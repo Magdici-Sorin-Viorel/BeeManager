@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BeeManager Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
+:root{--bg:#0f0e0e;--sur:#1a1919;--card:#222121;--bdr:#2c2b2b;--txt:#f5f3ef;--mut:#b9b5ae;--gold:#e6b422;--gold2:#f5c542;--danger:#e07c4c;--ok:#6fbf4c;--info:#4a9eff;--sh:0 8px 24px rgba(0,0,0,.45);--rl:20px;--rm:14px;--rs:10px;--sw:256px;}
+body{background:var(--bg);color:var(--txt);overflow-x:hidden;}
+body.light{--bg:#fefaf0;--sur:#fff7e8;--card:#ffffff;--bdr:#f0e3c9;--txt:#1f1b13;--mut:#5c564b;}
+.app{display:flex;min-height:100vh;}
+/* SIDEBAR */
+.sb{width:var(--sw);background:var(--sur);border-right:1px solid var(--bdr);position:fixed;height:100vh;z-index:200;overflow-y:auto;transition:transform .3s ease;display:flex;flex-direction:column;}
+.sb-logo{padding:18px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;}
+.sb-logo .nm{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--gold),#ffcf4a);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.ni{display:flex;align-items:center;gap:11px;padding:11px 16px;margin:2px 7px;border-radius:var(--rs);color:var(--mut);cursor:pointer;transition:all .18s;font-size:.88rem;min-height:44px;}
+.ni i{width:17px;text-align:center;font-size:.95rem;}
+.ni.on{background:rgba(230,180,34,.15);color:var(--gold);border-left:3px solid var(--gold);padding-left:13px;}
+.ni:hover:not(.on){background:rgba(230,180,34,.07);color:var(--txt);}
+/* MAIN */
+.main{flex:1;margin-left:var(--sw);padding:20px 24px;transition:margin .3s;}
+/* OVERLAY */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:190;}
+.ov.show{display:block;}
+/* TOPBAR */
+.tb{display:none;position:fixed;top:0;left:0;right:0;height:52px;background:var(--sur);border-bottom:1px solid var(--bdr);z-index:150;align-items:center;padding:0 12px;gap:10px;}
+.tb-t{font-weight:700;font-size:.95rem;color:var(--gold);flex:1;}
+.bgr{background:none;border:none;color:var(--gold);font-size:1.25rem;cursor:pointer;padding:8px;box-shadow:none;min-height:auto;}
+.bgr:hover{transform:none;filter:none;}
+/* GRID */
+.g{display:grid;gap:14px;margin-bottom:18px;}
+.gs{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+.gc{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));}
+/* CARD */
+.c{background:var(--card);border-radius:var(--rm);padding:15px;box-shadow:var(--sh);border:1px solid rgba(230,180,34,.18);transition:transform .2s,box-shadow .2s;}
+.c:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.55);}
+.cl{font-size:.73rem;text-transform:uppercase;letter-spacing:.7px;color:var(--gold);margin-bottom:3px;}
+.cv{font-size:1.9rem;font-weight:800;margin:5px 0;}
+.cs{font-size:.75rem;color:var(--mut);}
+.ct{font-size:.92rem;font-weight:700;margin-bottom:9px;color:var(--gold2);}
+/* BUTTONS */
+.btn{background:linear-gradient(145deg,var(--gold),#c8911a);border:none;padding:10px 18px;border-radius:40px;font-weight:700;color:#121212;cursor:pointer;transition:all .18s;font-size:.86rem;min-height:40px;display:inline-flex;align-items:center;gap:5px;}
+.btn:hover{filter:brightness(1.08);}
+.sm{padding:7px 12px;font-size:.76rem;min-height:32px;}
+.gh{background:rgba(255,255,255,.09);color:var(--txt);}
+.bd{background:linear-gradient(145deg,#e07c4c,#c05a30);color:#fff;}
+.be{background:rgba(74,158,255,.14);color:var(--info);border:1px solid rgba(74,158,255,.28);}
+.be:hover{background:rgba(74,158,255,.24);}
+.br{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+/* BADGES */
+.bg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:700;white-space:nowrap;}
+.gg{background:rgba(111,191,76,.2);color:#6fbf4c;}
+.gy{background:rgba(230,180,34,.2);color:#e6b422;}
+.gr{background:rgba(224,124,76,.2);color:#e07c4c;}
+.gb{background:rgba(74,158,255,.2);color:#4a9eff;}
+/* ALERTS */
+.al{padding:9px 13px;border-radius:var(--rs);margin:7px 0;font-size:.83rem;}
+.alw{background:rgba(230,180,34,.12);border-left:4px solid var(--gold);}
+.ald{background:rgba(224,124,76,.12);border-left:4px solid var(--danger);}
+.alo{background:rgba(111,191,76,.12);border-left:4px solid var(--ok);}
+.ali{background:rgba(74,158,255,.12);border-left:4px solid var(--info);}
+/* MODAL */
+.mb{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:12px;}
+.mb-b{background:var(--card);border-radius:var(--rl);width:100%;max-width:640px;max-height:92vh;overflow-y:auto;padding:20px;border-top:3px solid var(--gold);}
+.mt{font-size:1.1rem;font-weight:800;color:var(--gold);margin-bottom:13px;}
+/* FORMS */
+label.L{font-size:.78rem;font-weight:700;color:var(--gold);display:block;margin-top:9px;margin-bottom:3px;}
+input,select,textarea{background:var(--sur);border:1px solid var(--bdr);padding:9px 12px;border-radius:var(--rs);color:var(--txt);width:100%;font-size:.88rem;transition:border-color .2s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);}
+input[type=checkbox],input[type=radio]{width:auto;margin-right:5px;}
+.hint{font-size:.66rem;color:var(--mut);margin-top:2px;display:block;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.dv{border-top:1px solid var(--bdr);margin:12px 0;padding-top:11px;}
+.stt{font-size:.88rem;font-weight:700;color:var(--gold2);margin-bottom:7px;}
+.ck{display:flex;align-items:center;gap:7px;padding:4px 0;font-size:.85rem;}
+.ck label{color:var(--txt);margin:0;}
+/* WEATHER */
+.wp{display:flex;align-items:center;gap:11px;padding:12px;background:rgba(255,255,255,.04);border-radius:var(--rm);margin-top:9px;}
+.wi{font-size:2rem;}
+.gauge{background:rgba(0,0,0,.25);border-radius:20px;height:6px;margin:8px 0;overflow:hidden;}
+.gf{height:100%;background:linear-gradient(90deg,var(--gold),#ffcf4a);border-radius:20px;}
+.gl{display:flex;justify-content:space-between;font-size:.63rem;color:var(--mut);}
+.bb{display:flex;align-items:center;gap:11px;padding:10px;border-radius:var(--rs);margin-top:8px;}
+/* SEARCH */
+.sb2{display:flex;gap:9px;align-items:center;margin:10px 0;}
+.sb2 input{margin:0;flex:1;}
+/* ESTIMATOR */
+.est{background:rgba(230,180,34,.06);border:1px solid rgba(230,180,34,.15);border-radius:var(--rm);padding:12px;margin:7px 0;}
+.er{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.er input[type=number]{width:70px;flex-shrink:0;margin:0;}
+.er select{flex:1;margin:0;}
+.esb{font-size:.76rem;color:var(--mut);min-width:52px;}
+.etot{font-size:1.05rem;font-weight:800;color:var(--gold);margin-top:6px;}
+/* RECON TABLE */
+.rt{width:100%;border-collapse:collapse;margin-top:7px;font-size:.8rem;}
+.rt th{padding:6px 9px;text-align:left;color:var(--gold);background:rgba(230,180,34,.1);}
+.rt td{padding:6px 9px;border-bottom:1px solid var(--bdr);}
+/* STOCK ALERT */
+.sa{background:rgba(224,124,76,.12);border:1px solid var(--danger);border-radius:var(--rm);padding:12px;margin-bottom:13px;}
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border-left:5px solid var(--gold);padding:10px 18px;border-radius:40px;z-index:2000;box-shadow:var(--sh);font-size:.86rem;animation:ti .3s;}
+@keyframes ti{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+/* RESPONSIVE */
+@media(max-width:900px){:root{--sw:215px;}.main{padding:14px;}.gs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}}
+@media(max-width:650px){
+  .sb{transform:translateX(-100%);}
+  .sb.open{transform:translateX(0);}
+  .main{margin-left:0;padding:12px;padding-top:66px;}
+  .tb{display:flex;}
+  .gs{grid-template-columns:1fr 1fr;}
+  .gc{grid-template-columns:1fr;}
+  .r2,.r3{grid-template-columns:1fr;}
+  .mb{padding:0;align-items:flex-end;}
+  .mb-b{max-height:94vh;border-radius:var(--rl) var(--rl) 0 0;}
+  .toast{left:12px;right:12px;bottom:12px;text-align:center;}
+}
+@media(max-width:380px){.gs{grid-template-columns:1fr;}}
+@media(min-width:1350px){.main{padding:24px 36px;}.gs{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));}.gc{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}}
+</style>
+</head>
+<body>
+<div class="ov" id="ov"></div>
+<div class="app">
+  <aside class="sb" id="sb">
+    <div class="sb-logo"><span style="font-size:1.6rem">🐝</span><span class="nm">BeeManager Pro</span></div>
+    <nav id="nav" style="padding:5px 0;flex:1;"></nav>
+  </aside>
+  <main class="main">
+    <div class="tb" id="tb"><button class="bgr" id="bgr"><i class="fas fa-bars"></i></button><span class="tb-t" id="tbt">Dashboard</span><span style="font-size:1.2rem">🐝</span></div>
+    <div id="pg"></div>
+  </main>
+</div>
+<script>
+// ═══════════════════════════════════════════
+// DATA MODEL
+// ═══════════════════════════════════════════
+let D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],userLoc:null,weather:null,settings:{dark:true}};
+
+const PLANTS=[
+  {id:"sal",n:"Salcâm",sm:5,sd:1,em:5,ed:25,ic:"🌳",nt:[15,28],dc:"Cel mai valoros nectar! Perioadă scurtă, 2-3 săptămâni."},
+  {id:"rap",n:"Rapiță",sm:4,sd:10,em:5,ed:5,ic:"🌾",nt:[12,25],dc:"Cules principal de primăvară. Cristalizează rapid."},
+  {id:"tei",n:"Tei",sm:6,sd:15,em:7,ed:5,ic:"💛",nt:[20,32],dc:"Dependent de umiditate. Înflorește în valuri."},
+  {id:"fls",n:"Floarea soarelui",sm:6,sd:28,em:8,ed:10,ic:"🌻",nt:[22,38],dc:"Cules masiv de vară, necesită căldură."},
+  {id:"pom",n:"Pomi fructiferi",sm:3,sd:20,em:4,ed:20,ic:"🍎",nt:[10,22],dc:"Întărește familiile primăvara devreme."},
+  {id:"pol",n:"Polifloră",sm:5,sd:20,em:9,ed:30,ic:"🌼",nt:[14,30],dc:"Cules de întreținere între perioade principale."}
+];
+
+const ICAT={
+  "Rame":["Rame Dadant 1/1 cu sârmă","Rame Dadant 1/1 fără sârmă","Rame Dadant 1/2 cu sârmă","Rame Dadant 1/2 fără sârmă","Rame Langstroth","Rame clădite complet","Rame cu foiță ceară"],
+  "Foițe ceară":["Foițe Dadant 1/1","Foițe Dadant 1/2","Foițe Langstroth"],
+  "Cutii/Corpuri":["Corp Dadant lemn","Corp Dadant polistiren","Corp Dadant plastic","Corp Langstroth","Magazie Dadant","Magazie Langstroth","Fund stup","Capac stup"],
+  "Feronerie":["Cuie 35mm","Cuie 50mm","Șuruburi 4x40","Sârmă inox","Sârmă galvanizată","Arzător rame","Densimetru"],
+  "Hrănitoare":["Hrănitoare cadru","Hrănitoare exterioară","Sticle hrănire 1L"],
+  "Protecție":["Mască apicol","Mănuși apicole","Combinezon","Fumigător mic","Fumigător mare","Combustibil fumigător"],
+  "Tratamente":["Acid oxalic lichid","Acid oxalic cristale","Acid formic 65%","Apivar","Apiguard","Nosevit"],
+  "Unelte":["Daltă apicol","Perie albine","Cuțit decapsulat plat","Cuțit decapsulat dințat","Extractor miere","Refractometru","Sită miere","Bidon 30kg"]
+};
+
+const FW={"Dadant 1/1 (cuib)":2.8,"Dadant 1/2 (magazie)":1.4,"Langstroth 1/1":2.5,"Langstroth 1/2":1.2,"Alt tip":2.0};
+
+const WMO={0:{l:"Senin",i:"☀️",r:0},1:{l:"Aproape senin",i:"🌤️",r:0},2:{l:"Parțial noros",i:"⛅",r:0},3:{l:"Înnorat",i:"☁️",r:0},
+  45:{l:"Ceață",i:"🌫️",r:0},48:{l:"Ceață chiciură",i:"🌫️",r:0},
+  51:{l:"Burniță ușoară",i:"🌧️",r:1},53:{l:"Burniță",i:"🌧️",r:1},55:{l:"Burniță deasă",i:"🌧️",r:1},
+  61:{l:"Ploaie ușoară",i:"🌧️",r:1},63:{l:"Ploaie moderată",i:"🌧️",r:1},65:{l:"Ploaie abundentă",i:"🌧️",r:1},
+  71:{l:"Ninsoare ușoară",i:"❄️",r:0},73:{l:"Ninsoare",i:"❄️",r:0},75:{l:"Ninsoare deasă",i:"❄️",r:0},
+  80:{l:"Averse",i:"🌦️",r:1},81:{l:"Averse moderate",i:"🌦️",r:1},82:{l:"Averse violente",i:"⛈️",r:1},
+  95:{l:"Furtună",i:"⛈️",r:1},96:{l:"Furtună+grindină",i:"⛈️",r:1},99:{l:"Furtună violentă",i:"⛈️",r:1}
+};
+
+function wmoI(c){return WMO[c]||WMO[Math.floor(c/10)*10]||{l:"Necunoscut",i:"🌡️",r:0};}
+
+// ═══════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════
+function load(){
+  const s=localStorage.getItem("bmp5");
+  if(s){const p=JSON.parse(s);D={...D,...p};}
+  else{
+    D.hives=[
+      {id:"h1",num:1,name:"Stupul #1",loc:"Livada Est",mat:"Lemn",mod:"Dadant 10 rame",hasMag:true,magF:10,str:"puternic",fT:10,fB:6,fH:3,sc:"green",notes:""},
+      {id:"h2",num:2,name:"Stupul #2",loc:"Deal Vest",mat:"Polistiren",mod:"Dadant 10 rame",hasMag:false,magF:0,str:"mediu",fT:8,fB:4,fH:2,sc:"yellow",notes:""}
+    ];
+    D.queens=[{id:"q1",hive:"h1",yr:2024,race:"Buckfast",status:"activă",lay:4,aggr:2,orig:"Cumpărată",origHive:"",line:"Elite B1"}];
+    D.inventory=[
+      {id:"i1",name:"Rame Dadant 1/1 cu sârmă",cat:"Rame",qty:25,min:10},
+      {id:"i2",name:"Rame clădite complet",cat:"Rame",qty:12,min:5},
+      {id:"i3",name:"Foițe Dadant 1/1",cat:"Foițe ceară",qty:30,min:10},
+      {id:"i4",name:"Fumigător mic",cat:"Protecție",qty:2,min:1}
+    ];
+  }
+  if(!D.settings)D.settings={dark:true};
+  applyTheme();
+  initLoc();
+}
+
+function save(t=true){localStorage.setItem("bmp5",JSON.stringify(D));if(t)toast("Salvat ✅","🍯");}
+function applyTheme(){document.body.classList.toggle("light",!D.settings.dark);}
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
+function toast(m,ic="🍯"){
+  const t=document.createElement("div");t.className="toast";
+  t.innerHTML=ic+" "+m;document.body.appendChild(t);setTimeout(()=>t.remove(),2700);
+}
+
+// ═══════════════════════════════════════════
+// WEATHER — Open-Meteo (fără API key)
+// ═══════════════════════════════════════════
+function initLoc(){
+  if(D.userLoc){
+    const age=D.weather?(Date.now()-(D.weather.ts||0)):Infinity;
+    if(age>15*60*1000)fetchW(D.userLoc.lat,D.userLoc.lon);
+  }
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      p=>{D.userLoc={lat:p.coords.latitude,lon:p.coords.longitude};save(false);fetchW(p.coords.latitude,p.coords.longitude);},
+      ()=>{if(!D.weather)toast("Activați locația pentru vreme reală 📍");},
+      {timeout:8000}
+    );
+  }
+}
+
+async function fetchW(lat,lon){
+  try{
+    const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,precipitation,weathercode,windspeed_10m,relativehumidity_2m&timezone=auto&forecast_days=1");
+    if(!r.ok)throw 0;
+    const d=await r.json(),c=d.current,wi=wmoI(c.weathercode);
+    D.weather={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,lbl:wi.l,ic:wi.i,rain:wi.r||c.precipitation>0,ts:Date.now()};
+    save(false);
+    if(curP==="dashboard")renderDashboard();
+  }catch(e){console.warn("Weather failed",e);}
+}
+
+function beeAct(w){
+  if(!w)return{ic:"❓",ttl:"Vreme necunoscută",det:"Activați locația în browser.",bg:"rgba(255,255,255,.04)"};
+  const t=w.temp,r=w.rain,wn=w.wind;
+  if(r)return{ic:"🌧️",ttl:"Albinele nu zboară — ploaie",det:"Perioadă de repaus forțat.",bg:"rgba(74,158,255,.12)"};
+  if(t<=8)return{ic:"❄️",ttl:"Zbor oprit — sub 8°C",det:"Albinele în ghemul de iernare.",bg:"rgba(74,158,255,.1)"};
+  if(t<=12)return{ic:"🥶",ttl:"Zbor redus — rece",det:"Nu deschide stupii.",bg:"rgba(74,158,255,.08)"};
+  if(t<=15)return{ic:"🐝",ttl:"Zboruri de curățire",det:"Activitate redusă.",bg:"rgba(230,180,34,.08)"};
+  if(wn>30)return{ic:"💨",ttl:"Vânt puternic",det:"Albinele evită zborul.",bg:"rgba(224,124,76,.1)"};
+  if(t>38)return{ic:"🌡️",ttl:"Stres termic extrem",det:"Asigură apă urgentă!",bg:"rgba(224,124,76,.2)"};
+  if(t>33)return{ic:"🌡️",ttl:"Cald — albinele fac apă",det:"Asigură adăpător cu apă.",bg:"rgba(224,124,76,.1)"};
+  if(t>=20)return{ic:"🐝🐝🐝",ttl:"Activitate intensă de cules",det:"Condiții optime pentru zbor și nectar.",bg:"rgba(111,191,76,.1)"};
+  return{ic:"🐝🐝",ttl:"Activitate bună",det:"Condiții favorabile.",bg:"rgba(230,180,34,.06)"};
+}
+
+// ═══════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════
+function doy(y,m,d){return Math.floor((new Date(y,m-1,d)-new Date(y,0,0))/86400000);}
+function cdoy(){const t=new Date();return doy(t.getFullYear(),t.getMonth()+1,t.getDate());}
+function getFlow(){const cd=cdoy(),yr=new Date().getFullYear();return PLANTS.find(p=>cd>=doy(yr,p.sm,p.sd)&&cd<=doy(yr,p.em,p.ed))||null;}
+function sBadge(s){return s==="puternic"?'<span class="bg gg">💪 Puternic</span>':s==="mediu"?'<span class="bg gy">⚡ Mediu</span>':'<span class="bg gr">⚠️ Slab</span>';}
+function matIc(m){return{Lemn:"🪵",Polistiren:"🧊",Plastic:"🔵"}[m]||"📦";}
+function strCalc(b){const n=parseInt(b)||0;if(n>=6)return"puternic";if(n>=3)return"mediu";return"slab";}
+function xv(ex,f,d){return(ex&&ex[f]!==undefined&&ex[f]!==null)?ex[f]:d;}
+function L(txt){return '<label class="L">'+txt+'</label>';}
+function sel(cur,opts){return opts.map(o=>'<option'+(cur===o?" selected":"")+'>'+o+'</option>').join("");}
+function $q(id){var el=document.getElementById("MB");return el?el.querySelector("#"+id)||document.getElementById(id):document.getElementById(id);}
+
+// ═══════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════
+const PGS=[
+  {id:"dashboard",l:"Dashboard",i:"fa-chart-line"},
+  {id:"hives",l:"Stupi",i:"fa-home"},
+  {id:"queens",l:"Regine",i:"fa-crown"},
+  {id:"inspections",l:"Inspecții",i:"fa-book"},
+  {id:"honey",l:"Recoltă Miere",i:"fa-jar"},
+  {id:"treatments",l:"Tratamente",i:"fa-syringe"},
+  {id:"inventory",l:"Inventar",i:"fa-boxes"},
+  {id:"calendar",l:"Calendar",i:"fa-calendar-alt"},
+  {id:"analytics",l:"Analize",i:"fa-chart-simple"},
+  {id:"settings",l:"Setări",i:"fa-sliders-h"}
+];
+
+let curP="dashboard";
+function buildNav(){
+  document.getElementById("nav").innerHTML=PGS.map(p=>'<div class="ni'+(p.id===curP?" on":"")+'" onclick="go(\''+p.id+'\')"><i class="fas '+p.i+'"></i><span>'+p.l+'</span></div>').join("");
+}
+function go(p){curP=p;buildNav();document.getElementById("tbt").textContent=PGS.find(x=>x.id===p)?.l||p;render();closeSB();}
+function render(){({dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,treatments:renderTreatments,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,settings:renderSettings}[curP]||renderDashboard)();}
+function setP(h){document.getElementById("pg").innerHTML=h;}
+function openSB(){document.getElementById("sb").classList.add("open");document.getElementById("ov").classList.add("show");}
+function closeSB(){document.getElementById("sb").classList.remove("open");document.getElementById("ov").classList.remove("show");}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function openM(html){
+  const bg=document.createElement("div");bg.className="mb";bg.id="MB";
+  bg.innerHTML='<div class="mb-b">'+html+'</div>';
+  document.body.appendChild(bg);
+  bg.addEventListener("click",function(e){if(e.target===bg)closeM();});
+}
+function closeM(){var el=document.getElementById("MB");if(el)el.remove();}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+function renderDashboard(){
+  var w=D.weather,act=beeAct(w),fl=getFlow();
+  var low=D.inventory.filter(function(i){return i.qty<=i.min;});
+  var totH=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  var pend=D.treatments.filter(function(t){return new Date(t.date)>new Date();}).length;
+  var lastArr=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var last=lastArr[0];
+  var tmpPct=w?Math.min(100,Math.max(0,(w.temp/40)*100)):0;
+  var ago=w?Math.round((Date.now()-w.ts)/60000):null;
+  var agoL=ago!==null?(ago<2?"acum":"acum "+ago+" min"):"";
+  var strong=D.hives.filter(function(h){return h.str==="puternic";}).length;
+  var med=D.hives.filter(function(h){return h.str==="mediu";}).length;
+  var slb=D.hives.filter(function(h){return h.str==="slab";}).length;
+
+  var culesH="";
+  if(w&&w.rain){
+    culesH='<div class="bb" style="background:rgba(74,158,255,.12)"><span style="font-size:1.6rem">🌧️</span><div><strong>Cules suspendat — ploaie</strong><br><small style="color:var(--mut)">Albinele nu culeg pe ploaie. Verifică mâine.</small></div></div>';
+  } else if(fl){
+    var tmpOk=w&&w.temp>=fl.nt[0]&&w.temp<=fl.nt[1];
+    culesH='<div class="bb" style="background:rgba(111,191,76,.1)"><span style="font-size:1.6rem">'+fl.ic+'</span><div><strong>🐝 CULES ACTIV: '+fl.n+'</strong>'+(w?' — '+w.temp+'°C <span class="bg '+(tmpOk?'gg':'gy')+'">'+(tmpOk?'✅ Temp. optimă':'⚠️ Sub optim')+'</span>':'')+'<br><small style="color:var(--mut)">'+fl.dc+' Optim: '+fl.nt[0]+'–'+fl.nt[1]+'°C</small></div></div>';
+  } else {
+    culesH='<div class="bb" style="background:rgba(224,124,76,.12)"><span style="font-size:1.6rem">⏸️</span><div><strong>Perioadă între culesuri</strong><br><small style="color:var(--mut)">Întreținere, tratamente, pregătire rame.</small></div></div>';
+  }
+
+  var wCard="";
+  if(w){
+    wCard='<div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><div class="cl">🌦️ Vreme reală '+(agoL?'— '+agoL:'')+'</div><button class="btn sm gh" onclick="if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon)">🔄</button></div>'
+      +'<div class="wp" style="background:'+act.bg+'"><span class="wi">'+w.ic+'</span><div>'
+      +'<div style="font-size:1.4rem;font-weight:800">'+w.temp+'°C <small style="font-size:.9rem;font-weight:400">'+w.lbl+'</small></div>'
+      +'<div style="font-size:.76rem;color:var(--mut)">💨 '+w.wind+' km/h · 💧 '+w.hum+'% · 🌧️ '+w.prec+' mm</div>'
+      +'<div style="color:var(--gold);font-weight:700;margin-top:3px;">'+act.ic+' '+act.ttl+'</div>'
+      +'<div style="font-size:.74rem;color:var(--mut)">'+act.det+'</div>'
+      +'</div></div>'
+      +'<div class="gauge"><div class="gf" style="width:'+tmpPct+'%"></div></div>'
+      +'<div class="gl"><span>0°</span><span>10°</span><span>20°</span><span>30°</span><span>40°C</span></div>'
+      +culesH+'</div>';
+  } else {
+    wCard='<div class="c"><div class="cl">🌦️ Vreme</div><div class="al alw" style="margin-top:7px;">📍 Activați locația în browser pentru vreme reală.</div>'+culesH+'</div>';
+  }
+
+  var stockA=low.length?'<div class="sa"><strong>⚠️ Stoc scăzut — '+low.length+' articol(e)</strong>'+low.map(function(i){return '<div style="margin-top:3px;font-size:.8rem;">📦 <strong>'+i.name+'</strong>: '+i.qty+' buc (min: '+i.min+')</div>';}).join("")+'<button class="btn sm" style="margin-top:8px" onclick="go(\'inventory\')">Gestionează inventar</button></div>':"";
+
+  var lastHiveName=last?D.hives.find(function(h){return h.id===last.hiveId;})?.name||"":"";
+
+  setP('<h1 style="margin-bottom:16px;font-size:1.35rem;"><i class="fas fa-tachometer-alt" style="color:var(--gold)"></i> Dashboard Stupină</h1>'
+    +stockA
+    +'<div class="g gs">'
+    +'<div class="c"><div class="cl">Colonii active</div><div class="cv">'+D.hives.length+'</div><div class="cs">'+strong+' put · '+med+' med · '+slb+' slab</div></div>'
+    +'<div class="c"><div class="cl">Regine active</div><div class="cv">'+D.queens.filter(function(q){return q.status==="activă";}).length+'</div><div class="cs">'+D.queens.filter(function(q){return q.status==="în imperechere";}).length+' în imperechere</div></div>'
+    +'<div class="c"><div class="cl">Miere extrasă (kg)</div><div class="cv">'+totH.toFixed(1)+'</div><div class="cs">'+D.honeyHarvests.length+' sesiuni</div></div>'
+    +'<div class="c"><div class="cl">Tratamente planificate</div><div class="cv">'+pend+'</div></div>'
+    +'<div class="c"><div class="cl">Ultima inspecție</div><div class="cv" style="font-size:1rem">'+(last?last.date:"—")+'</div><div class="cs">'+lastHiveName+'</div></div>'
+    +'<div class="c"><div class="cl">Stoc scăzut</div><div class="cv" style="color:'+(low.length?"var(--danger)":"var(--ok)")+'">'+low.length+'</div></div>'
+    +'</div>'+wCard);
+}
+
+// ═══════════════════════════════════════════
+// HIVES
+// ═══════════════════════════════════════════
+function renderHives(q){
+  q=q||"";
+  var list=q?D.hives.filter(function(h){return (h.name+h.loc+String(h.num||"")).toLowerCase().includes(q.toLowerCase());}):D.hives;
+  var cards=list.map(function(h){
+    var qn=D.queens.find(function(q){return q.hive===h.id;});
+    var li=[].concat(D.inspections).filter(function(i){return i.hiveId===h.id;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+    var dot=h.sc==="green"?"🟢":h.sc==="yellow"?"🟡":"🔴";
+    var qBadge=qn?qn.race+' — <span class="bg '+(qn.status==="activă"?"gg":qn.status==="în imperechere"?"gb":"gy")+'">'+qn.status+'</span>':'<span style="color:var(--danger)">Fără regină</span>';
+    return '<div class="c">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:7px;"><h3 style="font-size:.92rem;">'+dot+' '+h.name+'</h3>'+sBadge(h.str)+'</div>'
+      +'<div style="font-size:.76rem;color:var(--mut);margin-bottom:9px;">'+matIc(h.mat)+' '+(h.mat||"Lemn")+' · '+(h.mod||"Dadant")+' · 📍 '+h.loc+'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:9px;">'
+      +'<div style="text-align:center;background:rgba(255,255,255,.04);border-radius:8px;padding:6px;"><div style="font-size:1.15rem;font-weight:800">'+h.fT+'</div><div style="font-size:.62rem;color:var(--mut)">Total</div></div>'
+      +'<div style="text-align:center;background:rgba(230,180,34,.1);border-radius:8px;padding:6px;"><div style="font-size:1.15rem;font-weight:800;color:var(--gold)">'+h.fB+'</div><div style="font-size:.62rem;color:var(--mut)">Puiet</div></div>'
+      +'<div style="text-align:center;background:rgba(111,191,76,.1);border-radius:8px;padding:6px;"><div style="font-size:1.15rem;font-weight:800;color:var(--ok)">'+h.fH+'</div><div style="font-size:.62rem;color:var(--mut)">Miere</div></div>'
+      +'</div>'
+      +(h.hasMag?'<div style="font-size:.78rem;margin-bottom:4px;">📦 Magazie: '+h.magF+' rame</div>':"")
+      +'<div style="font-size:.78rem;margin-bottom:4px;">👑 '+qBadge+'</div>'
+      +'<div style="font-size:.73rem;color:var(--mut)">📅 Ultima insp.: '+(li?li.date:"—")+'</div>'
+      +(h.notes?'<div style="font-size:.7rem;color:var(--mut);margin-top:3px;font-style:italic">'+h.notes+'</div>':"")
+      +'<div class="br"><button class="btn sm" onclick="hiveM(\''+h.id+'\')">✏️ Editează</button><button class="btn sm be" onclick="inspM(\''+h.id+'\')">🔍 Inspecție</button><button class="btn sm bd" onclick="delH(\''+h.id+'\')">🗑️</button></div>'
+      +'</div>';
+  }).join("");
+
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-home" style="color:var(--gold)"></i> Stupi <span class="cs">('+D.hives.length+')</span></h2>'
+    +'<div class="sb2"><button class="btn" onclick="hiveM()">+ Stup nou</button><input placeholder="🔍 Caută după nume, număr, locație…" value="'+q+'" oninput="renderHives(this.value)"></div>'
+    +(list.length===0?'<div class="al ali">Niciun stup găsit pentru "'+q+'".</div>':'<div class="g gc">'+cards+'</div>'));
+}
+
+window.delH=function(id){
+  if(!confirm("Ștergi stupul și toate datele asociate?"))return;
+  D.hives=D.hives.filter(function(h){return h.id!==id;});
+  D.inspections=D.inspections.filter(function(i){return i.hiveId!==id;});
+  D.queens=D.queens.filter(function(q){return q.hive!==id;});
+  save();renderHives();
+};
+
+function hiveM(id){
+  var h=id?D.hives.find(function(x){return x.id===id;}):null;
+  openM('<div class="mt">'+(h?"✏️ Editează Stup":"🏠 Stup Nou")+'</div>'
+    +'<div class="r2"><div>'+L("🔢 Număr stup")+'<input id="hNum" type="number" value="'+(xv(h,"num",""))+'" placeholder="1"></div>'
+    +'<div>'+L("🏷️ Nume / etichetă")+'<input id="hNm" value="'+(xv(h,"name",""))+'" placeholder="Ex: Stupul #3"></div></div>'
+    +L("📍 Locație / amplasament")+'<input id="hLc" value="'+(xv(h,"loc",""))+'" placeholder="Ex: Livada Est">'
+    +'<div class="r2"><div>'+L("🪵 Material")+'<select id="hMt">'+sel(h?h.mat:"",["Lemn","Polistiren","Plastic","Alt material"])+'</select></div>'
+    +'<div>'+L("📐 Model")+'<select id="hMd">'+sel(h?h.mod:"",["Dadant 10 rame","Dadant 12 rame","Langstroth","Alt model"])+'</select></div></div>'
+    +'<div class="dv"><div class="stt">📊 Rame cuib</div></div>'
+    +'<div class="r3"><div>'+L("Total rame")+'<input id="hFT" type="number" value="'+(xv(h,"fT",10))+'"></div>'
+    +'<div>'+L("Rame puiet")+'<input id="hFB" type="number" value="'+(xv(h,"fB",4))+'" oninput="aStr()"></div>'
+    +'<div>'+L("Rame miere")+'<input id="hFH" type="number" value="'+(xv(h,"fH",3))+'"></div></div>'
+    +'<div style="background:rgba(230,180,34,.07);border-radius:var(--rs);padding:10px;margin:7px 0;">'
+    +'<div style="font-size:.76rem;color:var(--mut);margin-bottom:6px;">🤖 0-2 rame puiet = slab | 3-5 = mediu | 6+ = puternic</div>'
+    +'<div style="display:flex;gap:7px;"><select id="hSt" style="flex:1;margin:0;"><option'+(xv(h,"str","mediu")==="puternic"?" selected":"")+'>puternic</option><option'+(xv(h,"str","mediu")==="mediu"?" selected":"")+'>mediu</option><option'+(xv(h,"str","mediu")==="slab"?" selected":"")+'>slab</option></select>'
+    +'<button class="btn sm" onclick="aStr(true)">⚡ Auto</button></div></div>'
+    +'<div class="r2"><div>'+L("📦 Are magazie?")+'<select id="hMg" onchange="document.getElementById(\'mRow\').style.display=this.value===\'da\'?\'block\':\'none\'"><option value="nu"'+(!h||!h.hasMag?" selected":"")+'>Nu</option><option value="da"'+(h&&h.hasMag?" selected":"")+'>Da</option></select></div>'
+    +'<div id="mRow" style="display:'+(h&&h.hasMag?"block":"none")+'">'+L("🔢 Capacitate magazie")+'<input id="hMgF" type="number" value="'+(xv(h,"magF",10))+'"></div></div>'
+    +L("🟢 Stare")+'<select id="hSc"><option value="green"'+(xv(h,"sc","green")==="green"?" selected":"")+'>🟢 Sănătos</option><option value="yellow"'+(xv(h,"sc","")==="yellow"?" selected":"")+'>🟡 Atenție</option><option value="red"'+(xv(h,"sc","")==="red"?" selected":"")+'>🔴 Problemă</option></select>'
+    +L("📝 Observații")+'<textarea id="hNt" rows="2">'+(xv(h,"notes",""))+'</textarea>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveH(\''+(id||"")+'\')">💾 Salvează</button><button class="btn gh" onclick="closeM()">Anulează</button></div>');
+}
+
+window.aStr=function(t){
+  var b=parseInt(($q("hFB")||{}).value)||0;
+  var s=strCalc(b);
+  var el=$q("hSt");if(el)el.value=s;
+  if(t)toast("Forță: "+s,"🤖");
+};
+
+window.saveH=function(id){
+  var nm=($q("hNm")||{}).value||"";nm=nm.trim();
+  if(!nm){toast("Introdu numele stupului!","⚠️");return;}
+  var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fT:parseInt(($q("hFT")||{}).value)||0,fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,str:($q("hSt")||{}).value||"mediu",hasMag:($q("hMg")||{}).value==="da",magF:parseInt(($q("hMgF")||{}).value)||0,sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
+  if(id){var ex=D.hives.find(function(h){return h.id===id;});if(ex)Object.assign(ex,o);}else{D.hives.push(o);}
+  save();closeM();renderHives();
+};
+
+// ═══════════════════════════════════════════
+// INSPECTIONS — full EDIT support
+// ═══════════════════════════════════════════
+
+// Map Open-Meteo label → inspection select option
+function mapWeatherLabel(lbl){
+  if(!lbl) return "";
+  var l=lbl.toLowerCase();
+  if(l.includes("senin")) return "Însorit";
+  if(l.includes("par") && l.includes("noros")) return "Parțial noros";
+  if(l.includes("noros") || l.includes("înnorat") || l.includes("ceață") || l.includes("ninsoare")) return "Noros";
+  if(l.includes("ploaie") || l.includes("burniță") || l.includes("averse")) return "Ploios";
+  if(l.includes("furtun")) return "Furtunos";
+  return "";
+}
+
+// ── VOICE DICTATION ──────────────────────────────
+async function startVoice(){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ toast("Browser-ul nu suportă dictare. Folosiți Chrome sau Edge.","⚠️"); return; }
+  var btn=document.getElementById("voiceBtn");
+  var stat=document.getElementById("voiceStat");
+  var rec=new SR();
+  rec.lang="ro-RO"; rec.continuous=false; rec.interimResults=false;
+  btn.innerHTML="⏹️ Oprește"; btn.style.background="linear-gradient(145deg,#e07c4c,#c05a30)";
+  stat.innerHTML='<span style="color:var(--danger)">🔴 Ascult… Vorbește acum!</span>';
+  rec.start();
+  rec.onresult=async function(e){
+    var transcript=e.results[0][0].transcript;
+    stat.innerHTML='<span style="color:var(--gold)">✅ Am auzit: "<em>'+transcript+'</em>"<br>⏳ Procesez cu AI…</span>';
+    btn.innerHTML="⏳ Procesez…"; btn.style.background="";
+    try{
+      var resp=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          messages:[{role:"user",content:
+'Ești asistentul unui apicultor român. Analizează această transcriere vocală a unei inspecții de stup și extrage datele. Returnează DOAR un obiect JSON valid, fără explicații și fără backtick-uri.\n\nCâmpuri posibile (folosește null dacă nu e menționat):\n- weather: unul din [Însorit, Parțial noros, Noros, Ploios, Vântos, Furtunos]\n- temperature: număr grade Celsius\n- smoke: unul din [deloc, putin, moderat, mult]\n- structC: unul din [ok, fisuri, deteriorat]\n- behav: număr 1-5 (1=deloc agresive, 5=extrem agresive)\n- qSeen: boolean (a văzut matca)\n- eggs: boolean (a văzut ouă)\n- larvae: boolean (a văzut larve)\n- botci: boolean (există botci)\n- botciN: număr botci\n- botciStage: unul din [incipient, aproape_cap, capacite, mixt]\n- botciFrames: string cu ramele unde sunt botci\n- fB: număr rame cu puiet\n- fH: număr rame cu miere sau frână\n- fP: număr rame cu pastura sau pollen\n- popPct: procentaj populație, unul din [30,50,70,90,100]\n- bp: tipar puiet, unul din [compact, necompact, probleme]\n- nFrames: rame noi introduse azi\n- nFramesB: rame noi care au început să fie clădite\n- space: spațiu în stup, unul din [suficient, plin, urgent]\n- magFull: rame pline cu miere în magazie\n- magCap: rame capacite în magazie\n- diseases: array de strings cu boli observate (Varroa, Locă, Nosemoză, Puiet văros, Sănătos)\n- notes: note suplimentare\n\nTranscriere: "'+transcript+'"'
+          }]
+        })
+      });
+      var data=await resp.json();
+      var txt=data.content[0].text.trim().replace(/```json\n?|\n?```/g,"").trim();
+      applyVoice(JSON.parse(txt));
+      stat.innerHTML='<span style="color:var(--ok)">✅ Formular completat automat din dictare!</span>';
+    }catch(err){
+      stat.innerHTML='<span style="color:var(--danger)">❌ Eroare la procesare AI. Completați manual.</span>';
+      console.error(err);
+    }
+    btn.innerHTML="🎤 Dictează din nou"; btn.style.background="";
+  };
+  rec.onerror=function(e){
+    stat.innerHTML='<span style="color:var(--danger)">❌ Eroare microfon: '+e.error+'. Verificați permisiunile.</span>';
+    btn.innerHTML="🎤 Dictează vocală"; btn.style.background="";
+  };
+  rec.onend=function(){
+    if(btn.innerHTML==="⏹️ Oprește"){ btn.innerHTML="🎤 Dictează vocală"; btn.style.background=""; }
+  };
+}
+
+function applyVoice(d){
+  function fld(id){ return document.getElementById(id)||(document.getElementById("MB")&&document.getElementById("MB").querySelector("#"+id)); }
+  function set(id,val){ var el=fld(id); if(!el||val===null||val===undefined)return; if(el.type==="checkbox")el.checked=!!val; else el.value=val; el.dispatchEvent(new Event("change")); }
+  if(d.weather)set("iWt",d.weather);
+  if(d.temperature!==null&&d.temperature!==undefined)set("iTemp",d.temperature);
+  if(d.smoke)set("iSmk",d.smoke);
+  if(d.structC)set("iStC",d.structC);
+  if(d.behav!==null&&d.behav!==undefined)set("iBhv",String(d.behav));
+  if(d.qSeen!==null&&d.qSeen!==undefined)set("iQS",d.qSeen);
+  if(d.eggs!==null&&d.eggs!==undefined)set("iEg",d.eggs);
+  if(d.larvae!==null&&d.larvae!==undefined)set("iLv",d.larvae);
+  if(d.botci!==null&&d.botci!==undefined){
+    set("iBtc",d.botci);
+    var bs=document.getElementById("bSec"); if(bs)bs.style.display=d.botci?"block":"none";
+  }
+  if(d.botciN!==null&&d.botciN!==undefined)set("iBtcN",d.botciN);
+  if(d.botciStage)set("iBtcS",d.botciStage);
+  if(d.botciFrames)set("iBtcF",d.botciFrames);
+  if(d.fB!==null&&d.fB!==undefined)set("iFB",d.fB);
+  if(d.fH!==null&&d.fH!==undefined)set("iFH",d.fH);
+  if(d.fP!==null&&d.fP!==undefined)set("iFP",d.fP);
+  if(d.popPct!==null&&d.popPct!==undefined)set("iPop",d.popPct);
+  if(d.bp)set("iBP",d.bp);
+  if(d.nFrames!==null&&d.nFrames!==undefined)set("iNF",d.nFrames);
+  if(d.nFramesB!==null&&d.nFramesB!==undefined)set("iNFB",d.nFramesB);
+  if(d.space)set("iSp",d.space);
+  if(d.magFull!==null&&d.magFull!==undefined)set("iMgFl",d.magFull);
+  if(d.magCap!==null&&d.magCap!==undefined)set("iMgCp",d.magCap);
+  if(d.notes)set("iNt",d.notes);
+  if(d.diseases&&d.diseases.length>0){
+    var dis=d.diseases.map(function(x){return x.toLowerCase();});
+    ["dV","dL","dN","dVr","dOk"].forEach(function(id){ var el=fld(id); if(el)el.checked=false; });
+    if(dis.some(function(x){return x.includes("varroa");})) { var el=fld("dV"); if(el)el.checked=true; }
+    if(dis.some(function(x){return x.includes("loc");})) { var el=fld("dL"); if(el)el.checked=true; }
+    if(dis.some(function(x){return x.includes("nosemo")||x.includes("diaree");})) { var el=fld("dN"); if(el)el.checked=true; }
+    if(dis.some(function(x){return x.includes("văros")||x.includes("varos");})) { var el=fld("dVr"); if(el)el.checked=true; }
+    if(dis.some(function(x){return x.includes("sănătos")||x.includes("sanatos");})) { var el=fld("dOk"); if(el)el.checked=true; }
+  }
+  toast("Formular completat din dictare!","🎤");
+}
+// ─────────────────────────────────────────────
+function renderInspections(){
+  var sorted=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var cards=sorted.map(function(i){
+    var hv=D.hives.find(function(h){return h.id===i.hiveId;});
+    var patBg=i.bp==="compact"?"gg":i.bp==="necompact"?"gy":"gr";
+    return '<div class="c">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:6px;"><h3 style="font-size:.88rem;">'+(hv?hv.name:"Stup necunoscut")+'</h3><span class="bg '+patBg+'">'+(i.bp||"—")+'</span></div>'
+      +'<div style="font-size:.75rem;color:var(--mut);margin-bottom:6px;">📅 '+i.date+' · '+(i.weather||"")+'  · 🌡️ '+(i.temp||"—")+'°C · 💨 '+(i.smoke||"—")+'</div>'
+      +(i.structC&&i.structC!=="ok"?'<div class="al alw" style="padding:4px 8px;margin:3px 0;font-size:.75rem;">🔩 '+i.structC+(i.structN?" — "+i.structN:"")+'</div>':"")
+      +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin:5px 0;">'
+      +'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑 Matcă văzută":"👑 Nevăzută")+'</span>'
+      +'<span class="bg '+(i.eggs?"gg":"gy")+'">'+(i.eggs?"🥚 Ouă":"❌ Fără ouă")+'</span>'
+      +'<span class="bg gb">🐝 '+(i.popPct||"?")+'%</span></div>'
+      +'<div style="font-size:.78rem;">Puiet: <b>'+(i.fB||0)+'</b> · Miere: <b>'+(i.fH||0)+'</b> · Pastura: <b>'+(i.fP||0)+'</b> rame</div>'
+      +'<div style="font-size:.78rem;">😤 Aggr: '+(i.behav||"—")+'/5 · 📦 '+(i.space||"—")+'</div>'
+      +(i.botci?'<div class="al alw" style="padding:4px 8px;margin:4px 0;font-size:.75rem;">🐛 Botci: '+i.botciN+' buc · '+(i.botciS||"")+(i.botciF?" — "+i.botciF:"")+'</div>':"")
+      +(i.hasMag?'<div style="font-size:.78rem;">📦 Magazie: '+(i.magFull||0)+'/'+(i.magT||0)+' pline · '+(i.magCap||0)+' capacite</div>':"")
+      +'<div style="font-size:.78rem;">🦠 '+((i.diseases||[]).join(", ")||"—")+'</div>'
+      +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+i.notes+'</div>':"")
+      +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️ Editează</button><button class="btn sm bd" onclick="delInsp(\''+i.id+'\')">🗑️</button></div>'
+      +'</div>';
+  }).join("");
+
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-book" style="color:var(--gold)"></i> Inspecții <span class="cs">('+sorted.length+')</span></h2>'
+    +'<button class="btn" style="margin-bottom:14px;" onclick="inspM(null)">+ Inspecție nouă</button>'
+    +(sorted.length===0?'<div class="al ali">Nicio inspecție. Mergi la Stupi → 🔍 Inspecție.</div>':'<div class="g gc">'+cards+'</div>'));
+}
+
+window.delInsp=function(id){
+  if(!confirm("Ștergi inspecția?"))return;
+  D.inspections=D.inspections.filter(function(i){return i.id!==id;});
+  save();renderInspections();
+};
+
+function inspM(hiveId,editId){
+  hiveId=hiveId||null;editId=editId||null;
+  var ex=editId?D.inspections.find(function(i){return i.id===editId;}):null;
+  var effHid=ex?ex.hiveId:hiveId;
+  var hive=effHid?D.hives.find(function(h){return h.id===effHid;}):null;
+  var disArr=ex?ex.diseases||[]:[];
+  var mag=hive?hive.hasMag:(ex?ex.hasMag:false);
+
+  // Auto-populate weather from D.weather for new inspections
+  var autoW = !ex && D.weather ? mapWeatherLabel(D.weather.lbl) : "";
+  var autoT = (!ex && D.weather) ? D.weather.temp : "";
+  var wtDefault = xv(ex,"weather",autoW);
+  var tempDefault = xv(ex,"temp",autoT);
+
+  var hiveSelHTML=!hive?L("🏠 Stup")+'<select id="iHive" onchange="updMag(this.value)">'+D.hives.map(function(h){return '<option value="'+h.id+'"'+(effHid===h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    :'<input type="hidden" id="iHive" value="'+effHid+'">';
+
+  var magHTML=mag?('<div class="dv"><div class="stt">📦 Magazie</div></div>'
+    +'<div class="r3"><div>'+L("Total rame")+'<input type="number" id="iMgT" value="'+(xv(ex,"magT",hive?hive.magF:10))+'"></div>'
+    +'<div>'+L("🍯 Rame pline")+'<input type="number" id="iMgFl" value="'+(xv(ex,"magFull",0))+'"></div>'
+    +'<div>'+L("✅ Din care capacite")+'<input type="number" id="iMgCp" value="'+(xv(ex,"magCap",0))+'"></div></div>'
+    +'<div class="r2"><div>'+L("🆕 Rame noi magazie")+'<input type="number" id="iMgNw" value="'+(xv(ex,"magNew",0))+'"></div>'
+    +'<div>'+L("🏗️ Din care clădite")+'<input type="number" id="iMgNwB" value="'+(xv(ex,"magNewB",0))+'"></div></div>'):"";
+
+  // Voice box UI
+  var voiceHTML='<div style="background:rgba(230,180,34,.08);border:1px solid rgba(230,180,34,.25);border-radius:var(--rs);padding:11px;margin-bottom:12px;">'
+    +'<div style="font-size:.82rem;font-weight:700;color:var(--gold2);margin-bottom:7px;">🎤 Completează prin dictare vocală (română)</div>'
+    +'<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;">'
+    +'<button class="btn sm" id="voiceBtn" onclick="startVoice()" type="button">🎤 Dictează vocală</button>'
+    +'<div id="voiceStat" style="font-size:.78rem;color:var(--mut);flex:1;">Apasă și dictează observațiile în română — AI completează formularul automat.</div>'
+    +'</div>'
+    +'<div style="font-size:.68rem;color:var(--mut);margin-top:5px;">Ex: <em>"10 rame cu puiet, 2 rame cu miere, am văzut matca, colonia e liniștită, am dat 2 rame noi, fără botci, stup sănătos"</em></div>'
+    +'</div>';
+
+  // Weather auto-populated notice
+  var wNotice=(!ex && D.weather)?'<div style="font-size:.72rem;color:var(--ok);margin-top:3px;">✅ Temperatura și vremea completate automat din datele meteo în timp real ('+D.weather.temp+'°C — '+D.weather.lbl+')</div>':"";
+
+  openM('<div class="mt">'+(ex?"✏️ Editează":"🔍 Inspecție")+(hive?" — "+hive.name:"")+'</div>'
+    +voiceHTML
+    +hiveSelHTML
+    +'<div class="r2"><div>'+L("📅 Data")+'<input type="date" id="iDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
+    +'<div>'+L("🌦️ Vreme")+'<select id="iWt">'+["Însorit","Parțial noros","Noros","Ploios","Vântos","Furtunos"].map(function(w){return '<option'+(wtDefault===w?" selected":"")+'>'+w+'</option>';}).join("")+'</select></div></div>'
+    +wNotice
+    +'<div class="r2"><div>'+L("🌡️ Temperatură (°C)")+'<input type="number" id="iTemp" step="0.5" value="'+tempDefault+'"></div>'
+    +'<div>'+L("💨 Fum")+'<select id="iSmk"><option value="deloc"'+(xv(ex,"smoke","")==="deloc"?" selected":"")+'>🚫 Deloc</option><option value="putin"'+(xv(ex,"smoke","")==="putin"?" selected":"")+'>🔥 Puțin</option><option value="moderat"'+(xv(ex,"smoke","moderat")==="moderat"?" selected":"")+'>🔥🔥 Moderat</option><option value="mult"'+(xv(ex,"smoke","")==="mult"?" selected":"")+'>🔥🔥🔥 Mult</option></select></div></div>'
+    +'<div class="dv"><div class="stt">🏚️ Starea fizică</div></div>'
+    +'<div class="r2"><div>'+L("🔩 Structură")+'<select id="iStC"><option value="ok"'+(xv(ex,"structC","ok")==="ok"?" selected":"")+'>✅ OK</option><option value="fisuri"'+(xv(ex,"structC","")==="fisuri"?" selected":"")+'>⚠️ Fisuri</option><option value="deteriorat"'+(xv(ex,"structC","")==="deteriorat"?" selected":"")+'>🔴 Deteriorat</option></select></div>'
+    +'<div>'+L("📝 Note structurale")+'<input id="iStN" value="'+(xv(ex,"structN",""))+'" placeholder="fisură pe capac…"></div></div>'
+    +'<div class="dv"><div class="stt">😤 Comportament</div></div>'
+    +L("Agresivitate 1–5")+'<select id="iBhv">'+[[1,"😊 1 — Deloc agresive"],[2,"😌 2 — Blânde"],[3,"😐 3 — Normale"],[4,"😤 4 — Agitate"],[5,"😡 5 — Agresive, lucrul dificil"]].map(function(a){return '<option value="'+a[0]+'"'+(String(xv(ex,"behav","3"))===String(a[0])?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select>'
+    +'<div class="dv"><div class="stt">👑 Starea mătcii</div></div>'
+    +'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:7px;">'
+    +'<div class="ck"><input type="checkbox" id="iQS"'+(xv(ex,"qSeen",false)?" checked":"")+'>  <label for="iQS">Matcă văzută</label></div>'
+    +'<div class="ck"><input type="checkbox" id="iEg"'+(xv(ex,"eggs",false)?" checked":"")+'>  <label for="iEg">Ouă depuse</label></div>'
+    +'<div class="ck"><input type="checkbox" id="iLv"'+(xv(ex,"larvae",false)?" checked":"")+'>  <label for="iLv">Larve prezente</label></div>'
+    +'</div>'
+    +L("⭐ Calitatea pontei")+'<select id="iQQ"><option value="excelenta"'+(xv(ex,"qQual","buna")==="excelenta"?" selected":"")+'>⭐⭐⭐ Excelentă</option><option value="buna"'+(xv(ex,"qQual","buna")==="buna"?" selected":"")+'>⭐⭐ Bună</option><option value="medie"'+(xv(ex,"qQual","")==="medie"?" selected":"")+'>⭐ Medie</option><option value="slaba"'+(xv(ex,"qQual","")==="slaba"?" selected":"")+'>⚠️ Slabă</option></select>'
+    +'<div class="dv"><div class="stt">🐛 Botci</div></div>'
+    +'<div class="ck"><input type="checkbox" id="iBtc"'+(xv(ex,"botci",false)?" checked":"")+' onchange="document.getElementById(\'bSec\').style.display=this.checked?\'block\':\'none\'"> <label for="iBtc">Botci prezente pe rame</label></div>'
+    +'<div id="bSec" style="display:'+(xv(ex,"botci",false)?"block":"none")+';background:rgba(230,180,34,.07);border-radius:var(--rs);padding:10px;margin-top:6px;">'
+    +'<div class="r2"><div>'+L("🔢 Număr botci")+'<input type="number" id="iBtcN" value="'+(xv(ex,"botciN",0))+'"></div>'
+    +'<div>'+L("📏 Stadiu")+'<select id="iBtcS"><option value="incipient"'+(xv(ex,"botciS","")==="incipient"?" selected":"")+'>🌱 Incipiente</option><option value="aproape_cap"'+(xv(ex,"botciS","")==="aproape_cap"?" selected":"")+'>🔄 Aproape capacite</option><option value="capacite"'+(xv(ex,"botciS","")==="capacite"?" selected":"")+'>✅ Capacite</option><option value="mixt"'+(xv(ex,"botciS","")==="mixt"?" selected":"")+'>📊 Mixt</option></select></div></div>'
+    +L("📋 Pe ce rame (ex: 2, 5, 7)")+'<input id="iBtcF" value="'+(xv(ex,"botciF",""))+'" placeholder="Ex: ramele 2, 4 și 7">'
+    +'<div class="al alw" style="font-size:.76rem;padding:4px 8px;margin-top:5px;">⚠️ Botci capacite = risc roire iminent!</div></div>'
+    +'<div class="dv"><div class="stt">📊 Rame cuib</div></div>'
+    +'<div class="r3"><div>'+L("🥚 Rame puiet")+'<input type="number" id="iFB" value="'+(xv(ex,"fB",hive?hive.fB||0:0))+'"></div>'
+    +'<div>'+L("🍯 Rame miere/frână")+'<input type="number" id="iFH" value="'+(xv(ex,"fH",0))+'"></div>'
+    +'<div>'+L("🌸 Rame pastura/pollen")+'<input type="number" id="iFP" value="'+(xv(ex,"fP",0))+'"></div></div>'
+    +'<div class="r2"><div>'+L("📈 Populație medie (%)")+'<select id="iPop"><option value="30"'+(xv(ex,"popPct",90)===30?" selected":"")+'>30%</option><option value="50"'+(xv(ex,"popPct",90)===50?" selected":"")+'>50%</option><option value="70"'+(xv(ex,"popPct",90)===70?" selected":"")+'>70%</option><option value="90"'+(xv(ex,"popPct",90)===90?" selected":"")+'>90%</option><option value="100"'+(xv(ex,"popPct",90)===100?" selected":"")+'>100%</option></select></div>'
+    +'<div>'+L("📋 Tipar puiet")+'<select id="iBP"><option value="compact"'+(xv(ex,"bp","compact")==="compact"?" selected":"")+'>✅ Compact</option><option value="necompact"'+(xv(ex,"bp","")==="necompact"?" selected":"")+'>⚠️ Necompact</option><option value="probleme"'+(xv(ex,"bp","")==="probleme"?" selected":"")+'>🔴 Probleme</option></select></div></div>'
+    +'<div class="r2"><div>'+L("🆕 Rame noi introduse azi")+'<input type="number" id="iNF" value="'+(xv(ex,"nFrames",0))+'"></div>'
+    +'<div>'+L("🏗️ Rame noi clădite (din anterioare)")+'<input type="number" id="iNFB" value="'+(xv(ex,"nFramesB",0))+'"></div></div>'
+    +L("📦 Spațiu cuib")+'<select id="iSp"><option value="suficient"'+(xv(ex,"space","suficient")==="suficient"?" selected":"")+'>✅ Suficient</option><option value="plin"'+(xv(ex,"space","")==="plin"?" selected":"")+'>⚠️ Aproape plin</option><option value="urgent"'+(xv(ex,"space","")==="urgent"?" selected":"")+'>🔴 Lipsă spațiu — risc roire</option></select>'
+    +'<div id="magSec">'+magHTML+'</div>'
+    +'<div class="dv"><div class="stt">🦠 Sănătate</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:7px;">'
+    +'<div class="ck"><input type="checkbox" id="dV"'+(disArr.includes("Varroa")?" checked":"")+'>  <label for="dV">🕷️ Varroa</label></div>'
+    +'<div class="ck"><input type="checkbox" id="dL"'+(disArr.includes("Locă")?" checked":"")+'>  <label for="dL">🦠 Locă</label></div>'
+    +'<div class="ck"><input type="checkbox" id="dN"'+(disArr.includes("Nosemoză")?" checked":"")+'>  <label for="dN">💩 Nosemoză</label></div>'
+    +'<div class="ck"><input type="checkbox" id="dVr"'+(disArr.includes("Puiet văros")?" checked":"")+'>  <label for="dVr">🍄 Puiet văros</label></div>'
+    +'<div class="ck"><input type="checkbox" id="dOk"'+(disArr.includes("Sănătos")||disArr.length===0?" checked":"")+'>  <label for="dOk">✅ Sănătos</label></div>'
+    +'</div>'
+    +'<input id="iDN" value="'+(xv(ex,"diseaseN",""))+'" placeholder="Alte observații boli…">'
+    +'<div class="dv"></div>'+L("📝 Note libere")+'<textarea id="iNt" rows="3">'+(xv(ex,"notes",""))+'</textarea>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveInsp(\''+(editId||"")+'\',\''+(effHid||"")+'\')">✅ Salvează</button><button class="btn gh" onclick="closeM()">Anulează</button></div>');
+}
+
+window.updMag=function(hid){
+  var hive=D.hives.find(function(h){return h.id===hid;});
+  var el=document.getElementById("magSec");
+  if(!el)return;
+  if(hive&&hive.hasMag){
+    el.innerHTML='<div class="dv"><div class="stt">📦 Magazie</div></div>'
+      +'<div class="r3"><div>'+L("Total rame")+'<input type="number" id="iMgT" value="'+(hive.magF||10)+'"></div>'
+      +'<div>'+L("🍯 Rame pline")+'<input type="number" id="iMgFl" value="0"></div>'
+      +'<div>'+L("✅ Capacite")+'<input type="number" id="iMgCp" value="0"></div></div>'
+      +'<div class="r2"><div>'+L("🆕 Rame noi")+'<input type="number" id="iMgNw" value="0"></div>'
+      +'<div>'+L("🏗️ Din care clădite")+'<input type="number" id="iMgNwB" value="0"></div></div>';
+  } else {
+    el.innerHTML="";
+  }
+};
+
+window.saveInsp=function(editId,hiveId){
+  var hid=($q("iHive")||{}).value||hiveId;
+  if(!hid){toast("Selectează stupul!","⚠️");return;}
+  var dis=[];
+  if(($q("dV")||{}).checked)dis.push("Varroa");
+  if(($q("dL")||{}).checked)dis.push("Locă");
+  if(($q("dN")||{}).checked)dis.push("Nosemoză");
+  if(($q("dVr")||{}).checked)dis.push("Puiet văros");
+  if(($q("dOk")||{}).checked)dis.push("Sănătos");
+  var dn=($q("iDN")||{}).value;if(dn)dis.push(dn);
+  var brood=parseInt(($q("iFB")||{}).value)||0;
+  var o={
+    id:editId||uid(),hiveId:hid,
+    date:($q("iDt")||{}).value||"",
+    weather:($q("iWt")||{}).value||"",
+    temp:parseFloat(($q("iTemp")||{}).value)||null,
+    smoke:($q("iSmk")||{}).value||"",
+    structC:($q("iStC")||{}).value||"ok",
+    structN:($q("iStN")||{}).value||"",
+    behav:parseInt(($q("iBhv")||{}).value)||3,
+    qSeen:($q("iQS")||{}).checked||false,
+    eggs:($q("iEg")||{}).checked||false,
+    larvae:($q("iLv")||{}).checked||false,
+    qQual:($q("iQQ")||{}).value||"buna",
+    botci:($q("iBtc")||{}).checked||false,
+    botciN:parseInt(($q("iBtcN")||{}).value)||0,
+    botciS:($q("iBtcS")||{}).value||"",
+    botciF:($q("iBtcF")||{}).value||"",
+    fB:brood,fH:parseInt(($q("iFH")||{}).value)||0,fP:parseInt(($q("iFP")||{}).value)||0,
+    popPct:parseInt(($q("iPop")||{}).value)||90,
+    bp:($q("iBP")||{}).value||"compact",
+    nFrames:parseInt(($q("iNF")||{}).value)||0,
+    nFramesB:parseInt(($q("iNFB")||{}).value)||0,
+    space:($q("iSp")||{}).value||"suficient",
+    hasMag:!!document.getElementById("iMgT"),
+    magT:parseInt(($q("iMgT")||{}).value)||0,
+    magFull:parseInt(($q("iMgFl")||{}).value)||0,
+    magCap:parseInt(($q("iMgCp")||{}).value)||0,
+    magNew:parseInt(($q("iMgNw")||{}).value)||0,
+    magNewB:parseInt(($q("iMgNwB")||{}).value)||0,
+    diseases:dis,diseaseN:($q("iDN")||{}).value||"",notes:($q("iNt")||{}).value||""
+  };
+  if(editId){var ei=D.inspections.find(function(i){return i.id===editId;});if(ei)Object.assign(ei,o);}
+  else{D.inspections.push(o);}
+  var hive=D.hives.find(function(h){return h.id===hid;});
+  if(hive){hive.fB=brood;hive.str=strCalc(brood);if(o.space==="urgent")hive.sc="red";}
+  save();closeM();
+  if(curP==="inspections")renderInspections();else renderHives();
+  toast(editId?"Inspecție actualizată!":"Inspecție salvată!","🐝");
+};
+
+// ═══════════════════════════════════════════
+// QUEENS
+// ═══════════════════════════════════════════
+function renderQueens(){
+  var cards=D.queens.map(function(q){
+    var hv=D.hives.find(function(h){return h.id===q.hive;});
+    var oh=D.hives.find(function(h){return h.id===q.origHive;});
+    var sc=((q.lay||3)+(6-(q.aggr||3)))/2;
+    return '<div class="c">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><h3 style="font-size:.92rem;">👑 '+q.race+'</h3><span class="bg '+(q.status==="activă"?"gg":q.status==="în imperechere"?"gb":"gy")+'">'+q.status+'</span></div>'
+      +'<div style="font-size:.8rem;">🏠 <strong>'+(hv?hv.name:"—")+'</strong></div>'
+      +'<div style="font-size:.8rem;">📅 '+q.yr+' · '+q.orig+(oh?" (din "+oh.name+")":'')+'</div>'
+      +'<div style="font-size:.8rem;">⭐ Pontă: '+q.lay+'/5 · 😤 Aggr: '+q.aggr+'/5 · Scor: <strong>'+sc.toFixed(1)+'/5.5</strong></div>'
+      +(q.line?'<div style="font-size:.75rem;color:var(--mut)">🧬 '+q.line+'</div>':"")
+      +'<div class="br"><button class="btn sm be" onclick="queenM(\''+q.id+'\')">✏️ Editează</button><button class="btn sm bd" onclick="delQ(\''+q.id+'\')">🗑️</button></div>'
+      +'</div>';
+  }).join("");
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-crown" style="color:var(--gold)"></i> Regine</h2>'
+    +'<button class="btn" style="margin-bottom:14px;" onclick="queenM()">+ Adaugă Regină</button>'
+    +(D.queens.length===0?'<div class="al ali">Nicio regină înregistrată.</div>':'<div class="g gc">'+cards+'</div>'));
+}
+window.delQ=function(id){if(!confirm("Ștergi regina?"))return;D.queens=D.queens.filter(function(q){return q.id!==id;});save();renderQueens();};
+
+function queenM(id){
+  var q=id?D.queens.find(function(x){return x.id===id;}):null;
+  openM('<div class="mt">'+(q?"✏️ Editează":"👑 Adaugă")+" Regină</div>"
+    +L("🏠 Stup")+'<select id="qH">'+D.hives.map(function(h){return '<option value="'+h.id+'"'+(xv(q,"hive","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    +'<div class="r2"><div>'+L("📅 An naștere")+'<input id="qY" type="number" value="'+(xv(q,"yr",new Date().getFullYear()))+'"></div>'
+    +'<div>'+L("🧬 Rasă")+'<select id="qR">'+sel(xv(q,"race",""),["Carnica","Buckfast","Carnica hibrid","Caucasian","Italian","Carpatica","Autohtonă","Altă rasă"])+'</select></div></div>'
+    +'<div class="r2"><div>'+L("⭐ Calitate pontă (1–5)")+'<input id="qLy" type="number" min="1" max="5" value="'+(xv(q,"lay",4))+'"><span class="hint">5 = excelentă</span></div>'
+    +'<div>'+L("😠 Agresivitate (1–5)")+'<input id="qAg" type="number" min="1" max="5" value="'+(xv(q,"aggr",2))+'"><span class="hint">1 = deloc</span></div></div>'
+    +L("🌱 Origine")+'<select id="qOr">'+sel(xv(q,"orig",""),["Cumpărată","Din roi propriu","Crescută local","Import","Natural (roi)"])+'</select>'
+    +L("🏠 Stup de origine (din roi propriu)")+'<select id="qOH"><option value="">— Nu se aplică —</option>'+D.hives.map(function(h){return '<option value="'+h.id+'"'+(xv(q,"origHive","")===h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    +L("📜 Linie genetică")+'<input id="qLn" value="'+(xv(q,"line",""))+'" placeholder="Ex: Elite B1">'
+    +L("🔘 Status")+'<select id="qSt">'+sel(xv(q,"status","activă"),["activă","în imperechere","slabă","înlocuită","dispărută"])+'</select>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveQ(\''+(id||"")+'\')">💾 Salvează</button><button class="btn gh" onclick="closeM()">Anulează</button></div>');
+}
+window.saveQ=function(id){
+  var o={id:id||uid(),hive:($q("qH")||{}).value,yr:parseInt(($q("qY")||{}).value),race:($q("qR")||{}).value,lay:parseInt(($q("qLy")||{}).value),aggr:parseInt(($q("qAg")||{}).value),orig:($q("qOr")||{}).value,origHive:($q("qOH")||{}).value||null,line:($q("qLn")||{}).value,status:($q("qSt")||{}).value};
+  if(id){var ex=D.queens.find(function(q){return q.id===id;});if(ex)Object.assign(ex,o);}else{D.queens.push(o);}
+  save();closeM();renderQueens();
+};
+
+// ═══════════════════════════════════════════
+// HONEY — EDIT + reconciliation
+// ═══════════════════════════════════════════
+function renderHoney(){
+  var byT={};
+  D.honeyHarvests.forEach(function(h){var t=h.honeyType||"Necunoscut";if(!byT[t])byT[t]={e:0,a:0};byT[t].e+=(h.estQty||0);byT[t].a+=(h.actualQty||h.qty||0);});
+  var reconRows=Object.keys(byT).map(function(t){var d=byT[t],df=d.a-d.e,ef=d.e>0?((d.a/d.e)*100).toFixed(0):"—";return '<tr><td><strong>'+t+'</strong></td><td>'+d.e.toFixed(1)+' kg</td><td><strong>'+d.a.toFixed(1)+' kg</strong></td><td style="color:'+(df>=0?"var(--ok)":"var(--danger)")+'">'+(df>=0?"+":"")+df.toFixed(1)+' kg</td><td><span class="bg '+(parseInt(ef)>=85?"gg":parseInt(ef)>=65?"gy":"gr")+'">'+ef+'%</span></td></tr>';}).join("");
+  var recon=Object.keys(byT).length?'<div class="c" style="margin-bottom:16px;"><div class="ct">📊 Reconciliere pe tip de miere</div><div style="overflow-x:auto;"><table class="rt"><thead><tr><th>Tip</th><th>Estimat</th><th>Real</th><th>Diferență</th><th>Eficiență</th></tr></thead><tbody>'+reconRows+'</tbody></table></div><div style="font-size:.68rem;color:var(--mut);margin-top:5px;">Eficiența sub 100% = estimarea a fost mai mare (normal 70–90%).</div></div>':"";
+  var cards=D.honeyHarvests.map(function(h){
+    var hv=D.hives.find(function(hive){return hive.id===h.hiveId;});
+    var df=h.actualQty&&h.estQty?h.actualQty-h.estQty:null;
+    return '<div class="c"><h3 style="font-size:.92rem;margin-bottom:6px;">🍯 '+(h.honeyType||h.type||"")+'</h3>'
+      +'<div style="font-size:.78rem;">🏠 '+(hv?hv.name:h.hiveId||"—")+' · 📅 '+(h.extractionDate||h.date||"")+'</div>'
+      +(h.estQty?'<div style="font-size:.78rem;">📐 Estimat: <strong>'+h.estQty.toFixed(1)+' kg</strong></div>':"")
+      +'<div style="font-size:.78rem;">⚖️ Real: <strong>'+((h.actualQty||h.qty||0)).toFixed(1)+' kg</strong>'+((!h.actualQty)?'<span class="bg gy" style="margin-left:6px;">⏳ Necompletă</span>':"")+'</div>'
+      +(df!==null?'<div style="font-size:.78rem;color:'+(df>=0?"var(--ok)":"var(--danger)")+'">'+(df>=0?"+":"")+df.toFixed(1)+' kg față de estimare</div>':"")
+      +'<div style="font-size:.78rem;">💧 '+(h.humidity||"—")+'% · ⭐ '+(h.quality||"—")+'</div>'
+      +(h.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+h.notes+'</div>':"")
+      +'<div class="br"><button class="btn sm be" onclick="honeyM(\''+h.id+'\')">✏️ Editează</button><button class="btn sm bd" onclick="delHn(\''+h.id+'\')">🗑️</button></div>'
+      +'</div>';
+  }).join("");
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-jar" style="color:var(--gold)"></i> Recoltă Miere</h2>'
+    +'<button class="btn" style="margin-bottom:14px;" onclick="honeyM()">+ Înregistrează Extracție</button>'
+    +recon
+    +(D.honeyHarvests.length===0?'<div class="al ali">Nicio extracție înregistrată.</div>':'<div class="g gc">'+cards+'</div>'));
+}
+window.delHn=function(id){if(!confirm("Ștergi înregistrarea?"))return;D.honeyHarvests=D.honeyHarvests.filter(function(h){return h.id!==id;});save();renderHoney();};
+
+function honeyM(id){
+  var ex=id?D.honeyHarvests.find(function(h){return h.id===id;}):null;
+  openM('<div class="mt">'+(ex?"✏️ Editează":"🍯 Înregistrează")+" Extracție</div>"
+    +'<div class="r2"><div>'+L("🏠 Stup")+'<select id="hHv"><option value="">Fără stup specific</option>'+D.hives.map(function(h){return '<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select></div>'
+    +'<div>'+L("🌸 Tipul mierii")+'<select id="hTp">'+sel(xv(ex,"honeyType",xv(ex,"type","")),["Salcâm","Rapiță","Tei","Floarea soarelui","Polifloră","Mană","Alta"])+'</select></div></div>'
+    +L("📅 Data extragerii")+'<input type="date" id="hDt" value="'+(xv(ex,"extractionDate",xv(ex,"date",new Date().toISOString().slice(0,10))))+'">'
+    +'<div class="dv"><div class="stt">📐 Estimare după rame extrase</div></div>'
+    +'<div class="est"><div style="font-size:.76rem;color:var(--mut);margin-bottom:8px;">Introdu ramele extrase pe tip pentru a estima automat cantitatea:</div>'
+    +'<div id="fgL">'
+    +'<div class="er"><input type="number" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+Object.keys(FW).map(function(k){return '<option>'+k+'</option>';}).join("")+'</select><span class="esb">≈ 0 kg</span></div>'
+    +'<div class="er"><input type="number" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+Object.keys(FW).map(function(k,i){return '<option'+(i===1?" selected":"")+'>'+k+'</option>';}).join("")+'</select><span class="esb">≈ 0 kg</span></div>'
+    +'</div>'
+    +'<button class="btn sm gh" type="button" onclick="addFR()" style="margin-top:5px;">+ Tip ramă</button>'
+    +'<div class="etot" id="eT">Estimare: <strong>0.0 kg</strong></div>'
+    +'<div style="font-size:.66rem;color:var(--mut);margin-top:3px;">Dadant 1/1 ≈ 2.8 kg/ramă · Dadant 1/2 ≈ 1.4 kg/ramă (rame pline, capacite)</div></div>'
+    +'<div class="dv"><div class="stt">⚖️ Date reale</div></div>'
+    +'<div class="r2"><div>'+L("⚖️ Cantitate extrasă real (kg)")+'<input id="hAq" type="number" step="0.1" value="'+(xv(ex,"actualQty",xv(ex,"qty","")))+'" placeholder="ex: 18.5"><span class="hint">Lasă gol dacă nu ai extras — completezi cu ✏️ Editează</span></div>'
+    +'<div>'+L("💧 Umiditate % (refractometru)")+'<input id="hHm" type="number" step="0.1" value="'+(xv(ex,"humidity",17.5))+'"></div></div>'
+    +L("⭐ Calitate")+'<select id="hQl">'+sel(xv(ex,"quality",""),["A+ (excepțională)","A (foarte bună)","B (standard)","C (consum propriu)"])+'</select>'
+    +L("📝 Observații")+'<textarea id="hNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveHn(\''+(id||"")+'\')">💾 Salvează</button><button class="btn gh" onclick="closeM()">Anulează</button></div>');
+}
+window.recE=function(){
+  var tot=0;
+  var rows=document.querySelectorAll("#MB .er");
+  rows.forEach(function(row){
+    var cnt=parseInt((row.querySelector(".fgC")||{}).value)||0;
+    var typ=(row.querySelector(".fgT")||{}).value||"Alt tip";
+    var w=FW[typ]||2;var sub=cnt*w;tot+=sub;
+    var sw=row.querySelector(".esb");if(sw)sw.textContent="≈ "+sub.toFixed(1)+" kg";
+  });
+  var el=document.getElementById("eT");if(el)el.innerHTML="Estimare: <strong>"+tot.toFixed(1)+" kg</strong>";
+  return tot;
+};
+window.addFR=function(){
+  var d=document.createElement("div");d.className="er";
+  d.innerHTML='<input type="number" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()" style="margin:0;width:70px;flex-shrink:0;"><select class="fgT" onchange="recE()" style="margin:0;flex:1;">'+Object.keys(FW).map(function(k){return '<option>'+k+'</option>';}).join("")+'</select><span class="esb">≈ 0 kg</span><button type="button" class="btn sm bd" onclick="this.parentNode.remove();recE()" style="padding:4px 8px;">✕</button>';
+  var list=document.getElementById("fgL");if(list)list.appendChild(d);
+};
+window.saveHn=function(id){
+  var est=recE(),aqRaw=($q("hAq")||{}).value,aq=aqRaw?parseFloat(aqRaw):null;
+  var o={id:id||uid(),hiveId:($q("hHv")||{}).value||null,honeyType:($q("hTp")||{}).value,type:($q("hTp")||{}).value,extractionDate:($q("hDt")||{}).value,estQty:parseFloat(est.toFixed(2)),actualQty:aq,qty:aq||est,humidity:parseFloat(($q("hHm")||{}).value)||null,quality:($q("hQl")||{}).value,notes:($q("hNt")||{}).value};
+  if(id){var ex=D.honeyHarvests.find(function(h){return h.id===id;});if(ex)Object.assign(ex,o);}else{D.honeyHarvests.push(o);}
+  save();closeM();renderHoney();toast(id?"Recoltă actualizată!":"Recoltă salvată!","🍯");
+};
+
+// ═══════════════════════════════════════════
+// TREATMENTS — EDIT
+// ═══════════════════════════════════════════
+function renderTreatments(){
+  var sorted=[].concat(D.treatments).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var cards=sorted.map(function(t){
+    var hv=D.hives.find(function(h){return h.id===t.hiveId;});var past=new Date(t.date)<=new Date();
+    return '<div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><h3 style="font-size:.92rem;">💊 '+t.product+'</h3><span class="bg '+(past?"gy":"gb")+'">'+(past?"Efectuat":"Planificat")+'</span></div>'
+      +'<div style="font-size:.8rem;">🏠 '+(hv?hv.name:"Toți stupii")+' · 📅 '+t.date+'</div>'
+      +'<div style="font-size:.8rem;">⚖️ '+(t.dosage||"—")+' · 📈 '+(t.efficacy||"—")+'</div>'
+      +(t.notes?'<div style="font-size:.74rem;color:var(--mut);margin-top:3px;font-style:italic">'+t.notes+'</div>':"")
+      +'<div class="br"><button class="btn sm be" onclick="treatM(\''+t.id+'\')">✏️ Editează</button><button class="btn sm bd" onclick="delTr(\''+t.id+'\')">🗑️</button></div>'
+      +'</div>';
+  }).join("");
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-syringe" style="color:var(--gold)"></i> Tratamente</h2>'
+    +'<button class="btn" style="margin-bottom:14px;" onclick="treatM()">+ Înregistrează Tratament</button>'
+    +(sorted.length===0?'<div class="al ali">Niciun tratament înregistrat.</div>':'<div class="g gc">'+cards+'</div>'));
+}
+window.delTr=function(id){if(!confirm("Ștergi tratamentul?"))return;D.treatments=D.treatments.filter(function(t){return t.id!==id;});save();renderTreatments();};
+function treatM(id){
+  var ex=id?D.treatments.find(function(t){return t.id===id;}):null;
+  openM('<div class="mt">'+(ex?"✏️ Editează":"💊 Tratament")+'</div>'
+    +L("🧪 Produs")+'<select id="tPr">'+sel(xv(ex,"product",""),["Acid oxalic (sublimare)","Acid oxalic (picurare)","Acid formic (benzi)","Apivar (amitraz)","Apiguard (timol)","Nosevit","Terramicină","Alt produs"])+'</select>'
+    +L("🎯 Aplicat la")+'<select id="tHv"><option value="">Toți stupii (general)</option>'+D.hives.map(function(h){return '<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    +'<div class="r2"><div>'+L("📅 Data")+'<input type="date" id="tDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
+    +'<div>'+L("⚖️ Doză")+'<input id="tDs" value="'+(xv(ex,"dosage",""))+'" placeholder="ex: 2g, 1 bandă"></div></div>'
+    +L("📈 Eficacitate observată")+'<select id="tEf">'+sel(xv(ex,"efficacy",""),["ridicată (>90%)","medie (60-90%)","scăzută (<60%)"])+'</select>'
+    +L("📝 Observații")+'<textarea id="tNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveTr(\''+(id||"")+'\')">💾 Salvează</button><button class="btn gh" onclick="closeM()">Anulează</button></div>');
+}
+window.saveTr=function(id){
+  var o={id:id||uid(),product:($q("tPr")||{}).value,hiveId:($q("tHv")||{}).value||null,date:($q("tDt")||{}).value,dosage:($q("tDs")||{}).value,efficacy:($q("tEf")||{}).value,notes:($q("tNt")||{}).value};
+  if(id){var ex=D.treatments.find(function(t){return t.id===id;});if(ex)Object.assign(ex,o);}else{D.treatments.push(o);}
+  save();closeM();renderTreatments();toast(id?"Tratament actualizat!":"Tratament salvat!","💊");
+};
+
+// ═══════════════════════════════════════════
+// INVENTORY — EDIT + quick +/-
+// ═══════════════════════════════════════════
+function renderInventory(){
+  var low=D.inventory.filter(function(i){return i.qty<=i.min;});
+  var byCat={};D.inventory.forEach(function(i){if(!byCat[i.cat])byCat[i.cat]=[];byCat[i.cat].push(i);});
+  var catHTML=Object.keys(byCat).map(function(cat){
+    var items=byCat[cat].map(function(i){var lw=i.qty<=i.min;
+      return '<div class="c" style="'+(lw?"border-color:var(--danger)":"")+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:5px;"><h3 style="font-size:.85rem;">'+i.name+'</h3>'+(lw?'<span class="bg gr">⚠️</span>':"")+'</div>'
+        +'<div style="font-size:1.8rem;font-weight:800;color:'+(lw?"var(--danger)":"var(--gold)")+'">'+i.qty+'</div>'
+        +'<div style="font-size:.73rem;color:var(--mut)">buc · Min: '+i.min+'</div>'
+        +'<div class="br"><button class="btn sm bd" onclick="chI(\''+i.id+'\',-1)">−1</button><button class="btn sm" onclick="chI(\''+i.id+'\',1)">+1</button><button class="btn sm be" onclick="invM(\''+i.id+'\')">✏️</button><button class="btn sm bd" onclick="delI(\''+i.id+'\')">🗑️</button></div>'
+        +'</div>';
+    }).join("");
+    return '<div style="margin-bottom:18px;"><h3 style="color:var(--gold);font-size:.82rem;margin-bottom:9px;text-transform:uppercase;letter-spacing:.5px;">📂 '+cat+'</h3><div class="g gc">'+items+'</div></div>';
+  }).join("");
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-boxes" style="color:var(--gold)"></i> Inventar</h2>'
+    +'<button class="btn" style="margin-bottom:12px;" onclick="invM()">+ Adaugă Material</button>'
+    +(low.length?'<div class="sa"><strong>⚠️ Stoc scăzut — '+low.length+' articol(e)</strong>'+low.map(function(i){return '<div style="margin-top:2px;font-size:.8rem;">📦 <strong>'+i.name+'</strong>: '+i.qty+' buc (min: '+i.min+')</div>';}).join("")+'</div>':"")
+    +(Object.keys(byCat).length===0?'<div class="al ali">Inventarul este gol.</div>':catHTML));
+}
+window.chI=function(id,d){var i=D.inventory.find(function(x){return x.id===id;});if(!i)return;i.qty=Math.max(0,i.qty+d);save(false);renderInventory();};
+window.delI=function(id){if(!confirm("Ștergi articolul?"))return;D.inventory=D.inventory.filter(function(i){return i.id!==id;});save();renderInventory();};
+function invM(id){
+  var ex=id?D.inventory.find(function(i){return i.id===id;}):null;
+  var allIt=Object.values(ICAT).reduce(function(a,b){return a.concat(b);},[]);
+  openM('<div class="mt">'+(ex?"✏️ Editează":"📦 Adaugă")+" Material</div>"
+    +L("🔧 Selectează din listă")+'<select id="iSN" onchange="document.getElementById(\'iMN\').value=this.value;document.getElementById(\'iCt\').value=getCt(this.value)||document.getElementById(\'iCt\').value;"><option value="">— Selectează —</option>'+allIt.map(function(n){return '<option value="'+n+'"'+(xv(ex,"name","")=== n?" selected":"")+'>'+n+'</option>';}).join("")+'</select>'
+    +L("✏️ sau scrie manual")+'<input id="iMN" value="'+(xv(ex,"name",""))+'" placeholder="Denumire material…">'
+    +L("📂 Categorie")+'<select id="iCt">'+Object.keys(ICAT).map(function(c){return '<option'+(xv(ex,"cat","")=== c?" selected":"")+'>'+c+'</option>';}).join("")+'</select>'
+    +'<div class="r2"><div>'+L("🔢 Cantitate")+'<input id="iQt" type="number" value="'+(xv(ex,"qty",0))+'"></div>'
+    +'<div>'+L("⚠️ Stoc minim")+'<input id="iMn" type="number" value="'+(xv(ex,"min",5))+'"></div></div>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveI(\''+(id||"")+'\')">💾 Salvează</button><button class="btn gh" onclick="closeM()">Anulează</button></div>');
+}
+window.getCt=function(n){var cats=Object.keys(ICAT);for(var i=0;i<cats.length;i++){if(ICAT[cats[i]].indexOf(n)>=0)return cats[i];}return null;};
+window.saveI=function(id){
+  var nm=(($q("iMN")||{}).value||($q("iSN")||{}).value||"").trim();
+  if(!nm){toast("Introdu denumirea!","⚠️");return;}
+  var o={id:id||uid(),name:nm,cat:($q("iCt")||{}).value,qty:parseInt(($q("iQt")||{}).value)||0,min:parseInt(($q("iMn")||{}).value)||5};
+  if(id){var ex=D.inventory.find(function(i){return i.id===id;});if(ex)Object.assign(ex,o);}else{D.inventory.push(o);}
+  save();closeM();renderInventory();
+};
+
+// ═══════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════
+function renderCalendar(){
+  var yr=new Date().getFullYear(),cd=cdoy(),fl=getFlow(),w=D.weather;
+  var next=PLANTS.filter(function(p){return doy(yr,p.sm,p.sd)>cd;}).sort(function(a,b){return doy(yr,a.sm,a.sd)-doy(yr,b.sm,b.sd);}).slice(0,3);
+  var bet="";
+  if(!fl&&next.length>0){
+    var dl=doy(yr,next[0].sm,next[0].sd)-cd;
+    bet='<div class="c" style="margin-top:13px;"><div class="ct">⏳ Perioadă între culesuri — '+dl+' zile până la '+next[0].ic+' '+next[0].n+'</div>'
+      +'<ul style="margin-left:16px;line-height:1.85;font-size:.84rem;">'
+      +'<li>🐝 Verifică rezervele de hrană — hrănește dacă e necesar.</li>'
+      +'<li>🩺 Tratament Varroa dacă nu s-a făcut recent.</li>'
+      +'<li>📦 Pregătește ramele pentru următorul cules.</li>'
+      +'<li>👑 Verifică mătcile — înlocuiește reginele slabe.</li>'
+      +'<li>🧹 Curăță fundurile și dezinfectează uneltele.</li>'
+      +'<li>🗃️ Inventariază rame, foițe ceară, cutii de rezervă.</li>'
+      +'</ul></div>';
+  }
+  var nextHTML=next.map(function(p){return '<div class="bb" style="background:rgba(255,255,255,.04);margin-top:7px;"><span style="font-size:1.3rem">'+p.ic+'</span><div><strong>'+p.n+'</strong> — ~'+p.sd+'.'+String(p.sm).padStart(2,"0")+' → '+p.ed+'.'+String(p.em).padStart(2,"0")+'<br><small style="color:var(--mut)">'+p.dc+'</small></div></div>';}).join("");
+  var treatHTML=D.treatments.filter(function(t){return new Date(t.date)>new Date();}).map(function(t){var hv=D.hives.find(function(h){return h.id===t.hiveId;});return '<div class="bb" style="background:rgba(255,255,255,.04);margin-top:7px;"><span>💊</span><div><strong>'+t.product+'</strong><br>📅 '+t.date+' · '+(hv?"Stup: "+hv.name:"Toți stupii")+'</div><button class="btn sm be" onclick="treatM(\''+t.id+'\')">✏️</button></div>';}).join("");
+  var flHTML=fl?('<div class="bb" style="background:rgba(111,191,76,.1);margin-top:7px;"><span style="font-size:1.7rem">'+fl.ic+'</span><div><strong>'+fl.n+'</strong>'+(w?" — "+w.temp+"°C"+' <span class="bg '+(w.temp>=fl.nt[0]&&w.temp<=fl.nt[1]?"gg":"gy")+'">'+(w.temp>=fl.nt[0]&&w.temp<=fl.nt[1]?"✅ Optim":"⚠️ Sub optim")+'</span>':"")+'<br><small style="color:var(--mut)">'+fl.dc+' Optim: '+fl.nt[0]+'–'+fl.nt[1]+'°C</small></div></div>'):'<p style="color:var(--mut);margin-top:7px;">Niciun cules principal activ acum.</p>';
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-calendar-alt" style="color:var(--gold)"></i> Calendar Apicol</h2>'
+    +'<div class="c"><div class="ct">🌼 Cules activ curent</div>'+flHTML+'</div>'
+    +'<div class="c" style="margin-top:13px;"><div class="ct">📅 Culesuri preconizate</div>'+(nextHTML||'<p style="color:var(--mut);margin-top:7px;">Nu sunt culesuri majore preconizate.</p>')+'</div>'
+    +bet
+    +'<div class="c" style="margin-top:13px;"><div class="ct">💊 Tratamente planificate</div>'+(treatHTML||'<p style="color:var(--mut);margin-top:7px;">Niciun tratament planificat.</p>')+'</div>');
+}
+
+// ═══════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════
+function renderAnalytics(){
+  var tR=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  var tE=D.honeyHarvests.reduce(function(s,h){return s+(h.estQty||0);},0);
+  var eff=tE>0?((tR/tE)*100).toFixed(0):"—";
+  var avgB=D.inspections.reduce(function(s,i){return s+(i.fB||0);},0)/(D.inspections.length||1);
+  var byT={};D.honeyHarvests.forEach(function(h){var t=h.honeyType||"Altele";byT[t]=(byT[t]||0)+(h.actualQty||h.qty||0);});
+  var sc={p:D.hives.filter(function(h){return h.str==="puternic";}).length,m:D.hives.filter(function(h){return h.str==="mediu";}).length,s:D.hives.filter(function(h){return h.str==="slab";}).length};
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-chart-simple" style="color:var(--gold)"></i> Analize & Performanță</h2>'
+    +'<div class="g gs">'
+    +'<div class="c"><div class="cl">Producție reală (kg)</div><div class="cv">'+tR.toFixed(1)+'</div></div>'
+    +'<div class="c"><div class="cl">Total estimat (kg)</div><div class="cv">'+tE.toFixed(1)+'</div><div class="cs">Eficiență: '+eff+'%</div></div>'
+    +'<div class="c"><div class="cl">Medie rame puiet</div><div class="cv">'+avgB.toFixed(1)+'</div></div>'
+    +'<div class="c"><div class="cl">Stupi puternici</div><div class="cv">'+sc.p+'</div></div>'
+    +'<div class="c"><div class="cl">Inspecții cu botci</div><div class="cv">'+D.inspections.filter(function(i){return i.botci;}).length+'</div></div>'
+    +'<div class="c"><div class="cl">Total inspecții</div><div class="cv">'+D.inspections.length+'</div></div>'
+    +'</div>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">🍯 Producție pe tip (kg)</div><canvas id="ch1" height="100"></canvas></div>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">📈 Evoluție recoltă (estimat vs real)</div><canvas id="ch2" height="100"></canvas></div>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">💪 Distribuție forță colonii</div><canvas id="ch3" height="100"></canvas></div>'
+    +'<button class="btn" onclick="html2pdf().from(document.getElementById(\'pg\')).save(\'Raport_'+new Date().getFullYear()+'.pdf\')">📄 Export Raport PDF</button>');
+  setTimeout(function(){
+    var cO={responsive:true,plugins:{legend:{labels:{color:"#b9b5ae"}}},scales:{x:{ticks:{color:"#b9b5ae"},grid:{color:"rgba(255,255,255,.05)"}},y:{ticks:{color:"#b9b5ae"},grid:{color:"rgba(255,255,255,.05)"}}}};
+    var c1=document.getElementById("ch1");if(c1&&Object.keys(byT).length>0)new Chart(c1.getContext("2d"),{type:"bar",data:{labels:Object.keys(byT),datasets:[{label:"kg",data:Object.values(byT),backgroundColor:"rgba(230,180,34,.7)",borderColor:"#e6b422",borderWidth:2,borderRadius:8}]},options:{...cO,plugins:{legend:{display:false}}}});
+    var sorted=[].concat(D.honeyHarvests).sort(function(a,b){return new Date(a.extractionDate||a.date)-new Date(b.extractionDate||b.date);});
+    var c2=document.getElementById("ch2");if(c2)new Chart(c2.getContext("2d"),{type:"line",data:{labels:sorted.map(function(h){return h.extractionDate||h.date||"";}),datasets:[{label:"Real (kg)",data:sorted.map(function(h){return h.actualQty||h.qty||0;}),borderColor:"#e6b422",backgroundColor:"rgba(230,180,34,.15)",fill:true,tension:.4},{label:"Estimat (kg)",data:sorted.map(function(h){return h.estQty||0;}),borderColor:"rgba(74,158,255,.7)",backgroundColor:"rgba(74,158,255,.05)",fill:true,tension:.4,borderDash:[5,5]}]},options:cO});
+    var c3=document.getElementById("ch3");if(c3)new Chart(c3.getContext("2d"),{type:"doughnut",data:{labels:["Puternici","Medii","Slabi"],datasets:[{data:[sc.p,sc.m,sc.s],backgroundColor:["rgba(111,191,76,.8)","rgba(230,180,34,.8)","rgba(224,124,76,.8)"],borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:"#b9b5ae"}}}}});
+  },80);
+}
+
+// ═══════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════
+function renderSettings(){
+  var totH=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders-h" style="color:var(--gold)"></i> Setări</h2>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">🎨 Afișaj</div>'
+    +'<div class="ck" style="margin-top:8px;"><input type="checkbox" id="dkTg"'+(D.settings.dark?" checked":"")
+    +' onchange="D.settings.dark=this.checked;applyTheme();save();"><label for="dkTg">Mod Întunecat</label></div></div>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">🌦️ Vreme</div>'
+    +'<p style="font-size:.82rem;color:var(--mut);margin-bottom:8px;">Datele meteo provin de la Open-Meteo (gratuit, fără cont). Se actualizează automat la 15 minute.</p>'
+    +(D.weather?'<div class="al alo">✅ Locație detectată · Actualizat acum '+Math.round((Date.now()-D.weather.ts)/60000)+' min</div>'
+    :'<div class="al alw">📍 Locația nu a fost detectată. Permiteți accesul la locație în browser.</div>')
+    +'<button class="btn sm" style="margin-top:9px;" onclick="if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon);else initLoc();">🔄 Actualizează acum</button></div>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">💾 Backup & Date</div>'
+    +'<button class="btn" style="margin-top:9px;display:block;" onclick="expData()">📤 Export JSON</button>'
+    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="impData()">📥 Import JSON</button>'
+    +'<button class="btn bd" style="margin-top:8px;display:block;" onclick="rstData()">⚠️ Resetare toate datele</button></div>'
+    +'<div class="c"><div class="ct">📊 Statistici rapide</div>'
+    +'<p style="font-size:.83rem;margin-top:6px;">Stupi: <strong>'+D.hives.length+'</strong> · Inspecții: <strong>'+D.inspections.length+'</strong> · Recoltă: <strong>'+totH.toFixed(1)+' kg</strong> · Inventar: <strong>'+D.inventory.length+'</strong> art.</p></div>');
+}
+window.expData=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:"application/json"}));a.download="beemanager_backup_"+new Date().toISOString().slice(0,10)+".json";a.click();};
+window.impData=function(){var inp=document.createElement("input");inp.type="file";inp.accept=".json";inp.onchange=function(e){var r=new FileReader();r.onload=function(ev){Object.assign(D,JSON.parse(ev.target.result));save();toast("Date importate!","📥");setTimeout(function(){location.reload();},1000);};r.readAsText(e.target.files[0]);};inp.click();};
+window.rstData=function(){if(!confirm("Ești sigur? Se șterg TOATE datele!"))return;localStorage.removeItem("bmp5");location.reload();};
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init(){
+  load();
+  buildNav();
+  go("dashboard");
+  document.getElementById("bgr").addEventListener("click",openSB);
+  document.getElementById("ov").addEventListener("click",closeSB);
+  window.addEventListener("resize",function(){if(window.innerWidth>650)closeSB();});
+}
+
+init();
+</script>
+</body>
+</html>
