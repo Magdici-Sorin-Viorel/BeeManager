@@ -452,49 +452,241 @@ function mapWeatherLabel(lbl){
   return "";
 }
 
-// ── VOICE DICTATION ──────────────────────────────
+// ── PARSER VOCAL ROMÂNĂ — funcționează offline, fără API ─────────────
+function parseRoTranscript(text){
+  var t=text.toLowerCase()
+    .replace(/ș/g,"s").replace(/ț/g,"t").replace(/ă/g,"a")
+    .replace(/â/g,"a").replace(/î/g,"i"); // normalize diacritics for matching
+  var orig=text.toLowerCase(); // keep original for notes
+  var r={};
+
+  function num(patterns){
+    for(var i=0;i<patterns.length;i++){
+      var m=t.match(patterns[i]);
+      if(m) return parseInt(m[1]||m[2]||m[3]);
+    }
+    return null;
+  }
+  function has(patterns){
+    for(var i=0;i<patterns.length;i++) if(patterns[i].test(t)) return true;
+    return false;
+  }
+  function hasNeg(neg,pos){
+    // returns true if pos found but not preceded by negation
+    var posMatch=pos.exec(t);
+    if(!posMatch) return false;
+    var before=t.slice(Math.max(0,posMatch.index-20),posMatch.index);
+    return !neg.test(before);
+  }
+
+  // ── Rame puiet
+  r.fB=num([/(\d+)\s*rame?\s*(?:cu\s*)?puiet/,/puiet\s*(?:pe\s*)?(\d+)\s*rame?/,/(\d+)\s*rame?\s*pline?\s*cu\s*puiet/]);
+
+  // ── Rame miere / frână
+  r.fH=num([/(\d+)\s*rame?\s*(?:cu\s*)?(?:miere|frana|frâna)/,/miere\s*(?:pe\s*)?(\d+)\s*rame?/,/(\d+)\s*rame?\s*cu\s*miere/]);
+
+  // ── Rame pastura / pollen
+  r.fP=num([/(\d+)\s*rame?\s*(?:cu\s*)?(?:pastura|pastura|pollen|polen)/,/pastura\s*(\d+)/,/(\d+)\s*rame?\s*cu\s*pol[ei]n/]);
+
+  // ── Matcă văzută
+  if(has([/nu\s*(?:am\s*)?vazut\s*matca/,/matca\s*(?:nu|absent|nevazut)/,/n-am\s*vazut\s*matca/])) r.qSeen=false;
+  else if(has([/vazut\s*matca/,/matca\s*(?:prezenta|observata|gasita|exista)/,/am\s*gasit\s*matca/])) r.qSeen=true;
+
+  // ── Ouă
+  if(has([/nu\s*(?:am\s*)?vazut\s*oua/,/fara\s*oua/,/nu\s*sunt\s*oua/])) r.eggs=false;
+  else if(has([/oua\s*(?:prezente|vazute|depuse)/,/vazut\s*oua/,/am\s*vazut\s*oua/,/depune\s*oua/,/oua\s*prezente/])) r.eggs=true;
+
+  // ── Larve
+  if(has([/larve?\s*(?:prezente?|vazute?)/,/vazut\s*larve?/,/larve?\s*ok/])) r.larvae=true;
+  else if(has([/fara\s*larve?/,/nu\s*sunt\s*larve?/])) r.larvae=false;
+
+  // ── Botci
+  if(has([/fara\s*botci/,/nicio?\s*botca/,/nu\s*(?:am\s*)?gasit\s*botci/,/nu\s*sunt\s*botci/,/zero\s*botci/])){
+    r.botci=false; r.botciN=0;
+  } else {
+    var bn=num([/(\d+)\s*botci/,/botci\s*(\d+)/]);
+    if(bn!==null||has([/botci/])){
+      r.botci=true; r.botciN=bn||1;
+      if(has([/capacite?/])) r.botciStage="capacite";
+      else if(has([/aproape\s*capacite?/])) r.botciStage="aproape_cap";
+      else if(has([/incipient/,/mici/,/abia/])) r.botciStage="incipient";
+      var bf=t.match(/(?:pe\s*)?rama?\s*(\d[\d\s,si]+)/);
+      if(bf) r.botciFrames="Ramele "+bf[1].trim();
+    }
+  }
+
+  // ── Agresivitate 1-5
+  if(has([/foarte\s*agresiv/,/extrem\s*agresiv/,/ataca/,/intepatura\s*mult/,/dificil/])) r.behav=5;
+  else if(has([/agresiv/,/agitat/,/nervos/,/iritabil/,/inteapa/])) r.behav=4;
+  else if(has([/normal/,/obisnuit/,/mediu/])) r.behav=3;
+  else if(has([/bland/,/linistit/,/docil/,/calme?/])) r.behav=2;
+  else if(has([/foarte\s*linistit/,/deloc\s*agresiv/,/perfect\s*linistit/,/excelent\s*comportament/])) r.behav=1;
+
+  // ── Fum
+  if(has([/fara\s*fum/,/deloc\s*fum/,/zero\s*fum/])) r.smoke="deloc";
+  else if(has([/mult\s*fum/,/fum\s*mult/,/multa\s*fum/])) r.smoke="mult";
+  else if(has([/putin\s*fum/,/fum\s*putin/,/minim\s*fum/,/fum\s*minim/])) r.smoke="putin";
+  else if(has([/fum/,/fumig/])) r.smoke="moderat";
+
+  // ── Temperatură
+  var tm=t.match(/(\d{1,2})[,.](\d)\s*(?:grade|°|celsius)?/)||t.match(/(\d{1,2})\s*(?:grade|°|celsius)/);
+  if(tm) r.temperature=parseFloat(tm[1]+(tm[2]?"."+tm[2]:""));
+
+  // ── Vreme
+  if(has([/ploaie/,/ploua/,/ploios/,/precipita/])) r.weather="Ploios";
+  else if(has([/furtuna/,/furtun/])) r.weather="Furtunos";
+  else if(has([/vant/,/vantos/])) r.weather="Vântos";
+  else if(has([/noros/,/nori/,/innor/])) r.weather="Noros";
+  else if(has([/partial\s*noros/,/partial\s*senin/])) r.weather="Parțial noros";
+  else if(has([/senin/,/soare/,/insorit/])) r.weather="Însorit";
+
+  // ── Tipar puiet
+  if(has([/puiet\s*(?:rar|necompact|lacune|goluri|lipsuri)/,/lacune\s*in\s*puiet/])) r.bp="necompact";
+  else if(has([/puiet\s*problem/,/miros\s*(?:urat|neplacut)/,/perforat/])) r.bp="probleme";
+  else if(has([/puiet\s*(?:compact|uniform|bun|frum|dens)/,/compact/])) r.bp="compact";
+
+  // ── Spațiu
+  if(has([/lipsa\s*spatiu/,/plin\s*complet/,/risc\s*roi/,/roi/])) r.space="urgent";
+  else if(has([/aproape\s*plin/,/putin\s*spatiu/,/spatiu\s*limitat/])) r.space="plin";
+  else if(has([/spatiu\s*suficient/,/loc\s*destul/])) r.space="suficient";
+
+  // ── Rame noi
+  r.nFrames=num([/(\d+)\s*rame?\s*noi?\s*(?:introduse?|puse?|adaugate?|bagat)/,/introduse?\s*(\d+)\s*rame?\s*noi?/,/am\s*pus\s*(\d+)\s*rame?\s*noi?/]);
+  r.nFramesB=num([/(\d+)\s*rame?\s*(?:cladit|construit|incep)/,/cladit\s*(\d+)/,/(\d+)\s*rame?\s*deja\s*cladit/]);
+
+  // ── Populație %
+  var pp=t.match(/(\d{2,3})\s*(?:la\s*suta|procent|%)/);
+  if(pp){var pv=parseInt(pp[1]);r.popPct=pv>=90?100:pv>=75?90:pv>=55?70:pv>=35?50:30;}
+
+  // ── Boli
+  var diseases=[];
+  if(has([/varroa/])) diseases.push("Varroa");
+  if(has([/loca/,/american/,/european/,/putrezire/])) diseases.push("Locă");
+  if(has([/nosemoza/,/nosema/,/diaree/])) diseases.push("Nosemoză");
+  if(has([/puiet\s*varos/,/ascosfera/,/varos/])) diseases.push("Puiet văros");
+  if(has([/sanatos/,/fara\s*boli/,/nu\s*am\s*observat\s*boli/,/bine/,/ok/])&&diseases.length===0) diseases.push("Sănătos");
+  if(diseases.length>0) r.diseases=diseases;
+
+  // ── Structură cutie
+  if(has([/fisura/,/crapatura/,/crapat/])) r.structC="fisuri";
+  else if(has([/deteriorat/,/stricat/,/rupt/,/defect/])) r.structC="deteriorat";
+
+  // ── Magazie
+  r.magFull=num([/magazie.*?(\d+)\s*rame?\s*(?:pline?|plin)/,/(\d+)\s*rame?\s*(?:pline?|plin).*?magazie/]);
+  r.magCap=num([/(\d+)\s*rame?\s*capacit/,/capacit\s*(\d+)/]);
+
+  // ── Note libere (transcrierea originală ca backup)
+  r.notes=null;
+
+  return r;
+}
+// ─────────────────────────────────────────────────────────────────────
 async function startVoice(){
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ toast("Browser-ul nu suportă dictare. Folosiți Chrome sau Edge.","⚠️"); return; }
   var btn=document.getElementById("voiceBtn");
   var stat=document.getElementById("voiceStat");
+
+  // 1. Check secure context (https or localhost) — file:// blocks mic on mobile
+  if(location.protocol==="file:"){
+    stat.innerHTML='<div style="color:var(--danger);font-size:.8rem;line-height:1.6">'
+      +'🔒 <strong>Fișier local detectat (file://)</strong><br>'
+      +'Browserele mobile blochează microfonul pe fișiere locale din motive de securitate.<br>'
+      +'<strong>Soluție rapidă:</strong> încarcă fișierul pe '
+      +'<a href="https://app.netlify.com/drop" target="_blank" style="color:var(--gold)">Netlify Drop</a> '
+      +'sau <a href="https://github.com" target="_blank" style="color:var(--gold)">GitHub Pages</a> '
+      +'și accesează linkul https:// primit. Funcționează instant și gratuit.'
+      +'</div>';
+    return;
+  }
+
+  // 2. Check Speech Recognition API support
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    stat.innerHTML='<div style="color:var(--danger);font-size:.8rem;line-height:1.6">'
+      +'⚠️ <strong>Browser incompatibil</strong><br>'
+      +'Dictarea vocală funcționează în <strong>Chrome, Edge și Safari</strong>.<br>'
+      +'Pe Android folosiți Chrome, pe iPhone/iPad folosiți Safari.'
+      +'</div>';
+    return;
+  }
+
+  // 3. Pre-check microphone permission
+  if(navigator.permissions){
+    try{
+      var perm=await navigator.permissions.query({name:"microphone"});
+      if(perm.state==="denied"){
+        stat.innerHTML='<div style="color:var(--danger);font-size:.8rem;line-height:1.6">'
+          +'🎙️ <strong>Microfon blocat de sistem</strong><br>'
+          +'<strong>Android:</strong> Setări → Aplicații → Chrome → Permisiuni → Microfon → Permite<br>'
+          +'<strong>iPhone:</strong> Setări → Safari → Microfon → Permite<br>'
+          +'Apoi reîncarcă pagina și încearcă din nou.'
+          +'</div>';
+        return;
+      }
+    }catch(e){}
+  }
+
+  // 4. All good — start recording
   var rec=new SR();
   rec.lang="ro-RO"; rec.continuous=false; rec.interimResults=false;
-  btn.innerHTML="⏹️ Oprește"; btn.style.background="linear-gradient(145deg,#e07c4c,#c05a30)";
-  stat.innerHTML='<span style="color:var(--danger)">🔴 Ascult… Vorbește acum!</span>';
+  btn.innerHTML="⏹️ Oprește înregistrarea";
+  btn.style.background="linear-gradient(145deg,#e07c4c,#c05a30)";
+  stat.innerHTML='<span style="color:var(--danger)">🔴 Înregistrez… Vorbește clar și rar!</span>';
+
   rec.start();
+
   rec.onresult=async function(e){
     var transcript=e.results[0][0].transcript;
-    stat.innerHTML='<span style="color:var(--gold)">✅ Am auzit: "<em>'+transcript+'</em>"<br>⏳ Procesez cu AI…</span>';
-    btn.innerHTML="⏳ Procesez…"; btn.style.background="";
+    var conf=Math.round((e.results[0][0].confidence||1)*100);
+    stat.innerHTML='<span style="color:var(--gold)">✅ Am auzit ('+conf+'% claritate):<br><em>"'+transcript+'"</em><br>⏳ Analizez…</span>';
+    btn.innerHTML="⏳ Analizez…"; btn.style.background="";
+
     try{
-      var resp=await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:1000,
-          messages:[{role:"user",content:
-'Ești asistentul unui apicultor român. Analizează această transcriere vocală a unei inspecții de stup și extrage datele. Returnează DOAR un obiect JSON valid, fără explicații și fără backtick-uri.\n\nCâmpuri posibile (folosește null dacă nu e menționat):\n- weather: unul din [Însorit, Parțial noros, Noros, Ploios, Vântos, Furtunos]\n- temperature: număr grade Celsius\n- smoke: unul din [deloc, putin, moderat, mult]\n- structC: unul din [ok, fisuri, deteriorat]\n- behav: număr 1-5 (1=deloc agresive, 5=extrem agresive)\n- qSeen: boolean (a văzut matca)\n- eggs: boolean (a văzut ouă)\n- larvae: boolean (a văzut larve)\n- botci: boolean (există botci)\n- botciN: număr botci\n- botciStage: unul din [incipient, aproape_cap, capacite, mixt]\n- botciFrames: string cu ramele unde sunt botci\n- fB: număr rame cu puiet\n- fH: număr rame cu miere sau frână\n- fP: număr rame cu pastura sau pollen\n- popPct: procentaj populație, unul din [30,50,70,90,100]\n- bp: tipar puiet, unul din [compact, necompact, probleme]\n- nFrames: rame noi introduse azi\n- nFramesB: rame noi care au început să fie clădite\n- space: spațiu în stup, unul din [suficient, plin, urgent]\n- magFull: rame pline cu miere în magazie\n- magCap: rame capacite în magazie\n- diseases: array de strings cu boli observate (Varroa, Locă, Nosemoză, Puiet văros, Sănătos)\n- notes: note suplimentare\n\nTranscriere: "'+transcript+'"'
-          }]
-        })
-      });
-      var data=await resp.json();
-      var txt=data.content[0].text.trim().replace(/```json\n?|\n?```/g,"").trim();
-      applyVoice(JSON.parse(txt));
-      stat.innerHTML='<span style="color:var(--ok)">✅ Formular completat automat din dictare!</span>';
+      var parsed=parseRoTranscript(transcript);
+      applyVoice(parsed);
+      // Show what was detected
+      var detected=[];
+      if(parsed.fB!==null) detected.push("Puiet: "+parsed.fB+" rame");
+      if(parsed.fH!==null) detected.push("Miere: "+parsed.fH+" rame");
+      if(parsed.fP!==null) detected.push("Pastura: "+parsed.fP+" rame");
+      if(parsed.qSeen!==null) detected.push(parsed.qSeen?"Matcă văzută":"Matcă nevăzută");
+      if(parsed.behav!==null) detected.push("Agresivitate: "+parsed.behav+"/5");
+      if(parsed.botci!==null) detected.push(parsed.botci?"Botci: "+parsed.botciN:"Fără botci");
+      if(parsed.temperature!==null) detected.push("Temp: "+parsed.temperature+"°C");
+      stat.innerHTML='<span style="color:var(--ok)">✅ Formular completat!<br>'
+        +(detected.length>0?'<small style="color:var(--mut)">Detectat: '+detected.join(" · ")+'</small>':'<small style="color:var(--mut)">Verifică câmpurile completate.</small>')
+        +'</span>';
     }catch(err){
-      stat.innerHTML='<span style="color:var(--danger)">❌ Eroare la procesare AI. Completați manual.</span>';
+      stat.innerHTML='<span style="color:var(--danger)">❌ Eroare la parsare. Completați manual.</span>';
       console.error(err);
     }
     btn.innerHTML="🎤 Dictează din nou"; btn.style.background="";
   };
+
   rec.onerror=function(e){
-    stat.innerHTML='<span style="color:var(--danger)">❌ Eroare microfon: '+e.error+'. Verificați permisiunile.</span>';
+    var msg="";
+    if(e.error==="not-allowed"||e.error==="permission-denied"){
+      msg='<div style="color:var(--danger);font-size:.8rem;line-height:1.6">'
+        +'🎙️ <strong>Acces la microfon refuzat</strong><br>'
+        +'<strong>Android Chrome:</strong> Setări → Aplicații → Chrome → Permisiuni → Microfon<br>'
+        +'<strong>iPhone Safari:</strong> Setări → Safari → Microfon → Permite<br>'
+        +'Sau apasă pe 🔒 lângă adresă → Microfon → Permite, apoi reîncarcă.'
+        +'</div>';
+    } else if(e.error==="network"){
+      msg='<span style="color:var(--danger)">❌ Fără conexiune internet. Verifică WiFi/date și încearcă din nou.</span>';
+    } else if(e.error==="no-speech"){
+      msg='<span style="color:var(--gold)">⚠️ Nu am auzit nimic. Vorbește mai tare și încearcă din nou.</span>';
+    } else {
+      msg='<span style="color:var(--danger)">❌ Eroare microfon: <strong>'+e.error+'</strong>. Încearcă din nou.</span>';
+    }
+    stat.innerHTML=msg;
     btn.innerHTML="🎤 Dictează vocală"; btn.style.background="";
   };
+
   rec.onend=function(){
-    if(btn.innerHTML==="⏹️ Oprește"){ btn.innerHTML="🎤 Dictează vocală"; btn.style.background=""; }
+    if(btn.innerHTML==="⏹️ Oprește înregistrarea"){
+      btn.innerHTML="🎤 Dictează vocală"; btn.style.background="";
+      stat.innerHTML='<span style="color:var(--mut)">Înregistrare oprită. Încearcă din nou.</span>';
+    }
   };
 }
 
