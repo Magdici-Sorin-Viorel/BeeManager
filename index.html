@@ -23,7 +23,16 @@ window.addEventListener('error', function(e) {
 body{background:var(--bg);color:var(--txt);overflow-x:hidden;}
 body.light{--bg:#fefaf0;--sur:#fff7e8;--card:#ffffff;--bdr:#f0e3c9;--txt:#1f1b13;--mut:#5c564b;}
 .app{display:flex;min-height:100vh;}
-.sb{width:var(--sw);background:var(--sur);border-right:1px solid var(--bdr);position:fixed;height:100vh;z-index:200;overflow-y:auto;transition:transform .3s ease;display:flex;flex-direction:column;}
+.sb{width:var(--sw);background:var(--sur);border-right:1px solid var(--bdr);position:fixed;height:100vh;z-index:200;overflow-y:auto;overflow-x:hidden;transition:width .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;}
+.sb.coll{width:58px;}
+.sb.coll .nm{display:none;}
+.sb.coll .ni span{display:none;}
+.sb.coll .ni{justify-content:center;padding:11px 0;margin:2px 4px;}
+.sb.coll .ni.on{border-left:none;border-radius:var(--rs);padding-left:0;}
+.sb.coll .sb-logo{justify-content:center;padding:12px 0;gap:0;}
+.sb.coll .sb-tog-lbl{display:none;}
+.sb-tog{background:none;border:none;color:var(--mut);cursor:pointer;padding:7px;min-height:auto;box-shadow:none;font-size:.85rem;border-radius:var(--rs);transition:color .15s,background .15s;line-height:1;margin-left:auto;flex-shrink:0;}
+.sb-tog:hover{color:var(--gold);background:rgba(230,180,34,.1);filter:none;transform:none;}
 .sb-logo{padding:18px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:10px;}
 .sb-logo .nm{font-size:1.3rem;font-weight:800;background:linear-gradient(135deg,var(--gold),#ffcf4a);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .ni{display:flex;align-items:center;gap:11px;padding:11px 16px;margin:2px 7px;border-radius:var(--rs);color:var(--mut);cursor:pointer;transition:all .18s;font-size:.88rem;min-height:44px;}
@@ -99,36 +108,42 @@ input[type=checkbox],input[type=radio]{width:auto;margin-right:5px;}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border-left:5px solid var(--gold);padding:10px 18px;border-radius:40px;z-index:2000;box-shadow:var(--sh);font-size:.86rem;animation:ti .3s;}
 @keyframes ti{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
 @media(max-width:900px){:root{--sw:215px;}.main{padding:14px;}.gs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}}
-/* TOP NAV (mobile) */
-.tnav{display:none;}
+/* TOP NAV (mobile) — dezactivat, folosim sidebar icon-only */
+.tnav{display:none!important;}
 @media(max-width:650px){
-  .sb{display:none;}
+  /* Sidebar permanent pe stanga: icon + text, lat fix cat sa incapa "Calcule Apicole" pe un rand */
+  :root{--sw:150px;}
+  .sb{display:flex;width:150px;overflow:hidden;}
+  .sb.coll{width:150px;}
+  .sb.coll .nm{display:none;}
+  .sb.coll .ni span{display:inline;}
+  .sb.coll .ni{flex-direction:row;justify-content:flex-start;padding:9px 10px;margin:1px 4px;}
+  .sb.coll .ni.on{border-left:3px solid var(--gold);padding-left:7px;border-radius:6px;}
+  .sb.coll .sb-logo{justify-content:flex-start;padding:12px 10px;gap:6px;}
+  .sb-logo{padding:12px 10px;}
+  .sb-logo .nm{display:none;}
+  .sb-tog{display:none;}
+  .ni{flex-direction:row;padding:9px 10px;margin:1px 4px;font-size:.7rem;gap:8px;min-height:40px;}
+  .ni i{font-size:.88rem;width:16px;flex-shrink:0;}
+  .ni span{display:inline;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ni.on{padding-left:7px;border-left:3px solid var(--gold);border-radius:6px;}
   .tb{display:none;}
-  .main{margin-left:0;padding:12px;padding-top:68px;padding-bottom:12px;}
+  .main{margin-left:150px;padding:10px 8px;}
   .gs{grid-template-columns:1fr 1fr;}
   .gc{grid-template-columns:1fr;}
   .r2,.r3{grid-template-columns:1fr;}
   .mb{padding:0;align-items:flex-end;}
   .mb-b{max-height:92vh;border-radius:var(--rl) var(--rl) 0 0;}
-  .toast{left:12px;right:12px;bottom:16px;text-align:center;}
-  .tnav{display:flex;position:fixed;top:0;left:0;right:0;height:56px;background:var(--sur);border-bottom:2px solid var(--bdr);z-index:200;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;align-items:stretch;}
-  .tnav::-webkit-scrollbar{display:none;}
-  .tnav-logo{display:flex;align-items:center;padding:0 10px 0 12px;gap:5px;flex-shrink:0;border-right:1px solid var(--bdr);}
-  .tnav-logo span{font-size:1.15rem;}
-  .tni{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 13px;min-width:58px;flex-shrink:0;color:var(--mut);cursor:pointer;transition:color .15s;border-bottom:3px solid transparent;-webkit-tap-highlight-color:transparent;}
-  .tni i{font-size:.88rem;}
-  .tni span{font-size:.56rem;font-weight:600;white-space:nowrap;}
-  .tni.on{color:var(--gold);border-bottom-color:var(--gold);background:rgba(230,180,34,.07);}
-  .tni:active{opacity:.7;}
+  .toast{left:158px;right:8px;bottom:16px;text-align:center;}
 }
-@media(max-width:380px){.gs{grid-template-columns:1fr;}}
+@media(max-width:380px){.gs{grid-template-columns:1fr;}.main{margin-left:150px;padding:6px 5px;}}
 @media(min-width:1350px){.main{padding:24px 36px;}.gs{grid-template-columns:repeat(auto-fill,minmax(185px,1fr));}.gc{grid-template-columns:repeat(auto-fill,minmax(300px,1fr));}}
 /* FIX: Touch targets - minimum 44x44px for all interactive elements */
 .btn{min-height:44px;min-width:44px;padding:10px 18px;}
 .btn.sm{min-height:40px;min-width:36px;padding:8px 12px;}
 .ni,.tni{min-height:44px;}
 input,select,textarea{min-height:44px;font-size:16px !important;-webkit-appearance:none;}
-input[type=checkbox],input[type=radio]{min-height:auto;min-width:auto;width:20px;height:20px;cursor:pointer;}
+input[type=checkbox],input[type=radio]{min-height:auto;min-width:auto;width:20px;height:20px;cursor:pointer;-webkit-appearance:auto;appearance:auto;accent-color:var(--gold);}
 /* FIX: Active/pressed effect on all interactive elements */
 .btn:active{transform:scale(0.97);transition:transform 0.05s;}
 .tni:active,.ni:active{opacity:0.7;}
@@ -144,13 +159,31 @@ input[type=checkbox],input[type=radio]{min-height:auto;min-width:auto;width:20px
 /* FIX: Error state for inputs */
 input.err,select.err{border-color:var(--danger);background:rgba(224,124,76,.07);}
 .field-err{font-size:.72rem;color:var(--danger);margin-top:3px;display:block;}
+/* ── Offline indicator ── */
+.offline-bar{display:none;position:fixed;top:0;left:0;right:0;z-index:4000;background:rgba(180,80,40,.96);color:#fff;font-size:.75rem;font-weight:700;padding:5px 14px;gap:10px;align-items:center;justify-content:center;backdrop-filter:blur(4px);flex-wrap:wrap;}
+.offline-bar.show{display:flex;}
+body.is-offline .sb{top:32px;}
+body.is-offline .main{padding-top:52px;}
+/* ── Drive status badges ── */
+.drv-ok{background:rgba(111,191,76,.1);border:1px solid var(--ok);border-radius:var(--rs);padding:9px 12px;font-size:.8rem;display:flex;align-items:center;gap:8px;}
+.drv-no{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 12px;font-size:.8rem;}
+.drv-pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+/* ── Per-hive save indicator ── */
+.hive-save-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;margin-left:4px;opacity:0;transition:opacity .4s;}
+.hive-save-dot.show{opacity:1;}
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+<div id="offlineBar" class="offline-bar">
+  <span>📴 Offline — datele se salvează local pe telefon</span>
+  <button onclick="openManualWeather()" style="background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:3px 10px;border-radius:20px;font-size:.72rem;cursor:pointer;">🌡️ Vreme manuală</button>
+</div>
 <div class="ov" id="ov"></div>
 <div class="app">
   <aside class="sb" id="sb">
-    <div class="sb-logo"><span style="font-size:1.6rem">🐝</span><span class="nm">BeeManager Pro</span></div>
+    <div class="sb-logo"><span style="font-size:1.6rem">🐝</span><span class="nm">BeeManager Pro</span><button class="sb-tog" id="sbTogBtn" onclick="toggleSB()" title="Toggle meniu"><i class="fas fa-chevron-left" id="sbTogIco"></i></button></div>
     <nav id="nav" style="padding:5px 0;flex:1;"></nav>
   </aside>
   <main class="main">
@@ -307,6 +340,19 @@ ro:{
   insp_notes:"📝 Note libere",insp_save:"✅ Salvează",
   insp_del_c:"Ștergi inspecția?",insp_saved:"Inspecție salvată!",insp_upd:"Inspecție actualizată!",insp_sel_h:"Selectează stupul!",
   insp_w_auto:"✅ Temperatura și vremea completate automat din datele meteo în timp real",
+  insp_has_mag:"📦 Magazie pusă la acest stup (în această inspecție)",
+  insp_cur_month:"🗓️ Inspecții luna curentă",
+  insp_last_per_hive:"Ultima inspecție pe stup",
+  insp_alert_title:"Stupi neinspectați",
+  insp_alert_msg:"Acești stupi lipsesc din ultimele",
+  insp_alert_rounds:"runde de inspecție:",
+  insp_archive:"📁 Arhivă inspecții lunile anterioare",
+  insp_no_cur:"Nicio inspecție în luna curentă.",
+  insp_no_arc:"Nicio inspecție arhivată.",
+  se_insp_th:"🔔 Runde de inspecție permise înainte de alertă stup",
+  se_insp_th_h:"Dacă un stup lipsește din atâtea runde consecutive, apare notificare (implicit: 2)",
+  se_auto_dl:"⬇️ Descarcă automat PDF + Excel după salvarea unei inspecții",
+  insp_stupi:"stupi",insp_insp:"insp.",
   wo:["Însorit","Parțial noros","Noros","Ploios","Vântos","Furtunos"],
   sm:[["deloc","🚫 Deloc"],["putin","🔥 Puțin"],["moderat","🔥🔥 Moderat"],["mult","🔥🔥🔥 Mult"]],
   stc:[["ok","✅ OK"],["fisuri","⚠️ Fisuri"],["deteriorat","🔴 Deteriorat"]],
@@ -476,6 +522,19 @@ en:{
   insp_notes:"📝 Free notes",insp_save:"✅ Save",
   insp_del_c:"Delete inspection?",insp_saved:"Inspection saved!",insp_upd:"Inspection updated!",insp_sel_h:"Select a hive!",
   insp_w_auto:"✅ Temperature and weather auto-populated from real-time weather data",
+  insp_has_mag:"📦 Super added to this hive (during this inspection)",
+  insp_cur_month:"🗓️ Current month inspections",
+  insp_last_per_hive:"Last inspection per hive",
+  insp_alert_title:"Uninspected hives",
+  insp_alert_msg:"These hives have missed the last",
+  insp_alert_rounds:"inspection rounds:",
+  insp_archive:"📁 Inspection archive — previous months",
+  insp_no_cur:"No inspections this month.",
+  insp_no_arc:"No archived inspections.",
+  se_insp_th:"🔔 Inspection rounds allowed before hive alert",
+  se_insp_th_h:"If a hive is missing from this many consecutive rounds, a notification appears (default: 2)",
+  se_auto_dl:"⬇️ Auto-download PDF + Excel after saving an inspection",
+  insp_stupi:"hives",insp_insp:"insp.",
   wo:["Sunny","Partly Cloudy","Cloudy","Rainy","Windy","Stormy"],
   sm:[["deloc","🚫 None"],["putin","🔥 Little"],["moderat","🔥🔥 Moderate"],["mult","🔥🔥🔥 Heavy"]],
   stc:[["ok","✅ OK"],["fisuri","⚠️ Cracks"],["deteriorat","🔴 Damaged"]],
@@ -569,17 +628,77 @@ function load(){
   if(!D.settings)D.settings={dark:true,lang:"ro",tempUnit:"C"};
   if(!D.settings.lang)D.settings.lang="ro";
   if(!D.settings.tempUnit)D.settings.tempUnit="C";
+  if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=2;
+  if(D.settings.autoDownloadInsp===undefined)D.settings.autoDownloadInsp=false;
   if(!D.pastorage)D.pastorage=[];
   applyTheme();
   initLoc();
 }
 
-function save(showToast){if(showToast===undefined)showToast=true;localStorage.setItem("bmp5",JSON.stringify(D));if(showToast)toast(D.settings.lang==="en"?"Saved ✅":"Salvat ✅","🍯");}
+function save(showToast){
+  if(showToast===undefined)showToast=true;
+  localStorage.setItem("bmp5",JSON.stringify(D));
+  if(showToast)toast(D.settings.lang==="en"?"Saved ✅":"Salvat ✅","🍯");
+  // Auto-sync to Google Drive if connected and enabled
+  if(D.settings.gAutoSync&&GDR.isConnected())GDR.sync();
+}
+
+// Per-hive snapshot: save individual hive data + its inspections in a separate localStorage key
+function saveHiveSnapshot(hiveId){
+  var hive=D.hives.find(function(h){return h.id===hiveId;});
+  if(!hive)return;
+  var snap={hive:hive,inspections:D.inspections.filter(function(i){return i.hiveId===hiveId;}),queens:D.queens?D.queens.filter(function(q){return q.hiveId===hiveId;}):[], honeyHarvests:D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;}),savedAt:new Date().toISOString()};
+  localStorage.setItem("bmp5_hive_"+hiveId,JSON.stringify(snap));
+}
+
 function applyTheme(){
   document.body.classList.toggle("light",!D.settings.dark);
   document.getElementById("htmlRoot").lang=D.settings.lang||"ro";
 }
 var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2);};
+
+// ═══════════════════════════════════════════
+// OFFLINE DETECTION
+// ═══════════════════════════════════════════
+function updateOfflineBar(){
+  var bar=document.getElementById("offlineBar");
+  var offline=!navigator.onLine;
+  if(bar){bar.classList.toggle("show",offline);document.body.classList.toggle("is-offline",offline);}
+}
+window.addEventListener("online",function(){updateOfflineBar();if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon);});
+window.addEventListener("offline",function(){updateOfflineBar();});
+
+window.openManualWeather=function(){
+  var isEN=D.settings.lang==="en";
+  var bg=document.createElement("div");bg.className="mb";bg.id="MB_MW";
+  bg.innerHTML='<div class="mb-b" style="max-width:380px;">'
+    +'<div class="mt">🌡️ '+(isEN?"Manual Weather Entry":"Vreme manuală")+'</div>'
+    +'<div class="r2" style="margin-top:8px;">'
+    +'<div>'+L((isEN?"Temperature (°C)":"Temperatură (°C)"))+'<input type="number" inputmode="decimal" id="mwTemp" value="'+(D.weather?D.weather.temp:20)+'"></div>'
+    +'<div>'+L((isEN?"Humidity (%)":"Umiditate (%)" ))+'<input type="number" inputmode="numeric" id="mwHum" value="'+(D.weather?D.weather.hum:60)+'"></div>'
+    +'</div><div class="r2">'
+    +'<div>'+L((isEN?"Wind (km/h)":"Vânt (km/h)"))+'<input type="number" inputmode="numeric" id="mwWind" value="'+(D.weather?D.weather.wind:0)+'"></div>'
+    +'<div>'+L((isEN?"Rain?":"Ploaie?"))+'<select id="mwRain"><option value="0">'+(isEN?"No rain":"Fără ploaie")+'</option><option value="1"'+(D.weather&&D.weather.rain?" selected":"")+'>'+(isEN?"Raining":"Plouă")+'</option></select></div>'
+    +'</div>'
+    +'<div class="br" style="margin-top:12px;">'
+    +'<button class="btn" onclick="saveManualWeather()">✓ '+(isEN?"Save":"Salvează")+'</button>'
+    +'<button class="btn gh" onclick="document.getElementById(\'MB_MW\').remove()">✕</button>'
+    +'</div></div>';
+  document.body.appendChild(bg);
+  bg.addEventListener("click",function(e){if(e.target===bg)bg.remove();});
+};
+
+window.saveManualWeather=function(){
+  var temp=parseFloat(($q("mwTemp")||{}).value)||20;
+  var hum=parseInt(($q("mwHum")||{}).value)||60;
+  var wind=parseInt(($q("mwWind")||{}).value)||0;
+  var rain=parseInt(($q("mwRain")||{}).value||"0")===1;
+  D.weather={temp:temp,hum:hum,wind:wind,rain:rain,ic:rain?"🌧️":"☀️",wc:0,prec:rain?1:0,ts:Date.now(),manual:true};
+  save(false);
+  var mb=document.getElementById("MB_MW");if(mb)mb.remove();
+  if(curP==="dashboard")renderDashboard();
+  toast("🌡️ Vreme salvată manual");
+};
 function toast(m,ic){ic=ic||"🍯";var el=document.createElement("div");el.className="toast";el.innerHTML=ic+" "+m;document.body.appendChild(el);setTimeout(function(){el.remove();},2700);}
 
 // FIX: Custom confirm modal (replaces native confirm() - WebView compatible)
@@ -614,6 +733,7 @@ var debouncedHiveSearch=debounce(function(v){renderHives(v);},300);
 // WEATHER
 // ═══════════════════════════════════════════
 function initLoc(){
+  if(!navigator.onLine){if(!D.weather)toast("📴 Offline — introduceți vreme manual","🌡️");return;}
   if(D.userLoc){var age=D.weather?(Date.now()-(D.weather.ts||0)):Infinity;if(age>15*60*1000)fetchW(D.userLoc.lat,D.userLoc.lon);}
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
@@ -625,14 +745,15 @@ function initLoc(){
 }
 
 async function fetchW(lat,lon){
+  if(!navigator.onLine){toast("📴 Offline — vreme din cache sau manuală","🌡️");return;}
   try{
     var r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,precipitation,weathercode,windspeed_10m,relativehumidity_2m&timezone=auto&forecast_days=1");
     if(!r.ok)throw 0;
     var d=await r.json(),c=d.current,wi=wmoI(c.weathercode);
-    D.weather={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,ts:Date.now()};
+    D.weather={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,ts:Date.now(),manual:false};
     save(false);
     if(curP==="dashboard")renderDashboard();
-  }catch(e){console.warn("Weather failed",e);}
+  }catch(e){console.warn("Weather failed",e);if(!D.weather)toast("⚠️ Vreme indisponibilă — introduceți manual","🌡️");}
 }
 
 function beeAct(w){
@@ -717,23 +838,48 @@ function mapWeatherLabel(){
 // ═══════════════════════════════════════════
 var PGS=[
   {id:"dashboard",lk:"nav_dashboard",i:"fa-chart-line"},
-  {id:"hives",lk:"nav_hives",i:"fa-home"},
+  {id:"hives",lk:"nav_hives",i:"fa-house"},
   {id:"queens",lk:"nav_queens",i:"fa-crown"},
-  {id:"inspections",lk:"nav_inspections",i:"fa-book"},
-  {id:"honey",lk:"nav_honey",i:"fa-jar"},
+  {id:"inspections",lk:"nav_inspections",i:"fa-book-open"},
+  {id:"honey",lk:"nav_honey",i:"fa-droplet"},
   {id:"treatments",lk:"nav_treatments",i:"fa-syringe"},
   {id:"pastorare",lk:"nav_pastorare",i:"fa-truck"},
-  {id:"inventory",lk:"nav_inventory",i:"fa-boxes"},
-  {id:"calendar",lk:"nav_calendar",i:"fa-calendar-alt"},
-  {id:"analytics",lk:"nav_analytics",i:"fa-chart-simple"},
+  {id:"inventory",lk:"nav_inventory",i:"fa-boxes-stacked"},
+  {id:"calendar",lk:"nav_calendar",i:"fa-calendar-days"},
+  {id:"analytics",lk:"nav_analytics",i:"fa-chart-bar"},
   {id:"calculator",lk:"nav_calculator",i:"fa-calculator"},
-  {id:"settings",lk:"nav_settings",i:"fa-sliders-h"}
+  {id:"settings",lk:"nav_settings",i:"fa-sliders"}
 ];
+
+// ═══════════════════════════════════════════
+// SIDEBAR COLLAPSE
+// ═══════════════════════════════════════════
+var sbColl=false;
+function applySBState(){
+  var sb=document.getElementById("sb");
+  var main=document.querySelector(".main");
+  var ico=document.getElementById("sbTogIco");
+  if(!sb)return;
+  if(sbColl){
+    sb.classList.add("coll");
+    if(main)main.style.marginLeft="58px";
+    if(ico){ico.className="fas fa-chevron-right";}
+  } else {
+    sb.classList.remove("coll");
+    if(main)main.style.marginLeft="";
+    if(ico){ico.className="fas fa-chevron-left";}
+  }
+}
+window.toggleSB=function(){
+  sbColl=!sbColl;
+  try{localStorage.setItem("sbColl",sbColl?"1":"");}catch(e){}
+  applySBState();
+};
 
 var curP="dashboard";
 function buildNav(){
   var html=PGS.map(function(p){
-    return'<div class="ni'+(p.id===curP?" on":"")+'" onclick="go(\''+p.id+'\')"><i class="fas '+p.i+'"></i><span>'+t(p.lk)+'</span></div>';
+    return'<div class="ni'+(p.id===curP?" on":"")+'" title="'+t(p.lk)+'" onclick="go(\''+p.id+'\')"><i class="fas '+p.i+'"></i><span>'+t(p.lk)+'</span></div>';
   }).join("");
   document.getElementById("nav").innerHTML=html;
   var tn=document.getElementById("tnav");
@@ -752,7 +898,7 @@ function buildNav(){
     if(act)setTimeout(function(){act.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});},60);
   }
 }
-function go(p){curP=p;buildNav();var pg=PGS.find(function(x){return x.id===p;});document.getElementById("tbt").textContent=pg?t(pg.lk):p;render();closeSB();}
+function go(p){curP=p;buildNav();var pg=PGS.find(function(x){return x.id===p;});document.getElementById("tbt").textContent=pg?t(pg.lk):p;render();}
 function render(){({dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,treatments:renderTreatments,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,calculator:renderCalculator,settings:renderSettings,pastorare:renderPastorage}[curP]||renderDashboard)();}
 function setP(h){document.getElementById("pg").innerHTML=h;}
 function openSB(){document.getElementById("sb").classList.add("open");document.getElementById("ov").classList.add("show");}
@@ -763,6 +909,8 @@ function setLang(l){D.settings.lang=l;applyTheme();save(false);buildNav();render
 // MODAL
 // ═══════════════════════════════════════════
 function openM(html){
+  // Auto-collapse sidebar to give more space
+  if(!sbColl){sbColl=true;try{localStorage.setItem("sbColl","1");}catch(e){}applySBState();}
   var bg=document.createElement("div");bg.className="mb";bg.id="MB";
   bg.innerHTML='<div class="mb-b">'+html+'</div>';
   document.body.appendChild(bg);
@@ -786,7 +934,7 @@ function closeM(){var el=document.getElementById("MB");if(el)el.remove();}
 // ═══════════════════════════════════════════
 function renderDashboard(){
   var w=D.weather,act=beeAct(w),fl=getFlow();
-  var low=D.inventory.filter(function(i){return i.qty<=i.min;});
+  var low=D.inventory.filter(function(i){return isLowStock(i);});
   var totH=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
   var pend=D.treatments.filter(function(t2){return new Date(t2.date)>new Date();}).length;
   var lastArr=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
@@ -890,7 +1038,7 @@ function renderHives(q){
       +'<div class="br"><button class="btn sm" onclick="hiveM(\''+h.id+'\')">✏️</button><button class="btn sm be" onclick="inspM(\''+h.id+'\')">'+t("insp_by_h")+'</button><button class="btn sm bd" onclick="delH(\''+h.id+'\')">🗑️</button></div>'
       +'</div>';
   }).join("");
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-home" style="color:var(--gold)"></i> '+t("h_title")+' <span class="cs">('+D.hives.length+')</span></h2>'
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-house" style="color:var(--gold)"></i> '+t("h_title")+' <span class="cs">('+D.hives.length+')</span></h2>'
     +'<div class="sb2"><button class="btn" onclick="hiveM()">'+t("h_new")+'</button><input placeholder="'+t("h_search")+'" value="'+q+'" oninput="debouncedHiveSearch(this.value)"></div>'
     +(list.length===0?'<div class="al ali">'+t("h_not_found")+' "'+q+'".</div>':'<div class="g gc">'+cards+'</div>'));
 }
@@ -949,31 +1097,226 @@ window.saveH=function(id){
 // ═══════════════════════════════════════════
 // INSPECTIONS
 // ═══════════════════════════════════════════
+
+// Helper: format month name from "YYYY-MM"
+function monthName(ym){
+  var ro=["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+  var en=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var p=ym.split("-");var mo=parseInt(p[1])-1;
+  return(D.settings.lang==="en"?en:ro)[mo]+" "+p[0];
+}
+
+// Helper: render one inspection card (full detail)
+function inspCardHTML(i,showHiveName){
+  var hv=D.hives.find(function(h){return h.id===i.hiveId;});
+  var bp=t("bp")||[];var bpEntry=bp.find(function(x){return x[0]===i.bp;});
+  var bpCls=i.bp==="compact"?"gg":i.bp==="necompact"?"gy":"gr";
+  var bpLbl=bpEntry?bpEntry[1]:(i.bp||"—");
+  var nm=showHiveName?(hv?hv.name:t("insp_hive")):(i.date||"");
+  return'<div class="c">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:6px;"><h3 style="font-size:.88rem;">'+nm+'</h3><span class="bg '+bpCls+'">'+bpLbl+'</span></div>'
+    +'<div style="font-size:.75rem;color:var(--mut);margin-bottom:6px;">📅 '+i.date+' · '+(i.weather||"")+'  · 🌡️ '+showTemp(i.temp)+'</div>'
+    +(i.structC&&i.structC!=="ok"?'<div class="al alw" style="padding:4px 8px;margin:3px 0;font-size:.75rem;">🔩 '+i.structC+(i.structN?" — "+i.structN:"")+'</div>':"")
+    +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin:5px 0;">'
+    +'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑 "+t("insp_q_seen"):"👑 ?")+'</span>'
+    +'<span class="bg '+(i.eggs?"gg":"gy")+'">'+(i.eggs?"🥚 "+t("insp_eggs"):"❌")+'</span>'
+    +'<span class="bg gb">🐝 '+(i.popPct||"?")+'%</span></div>'
+    +'<div style="font-size:.78rem;">'+t("insp_brood")+': <b>'+(i.fB||0)+'</b> · '+t("insp_honey")+': <b>'+(i.fH||0)+'</b></div>'
+    +(i.botci?'<div class="al alw" style="padding:4px 8px;margin:4px 0;font-size:.75rem;">🐛 '+i.botciN+' · '+(i.botciS||"")+(i.botciF?" — "+i.botciF:"")+'</div>':"")
+    +'<div style="font-size:.78rem;">🦠 '+((i.diseases||[]).join(", ")||"—")+'</div>'
+    +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+i.notes+'</div>':"")
+    +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️</button>'
+    +'<button class="btn sm gh" onclick="exportInspPDF(\''+i.id+'\')">📄 PDF</button>'
+    +'<button class="btn sm gh" onclick="exportInspXLS(\''+i.id+'\')">📊 XLS</button>'
+    +'<button class="btn sm bd" onclick="delInsp(\''+i.id+'\')">🗑️</button></div>'
+    +'</div>';
+}
+
+// Helper: toggle archive accordion panels
+window.toggleArc=function(id){
+  var el=document.getElementById(id);
+  if(el)el.style.display=el.style.display==="none"?"block":"none";
+};
+
+// Export single inspection as PDF
+window.exportInspPDF=function(id){
+  if(typeof html2pdf==="undefined"){toast("❌ html2pdf indisponibil");return;}
+  var insp=D.inspections.find(function(x){return x.id===id;});if(!insp)return;
+  var hv=D.hives.find(function(h){return h.id===insp.hiveId;});
+  var isEN=D.settings.lang==="en";
+  var dis=(insp.diseases||[]).join(", ")||"—";
+  var html='<div style="font-family:Arial,sans-serif;padding:24px;max-width:680px;color:#1f1b13;">'
+    +'<h2 style="color:#c8911a;border-bottom:3px solid #e6b422;padding-bottom:8px;margin-bottom:16px;">🐝 BeeManager Pro — '+(isEN?"Inspection Report":"Raport Inspecție")+'</h2>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:13px;">'
+    +'<tr style="background:#fff7e8;"><td style="padding:7px 10px;font-weight:bold;width:38%;">'+(isEN?"Hive":"Stup")+'</td><td style="padding:7px 10px;">'+(hv?hv.name:"?")+'</td>'
+    +'<td style="padding:7px 10px;font-weight:bold;width:20%;">'+(isEN?"Date":"Data")+'</td><td style="padding:7px 10px;">'+insp.date+'</td></tr>'
+    +'<tr><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Weather":"Vreme")+'</td><td style="padding:7px 10px;">'+(insp.weather||"—")+'</td>'
+    +'<td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Temp":"Temp")+'</td><td style="padding:7px 10px;">'+showTemp(insp.temp)+'</td></tr>'
+    +'<tr style="background:#fff7e8;"><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Queen seen":"Matcă văzută")+'</td><td style="padding:7px 10px;">'+(insp.qSeen?"✅ Da":"❌ Nu")+'</td>'
+    +'<td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Eggs/Larvae":"Ouă/Larve")+'</td><td style="padding:7px 10px;">'+(insp.eggs?"🥚 ✅":"🥚 ❌")+' '+(insp.larvae?"🐛 ✅":"🐛 ❌")+'</td></tr>'
+    +'<tr><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Brood / Honey / Pollen frames":"Rame puiet / miere / polen")+'</td>'
+    +'<td colspan="3" style="padding:7px 10px;">'+(insp.fB||0)+' / '+(insp.fH||0)+' / '+(insp.fP||0)+'</td></tr>'
+    +'<tr style="background:#fff7e8;"><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Population":"Populație")+'</td><td style="padding:7px 10px;">'+(insp.popPct||"—")+'%</td>'
+    +'<td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Brood pattern":"Tipar puiet")+'</td><td style="padding:7px 10px;">'+(insp.bp||"—")+'</td></tr>'
+    +(insp.botci?'<tr style="background:#fff3cd;"><td style="padding:7px 10px;font-weight:bold;">🐛 '+(isEN?"Queen cells":"Botci")+'</td><td colspan="3" style="padding:7px 10px;">'+insp.botciN+' · '+insp.botciS+(insp.botciF?" — rame: "+insp.botciF:"")+'</td></tr>':"")
+    +'<tr'+(insp.botci?"":' style="background:#fff7e8;"')+'><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Health":"Sănătate")+'</td><td colspan="3" style="padding:7px 10px;">'+dis+'</td></tr>'
+    +(insp.notes?'<tr style="background:#f9f9f9;"><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Notes":"Note")+'</td><td colspan="3" style="padding:7px 10px;font-style:italic;">'+insp.notes+'</td></tr>':"")
+    +'</table>'
+    +'<p style="margin-top:16px;font-size:10px;color:#aaa;">BeeManager Pro · '+new Date().toLocaleDateString()+'</p></div>';
+  var el=document.createElement("div");el.innerHTML=html;el.style.position="absolute";el.style.left="-9999px";document.body.appendChild(el);
+  var fn="Inspectie_"+(hv?hv.name.replace(/[^a-zA-Z0-9]/g,"_"):"")+"_"+insp.date+".pdf";
+  html2pdf().set({margin:8,filename:fn,html2canvas:{scale:2},jsPDF:{unit:"mm",format:"a4",orientation:"portrait"}}).from(el).save().then(function(){el.remove();});
+  toast(isEN?"PDF generated!":"PDF generat!","📄");
+};
+
+// Export single inspection as Excel
+window.exportInspXLS=function(id){
+  if(typeof XLSX==="undefined"){toast("❌ SheetJS indisponibil");return;}
+  var insp=D.inspections.find(function(x){return x.id===id;});if(!insp)return;
+  var hv=D.hives.find(function(h){return h.id===insp.hiveId;});
+  var isEN=D.settings.lang==="en";
+  var row={};
+  row[isEN?"Hive":"Stup"]=hv?hv.name:"?";
+  row[isEN?"Date":"Data"]=insp.date||"";
+  row[isEN?"Weather":"Vreme"]=insp.weather||"";
+  row["Temp (°C)"]=insp.temp||"";
+  row[isEN?"Queen seen":"Matcă văzută"]=insp.qSeen?"Da":"Nu";
+  row[isEN?"Eggs":"Ouă"]=insp.eggs?"Da":"Nu";
+  row[isEN?"Larvae":"Larve"]=insp.larvae?"Da":"Nu";
+  row[isEN?"Queen laying quality":"Calitate pontă"]=insp.qQual||"";
+  row[isEN?"Brood frames":"Rame puiet"]=insp.fB||0;
+  row[isEN?"Honey frames":"Rame miere"]=insp.fH||0;
+  row[isEN?"Pollen frames":"Rame polen"]=insp.fP||0;
+  row[isEN?"Population %":"Populație %"]=insp.popPct||"";
+  row[isEN?"Brood pattern":"Tipar puiet"]=insp.bp||"";
+  row[isEN?"Space":"Spațiu"]=insp.space||"";
+  row[isEN?"Queen cells":"Botci"]=insp.botci?"Da":"Nu";
+  row[isEN?"Queen cells count":"Nr. botci"]=insp.botciN||0;
+  row[isEN?"Queen cells stage":"Stadiu botci"]=insp.botciS||"";
+  row[isEN?"Diseases":"Boli"]=(insp.diseases||[]).join(", ")||"";
+  row[isEN?"Notes":"Note"]=insp.notes||"";
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.json_to_sheet([row]);
+  XLSX.utils.book_append_sheet(wb,ws,isEN?"Inspection":"Inspectie");
+  var fn="Inspectie_"+(hv?hv.name.replace(/[^a-zA-Z0-9]/g,"_"):"")+"_"+(insp.date||"")+".xlsx";
+  XLSX.writeFile(wb,fn);
+  toast(isEN?"Excel exported!":"Excel exportat!","📊");
+};
+
 function renderInspections(){
-  var sorted=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-  var cards=sorted.map(function(i){
-    var hv=D.hives.find(function(h){return h.id===i.hiveId;});
-    var bp=t("bp")||[];var bpEntry=bp.find(function(x){return x[0]===i.bp;});
-    var bpCls=i.bp==="compact"?"gg":i.bp==="necompact"?"gy":"gr";
-    var bpLbl=bpEntry?bpEntry[1]:(i.bp||"—");
-    return'<div class="c">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:6px;"><h3 style="font-size:.88rem;">'+(hv?hv.name:t("insp_hive"))+'</h3><span class="bg '+bpCls+'">'+bpLbl+'</span></div>'
-      +'<div style="font-size:.75rem;color:var(--mut);margin-bottom:6px;">📅 '+i.date+' · '+(i.weather||"")+'  · 🌡️ '+showTemp(i.temp)+'</div>'
-      +(i.structC&&i.structC!=="ok"?'<div class="al alw" style="padding:4px 8px;margin:3px 0;font-size:.75rem;">🔩 '+i.structC+(i.structN?" — "+i.structN:"")+'</div>':"")
-      +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin:5px 0;">'
-      +'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑 "+t("insp_q_seen"):"👑 ?")+'</span>'
-      +'<span class="bg '+(i.eggs?"gg":"gy")+'">'+(i.eggs?"🥚 "+t("insp_eggs"):"❌")+'</span>'
-      +'<span class="bg gb">🐝 '+(i.popPct||"?")+'%</span></div>'
-      +'<div style="font-size:.78rem;">'+t("insp_brood")+': <b>'+(i.fB||0)+'</b> · '+t("insp_honey")+': <b>'+(i.fH||0)+'</b></div>'
-      +(i.botci?'<div class="al alw" style="padding:4px 8px;margin:4px 0;font-size:.75rem;">🐛 '+i.botciN+' · '+(i.botciS||"")+(i.botciF?" — "+i.botciF:"")+'</div>':"")
-      +'<div style="font-size:.78rem;">🦠 '+((i.diseases||[]).join(", ")||"—")+'</div>'
-      +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+i.notes+'</div>':"")
-      +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️ '+t("insp_edit_t").replace("✏️ ","")+'</button><button class="btn sm bd" onclick="delInsp(\''+i.id+'\')">🗑️</button></div>'
-      +'</div>';
-  }).join("");
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-book" style="color:var(--gold)"></i> '+t("insp_title")+' <span class="cs">('+sorted.length+')</span></h2>'
+  var now=new Date();
+  var curMonth=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
+  var threshold=parseInt(D.settings.inspAlertThreshold)||2;
+
+  // Sort all inspections descending
+  var allSorted=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+
+  // Current month inspections
+  var curInsp=allSorted.filter(function(i){return i.date&&i.date.startsWith(curMonth);});
+
+  // Alert: hives not inspected in the last 7 days
+  var today7=new Date();today7.setHours(0,0,0,0);
+  var warnHives=D.hives.filter(function(h){
+    var lastI=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;})
+      .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+    if(!lastI)return true;
+    var lastD=new Date(lastI.date);lastD.setHours(0,0,0,0);
+    return (today7-lastD)/86400000>=7;
+  });
+
+  // Last inspection per hive in current month (already sorted desc so first = last)
+  var seenHive={};var curCards=[];var shownIds={};
+  curInsp.forEach(function(i){
+    if(!seenHive[i.hiveId]){seenHive[i.hiveId]=true;shownIds[i.id]=true;curCards.push(inspCardHTML(i,true));}
+  });
+
+  // Archive = ALL inspections except the ones shown as current-month cards
+  // (includes older inspections from current month + all past months)
+  var archiveInsp=allSorted.filter(function(i){return i.date&&!shownIds[i.id];});
+  var byMonth={};
+  archiveInsp.forEach(function(i){
+    var m=i.date.slice(0,7);
+    if(!byMonth[m])byMonth[m]={};
+    if(!byMonth[m][i.hiveId])byMonth[m][i.hiveId]=[];
+    byMonth[m][i.hiveId].push(i);
+  });
+  var monthKeys=Object.keys(byMonth).sort().reverse();
+
+  var alertHTML=warnHives.length?
+    '<div class="sa" style="margin-bottom:16px;">'
+    +'<strong>⚠️ '+t("insp_alert_title")+'</strong><br>'
+    +'<span style="font-size:.82rem;color:var(--mut);">'+(D.settings.lang==="en"?"Not inspected in the last 7 days:":"Nu au fost verificați în ultimele 7 zile:")+'</span><br style="margin-bottom:5px;">'
+    +warnHives.map(function(h){
+      var lastI=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;})
+        .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+      var daysAgo=lastI?Math.floor((today7-new Date(lastI.date))/86400000):null;
+      return'<span class="bg gr" style="margin:4px 3px 0 0;display:inline-block;">🏠 '+h.name+(daysAgo!==null?" ("+daysAgo+"d)":"")+'</span>';
+    }).join("")
+    +'</div>':"";
+
+  // Build current month HTML
+  var curHTML='<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">'
+    +'<span style="font-size:.82rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;">'+t("insp_cur_month")+'</span>'
+    +(curCards.length?'<span class="bg gy" style="font-size:.68rem;">'+curCards.length+' '+t("insp_stupi")+'</span>':"")
+    +'</div>'
+    +(curCards.length?'<div class="g gc">'+curCards.join("")+'</div>':'<div class="al ali">'+t("insp_no_cur")+'</div>');
+
+  // Build archive HTML
+  var arcHTML='<div style="margin-top:22px;margin-bottom:10px;"><span style="font-size:.82rem;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;">'+t("insp_archive")+'</span></div>';
+  if(monthKeys.length===0){
+    arcHTML+='<div class="al ali">'+t("insp_no_arc")+'</div>';
+  } else {
+    arcHTML+=monthKeys.map(function(ym,mi){
+      var arcId="arc_m"+mi;
+      var hivesInMonth=byMonth[ym];
+      var hiveKeys=Object.keys(hivesInMonth);
+      var totalInMonth=0;
+      hiveKeys.forEach(function(hid){totalInMonth+=hivesInMonth[hid].length;});
+      var hivesHTML=hiveKeys.map(function(hid,hi){
+        var hv=D.hives.find(function(h){return h.id===hid;});
+        var hivArcId=arcId+"_h"+hi;
+        // Sort ascending (chronological)
+        var insps=hivesInMonth[hid].slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+        var rowsHTML=insps.map(function(insp){
+          return'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;">'
+            +'<span style="font-size:.82rem;font-weight:700;min-width:95px;">📅 '+insp.date+'</span>'
+            +'<span class="bg '+(insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qSeen?"👑✅":"👑❓")+'</span>'
+            +'<span class="bg gb" style="font-size:.63rem;">🥚 '+(insp.fB||0)+'</span>'
+            +'<span class="bg gg" style="font-size:.63rem;">🍯 '+(insp.fH||0)+'</span>'
+            +(insp.botci?'<span class="bg gr" style="font-size:.63rem;">🐛</span>':"")
+            +'<div style="margin-left:auto;display:flex;gap:4px;">'
+            +'<button class="btn sm be" onclick="inspM(\''+insp.hiveId+'\',\''+insp.id+'\')">✏️</button>'
+            +'<button class="btn sm gh" onclick="exportInspPDF(\''+insp.id+'\')">📄</button>'
+            +'<button class="btn sm gh" onclick="exportInspXLS(\''+insp.id+'\')">📊</button>'
+            +'<button class="btn sm bd" onclick="delInsp(\''+insp.id+'\')">🗑️</button>'
+            +'</div></div>';
+        }).join("");
+        return'<div style="margin:3px 0;">'
+          +'<div onclick="toggleArc(\''+hivArcId+'\')" style="cursor:pointer;padding:9px 14px;background:rgba(230,180,34,.04);border:1px solid var(--bdr);border-radius:var(--rs);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
+          +'<span style="font-weight:700;font-size:.83rem;">🏠 '+(hv?hv.name:hid)+'</span>'
+          +'<div style="display:flex;gap:6px;align-items:center;">'
+          +'<span class="bg gy" style="font-size:.65rem;">'+insps.length+' '+t("insp_insp")+'</span>'
+          +'<span style="color:var(--mut);font-size:.75rem;">▼</span>'
+          +'</div></div>'
+          +'<div id="'+hivArcId+'" style="display:none;border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--rs) var(--rs);overflow:hidden;">'
+          +rowsHTML+'</div></div>';
+      }).join("");
+      return'<div style="margin-bottom:10px;">'
+        +'<div onclick="toggleArc(\''+arcId+'\')" style="cursor:pointer;padding:11px 16px;background:rgba(230,180,34,.09);border:1px solid rgba(230,180,34,.28);border-radius:var(--rm);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
+        +'<span style="font-weight:800;font-size:.92rem;">📅 '+monthName(ym)+'</span>'
+        +'<div style="display:flex;gap:7px;align-items:center;">'
+        +'<span class="bg gy" style="font-size:.68rem;">'+hiveKeys.length+' '+t("insp_stupi")+'</span>'
+        +'<span class="bg gb" style="font-size:.68rem;">'+totalInMonth+' '+t("insp_insp")+'</span>'
+        +'<span style="color:var(--gold);font-size:.8rem;">▼</span>'
+        +'</div></div>'
+        +'<div id="'+arcId+'" style="display:none;padding:8px 4px;">'
+        +hivesHTML+'</div></div>';
+    }).join("");
+  }
+
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-book-open" style="color:var(--gold)"></i> '+t("insp_title")+' <span class="cs">('+D.inspections.length+')</span></h2>'
     +'<button class="btn" style="margin-bottom:14px;" onclick="inspM(null)">'+t("insp_new")+'</button>'
-    +(sorted.length===0?'<div class="al ali">'+t("insp_no")+'</div>':'<div class="g gc">'+cards+'</div>'));
+    +alertHTML+curHTML+arcHTML);
 }
 
 window.delInsp=function(id){showConfirm(t("insp_del_c"),function(){D.inspections=D.inspections.filter(function(i){return i.id!==id;});save();renderInspections();});};
@@ -984,7 +1327,16 @@ function inspM(hiveId,editId){
   var effHid=ex?ex.hiveId:hiveId;
   var hive=effHid?D.hives.find(function(h){return h.id===effHid;}):null;
   var disArr=ex?ex.diseases||[]:[];
-  var mag=hive?hive.hasMag:(ex?ex.hasMag:false);
+  // Determina daca stupul are magazie: verifica hive.hasMag SAU ultima inspectie salvata cu hasMag=true
+  function hiveEffHasMag(hid){
+    if(!hid)return false;
+    var hv=D.hives.find(function(h){return h.id===hid;});
+    if(hv&&hv.hasMag)return true;
+    var lastI=D.inspections.filter(function(i){return i.hiveId===hid&&i.date;})
+      .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+    return !!(lastI&&lastI.hasMag);
+  }
+  var mag=ex?ex.hasMag:hiveEffHasMag(effHid);
   var autoW=!ex&&D.weather?mapWeatherLabel():"";
   var autoT=(!ex&&D.weather)?fmtTempInput(D.weather.temp):"";
   var wtDefault=xv(ex,"weather",autoW);
@@ -1040,7 +1392,9 @@ function inspM(hiveId,editId){
     +'<div class="r2"><div>'+L(t("insp_nf"))+'<input type="number" inputmode="numeric" id="iNF" value="'+(xv(ex,"nFrames",0))+'"></div>'
     +'<div>'+L(t("insp_nfb"))+'<input type="number" inputmode="numeric" id="iNFB" value="'+(xv(ex,"nFramesB",0))+'"></div></div>'
     +L(t("insp_space"))+'<select id="iSp">'+sp.map(function(a){return'<option value="'+a[0]+'"'+(xv(ex,"space","suficient")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select>'
-    +'<div id="magSec">'+magHTML+'</div>'
+    +'<div class="dv"></div>'
+    +'<div id="magRadioBlock">'+buildMagRadios(mag, ex, hive)+'</div>'
+    +'<div id="magSec">'+(mag?magHTML:"")+'</div>'
     +'<div class="dv"><div class="stt">'+t("insp_health_t")+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:7px;">'
     +dis.map(function(d){return'<div class="ck"><input type="checkbox" id="'+d[0]+'"'+(disArr.some(function(x){return disName(x)===disName(d[1]);})?" checked":"")+'>  <label for="'+d[0]+'">'+d[1]+'</label></div>';}).join("")
@@ -1050,17 +1404,83 @@ function inspM(hiveId,editId){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveInsp(\''+(editId||"")+'\',\''+(effHid||"")+'\')">'+t("insp_save")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
 
-window.updMag=function(hid){
-  var hive=D.hives.find(function(h){return h.id===hid;});
+// ── Magazie: build radio group ───────────────────────────────
+function buildMagRadios(mag, ex, hive){
+  var isEN=D.settings.lang==="en";
+  // Determine initial selection:
+  // If editing an existing inspection with hasMag=true → "present"
+  // If new inspection and hive has mag → "present"
+  // Default → "none"
+  var sel="none";
+  if(ex){
+    sel=ex.hasMag?"present":"none";
+  } else if(mag){
+    sel="present";
+  }
+  var lNone=isEN?"No super":"Fără magazie";
+  var lPres=isEN?"Super present":"Magazie prezentă";
+  var lAdd=isEN?"Adding super now":"Adaug magazie acum";
+  return '<div style="background:rgba(230,180,34,.06);border:1px solid rgba(230,180,34,.18);border-radius:var(--rs);padding:10px 12px;margin-bottom:4px;">'
+    +'<div style="font-size:.78rem;font-weight:700;color:var(--gold);margin-bottom:8px;">📦 '+(isEN?"Honey Super":"Magazie")+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;">'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer;">'
+    +'<input type="radio" name="magRadio" id="iMagNone" value="none"'+(sel==="none"?" checked":"")
+    +' onchange="onMagRadio(\'none\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lNone+'</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer;">'
+    +'<input type="radio" name="magRadio" id="iMagPres" value="present"'+(sel==="present"?" checked":"")
+    +' onchange="onMagRadio(\'present\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lPres+'</label>'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer;">'
+    +'<input type="radio" name="magRadio" id="iMagAdd" value="add"'+(sel==="add"?" checked":"")
+    +' onchange="onMagRadio(\'add\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lAdd+'</label>'
+    +'</div></div>';
+}
+
+window.onMagRadio=function(val){
   var el=document.getElementById("magSec");if(!el)return;
-  if(hive&&hive.hasMag){
+  if(val==="none"){el.innerHTML="";}
+  else{
+    var hid=($q("iHive")||{}).value;
+    var hive=D.hives.find(function(h){return h.id===hid;});
     el.innerHTML='<div class="dv"><div class="stt">'+t("insp_mag_t")+'</div></div>'
-      +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive.magF||10)+'"></div>'
+      +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive&&hive.magF?hive.magF:10)+'"></div>'
       +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="0"></div>'
       +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="0"></div></div>'
       +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0"></div>'
       +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>';
-  } else {el.innerHTML="";}
+  }
+};
+
+window.toggleMagSec=function(checked){
+  // Legacy: redirect to radio logic
+  if(checked){onMagRadio("present");}else{onMagRadio("none");}
+};
+
+window.updMag=function(hid){
+  var hive=D.hives.find(function(h){return h.id===hid;});
+  var hasMag=!!(hive&&hive.hasMag);
+  if(!hasMag){
+    var lastI=D.inspections.filter(function(i){return i.hiveId===hid&&i.date;})
+      .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+    hasMag=!!(lastI&&lastI.hasMag);
+  }
+  // Rebuild radio group when hive changes
+  var ms=document.getElementById("magSec");if(!ms)return;
+  var container=ms.parentNode;
+  // Remove old radio block (everything between iSp select's container and magSec)
+  var radBlock=document.getElementById("magRadioBlock");
+  if(radBlock)radBlock.remove();
+  // Insert new radio block before magSec
+  var tmp=document.createElement("div");
+  tmp.id="magRadioBlock";
+  tmp.innerHTML=buildMagRadios(hasMag,null,hive);
+  container.insertBefore(tmp,ms);
+  // Update magSec content
+  ms.innerHTML=hasMag?('<div class="dv"><div class="stt">'+t("insp_mag_t")+'</div></div>'
+    +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive&&hive.magF?hive.magF:10)+'"></div>'
+    +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="0"></div>'
+    +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="0"></div></div>'
+    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0"></div>'
+    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>'):"";
 };
 
 window.saveInsp=function(editId,hiveId){
@@ -1092,10 +1512,25 @@ window.saveInsp=function(editId,hiveId){
   if(editId){var ei=D.inspections.find(function(i){return i.id===editId;});if(ei)Object.assign(ei,o);}
   else{D.inspections.push(o);}
   var hive=D.hives.find(function(h){return h.id===hid;});
-  if(hive){hive.fB=brood;hive.str=strCalc(brood);if(o.space==="urgent")hive.sc="red";}
+  if(hive){
+    hive.fB=brood;hive.str=strCalc(brood);if(o.space==="urgent")hive.sc="red";
+    // Update hasMag based on radio selection
+    var magNoneEl=document.querySelector('input[name="magRadio"][value="none"]');
+    var magPresEl=document.querySelector('input[name="magRadio"][value="present"]');
+    var magAddEl=document.querySelector('input[name="magRadio"][value="add"]');
+    if(magNoneEl&&magNoneEl.checked) hive.hasMag=false;
+    if(magPresEl&&magPresEl.checked) hive.hasMag=true;
+    if(magAddEl&&magAddEl.checked) hive.hasMag=true;
+  }
   save();closeM();
+  // Per-hive auto-snapshot (saved to separate localStorage key)
+  saveHiveSnapshot(hid);
   if(curP==="inspections")renderInspections();else renderHives();
   toast(editId?t("insp_upd"):t("insp_saved"),"🐝");
+  if(D.settings.autoDownloadInsp){
+    setTimeout(function(){exportInspPDF(o.id);},400);
+    setTimeout(function(){exportInspXLS(o.id);},1800);
+  }
 };
 
 // ═══════════════════════════════════════════
@@ -1166,7 +1601,7 @@ function renderHoney(){
       +'<div class="br"><button class="btn sm be" onclick="honeyM(\''+h.id+'\')">✏️</button><button class="btn sm bd" onclick="delHn(\''+h.id+'\')">🗑️</button></div>'
       +'</div>';
   }).join("");
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-jar" style="color:var(--gold)"></i> '+t("hn_title")+'</h2>'
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-droplet" style="color:var(--gold)"></i> '+t("hn_title")+'</h2>'
     +'<button class="btn" style="margin-bottom:14px;" onclick="honeyM()">'+t("hn_new")+'</button>'
     +recon
     +(D.honeyHarvests.length===0?'<div class="al ali">'+t("hn_no")+'</div>':'<div class="g gc">'+cards+'</div>'));
@@ -1257,14 +1692,27 @@ window.saveTr=function(id){
   save();closeM();renderTreatments();toast(id?t("tr_upd"):t("tr_saved"),"💊");
 };
 
+// Helper: echipamente pentru care 1 bucata = suficient (fara warning la qty===min===1)
+var EQUIP_SINGLE=["Mască apicol","Mănuși apicole","Combinezon","Fumigător mic","Fumigător mare",
+  "Daltă apicol","Perie albine",
+  "Beekeeping Veil","Beekeeping Gloves","Beekeeping Suit","Small Smoker","Large Smoker",
+  "Hive Tool","Bee Brush"];
+function isLowStock(i){
+  // Pentru echipamente individuale: warning doar daca qty < min (nu la egal)
+  if(EQUIP_SINGLE.some(function(n){return i.name&&i.name.toLowerCase()===n.toLowerCase();})){
+    return i.qty<i.min;
+  }
+  return i.qty<=i.min;
+}
+
 // ═══════════════════════════════════════════
 // INVENTORY
 // ═══════════════════════════════════════════
 function renderInventory(){
-  var low=D.inventory.filter(function(i){return i.qty<=i.min;});
+  var low=D.inventory.filter(function(i){return isLowStock(i);});
   var byCat={};D.inventory.forEach(function(i){if(!byCat[i.cat])byCat[i.cat]=[];byCat[i.cat].push(i);});
   var catHTML=Object.keys(byCat).map(function(cat){
-    var items=byCat[cat].map(function(i){var lw=i.qty<=i.min;
+    var items=byCat[cat].map(function(i){var lw=isLowStock(i);
       return'<div class="c" style="'+(lw?"border-color:var(--danger)":"")+'">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:5px;"><h3 style="font-size:.85rem;">'+i.name+'</h3>'+(lw?'<span class="bg gr">⚠️</span>':"")+'</div>'
         +'<div style="font-size:1.8rem;font-weight:800;color:'+(lw?"var(--danger)":"var(--gold)")+'">'+i.qty+'</div>'
@@ -1274,7 +1722,7 @@ function renderInventory(){
     }).join("");
     return'<div style="margin-bottom:18px;"><h3 style="color:var(--gold);font-size:.82rem;margin-bottom:9px;text-transform:uppercase;letter-spacing:.5px;">📂 '+cat+'</h3><div class="g gc">'+items+'</div></div>';
   }).join("");
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-boxes" style="color:var(--gold)"></i> '+t("inv_title")+'</h2>'
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-boxes-stacked" style="color:var(--gold)"></i> '+t("inv_title")+'</h2>'
     +'<button class="btn" style="margin-bottom:12px;" onclick="invM()">'+t("inv_new")+'</button>'
     +(low.length?'<div class="sa"><strong>'+t("inv_low")+' — '+low.length+'</strong>'+low.map(function(i){return'<div style="margin-top:2px;font-size:.8rem;">📦 <strong>'+i.name+'</strong>: '+i.qty+' '+t("inv_units")+' ('+t("inv_min_d")+' '+i.min+')</div>';}).join("")+'</div>':"")
     +(Object.keys(byCat).length===0?'<div class="al ali">'+t("inv_no")+'</div>':catHTML));
@@ -1478,7 +1926,7 @@ function renderCalendar(){
         +'<button class="btn sm be" onclick="treatM(\''+tr.id+'\')">✏️</button></div>';
     }).join("");
 
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-calendar-alt" style="color:var(--gold)"></i> '+t("cal_title")+'</h2>'
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-calendar-days" style="color:var(--gold)"></i> '+t("cal_title")+'</h2>'
     +flCard
     +'<div class="c" style="margin-top:13px;"><div class="ct">'+t("cal_upcoming")+'</div>'
     +(nextHTML||'<p style="color:var(--mut);margin-top:7px;">'+t("cal_no_up")+'</p>')+'</div>'
@@ -1490,31 +1938,243 @@ function renderCalendar(){
 // ANALYTICS
 // ═══════════════════════════════════════════
 function renderAnalytics(){
+  var isEN=D.settings.lang==="en";
+  var curYear=new Date().getFullYear();
+  var prevYear=curYear-1;
+
+  // ── Totale globale ────────────────────────────────────────────
   var tR=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
   var tE=D.honeyHarvests.reduce(function(s,h){return s+(h.estQty||0);},0);
   var eff=tE>0?((tR/tE)*100).toFixed(0):"—";
-  var avgB=D.inspections.reduce(function(s,i){return s+(i.fB||0);},0)/(D.inspections.length||1);
-  var byT={};D.honeyHarvests.forEach(function(h){var tp=h.honeyType||"Other";byT[tp]=(byT[tp]||0)+(h.actualQty||h.qty||0);});
+  var avgB=D.inspections.length?(D.inspections.reduce(function(s,i){return s+(i.fB||0);},0)/D.inspections.length).toFixed(1):"—";
   var sc={p:D.hives.filter(function(h){return h.str==="puternic";}).length,m:D.hives.filter(function(h){return h.str==="mediu";}).length,s:D.hives.filter(function(h){return h.str==="slab";}).length};
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-chart-simple" style="color:var(--gold)"></i> '+t("an_title")+'</h2>'
-    +'<div class="g gs">'
-    +'<div class="c"><div class="cl">'+t("an_real")+'</div><div class="cv">'+tR.toFixed(1)+'</div></div>'
-    +'<div class="c"><div class="cl">'+t("an_est")+'</div><div class="cv">'+tE.toFixed(1)+'</div><div class="cs">'+t("an_eff")+' '+eff+'%</div></div>'
-    +'<div class="c"><div class="cl">'+t("an_avg_b")+'</div><div class="cv">'+avgB.toFixed(1)+'</div></div>'
-    +'<div class="c"><div class="cl">'+t("an_strong_h")+'</div><div class="cv">'+sc.p+'</div></div>'
-    +'<div class="c"><div class="cl">'+t("an_qc")+'</div><div class="cv">'+D.inspections.filter(function(i){return i.botci;}).length+'</div></div>'
-    +'<div class="c"><div class="cl">'+t("an_total_i")+'</div><div class="cv">'+D.inspections.length+'</div></div>'
+
+  // ── Helper: productie stup pe an ─────────────────────────────
+  function hiveYearProd(hid,year){
+    return D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return h.hiveId===hid&&d.startsWith(String(year));})
+      .reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  }
+  function hiveYearEst(hid,year){
+    return D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return h.hiveId===hid&&d.startsWith(String(year));})
+      .reduce(function(s,h){return s+(h.estQty||0);},0);
+  }
+
+  // ── Productie per stup ────────────────────────────────────────
+  var hiveProd=D.hives.map(function(h){
+    var real=hiveYearProd(h.id,curYear);
+    var realAll=D.honeyHarvests.filter(function(hr){return hr.hiveId===h.id;}).reduce(function(s,hr){return s+(hr.actualQty||hr.qty||0);},0);
+    var est=hiveYearEst(h.id,curYear);
+    var estAll=D.honeyHarvests.filter(function(hr){return hr.hiveId===h.id;}).reduce(function(s,hr){return s+(hr.estQty||0);},0);
+    var effH=estAll>0?((realAll/estAll)*100).toFixed(0):null;
+    var prevR=hiveYearProd(h.id,prevYear);
+    return{h:h,real:realAll,realCur:real,est:estAll,estCur:est,eff:effH,prevR:prevR};
+  }).sort(function(a,b){return b.real-a.real;});
+
+  var maxReal=hiveProd.length?Math.max.apply(null,hiveProd.map(function(x){return Math.max(x.real,0.01);})):1;
+  var hasPrevData=hiveProd.some(function(x){return x.prevR>0;});
+
+  var prodRows=hiveProd.map(function(x){
+    var barW=Math.round((x.real/maxReal)*100);
+    var trend=hasPrevData?(x.real>x.prevR?"↑":x.real<x.prevR?"↓":"—"):"";
+    var trendCls=x.real>x.prevR?"color:var(--ok)":x.real<x.prevR?"color:var(--danger)":"color:var(--mut)";
+    var badge=x.h.str==="puternic"?'<span class="bg gg" style="font-size:.58rem;">💪</span>':x.h.str==="slab"?'<span class="bg gr" style="font-size:.58rem;">⚠️</span>':"";
+    return'<tr>'
+      +'<td style="font-weight:700;font-size:.8rem;">'+x.h.name+' '+badge+'</td>'
+      +'<td style="text-align:right;font-weight:800;color:var(--gold);">'+x.real.toFixed(1)+'</td>'
+      +'<td style="text-align:right;font-size:.76rem;color:var(--mut);">'+x.est.toFixed(1)+'</td>'
+      +'<td style="text-align:right;font-size:.76rem;">'+(x.eff!==null?x.eff+'%':'—')+'</td>'
+      +(hasPrevData?'<td style="text-align:right;font-size:.78rem;font-weight:700;'+trendCls+';">'+trend+' '+(x.prevR>0?x.prevR.toFixed(1):'—')+'</td>':'')
+      +'<td style="min-width:60px;"><div style="background:rgba(255,255,255,.07);border-radius:20px;height:5px;overflow:hidden;">'
+      +'<div style="width:'+barW+'%;height:100%;background:linear-gradient(90deg,var(--gold),#ffcf4a);border-radius:20px;"></div></div></td>'
+      +'</tr>';
+  }).join("");
+
+  var prodHTML='<div class="c" style="margin-bottom:14px;">'
+    +'<div class="ct">🍯 '+(isEN?"Production per hive (all time)":"Producție per stup (total)")+'</div>'
+    +'<div class="rt-wrap"><table class="rt" style="white-space:normal;min-width:unset;">'
+    +'<thead><tr><th>'+(isEN?"Hive":"Stup")+'</th><th style="text-align:right;">Real(kg)</th><th style="text-align:right;">Est.(kg)</th><th style="text-align:right;">Ef.%</th>'
+    +(hasPrevData?'<th style="text-align:right;">vs '+prevYear+'</th>':'')+'<th></th></tr></thead>'
+    +'<tbody>'+prodRows+'</tbody></table></div>'
+    +(hiveProd.every(function(x){return x.real===0;})?'<div class="al ali" style="margin-top:8px;font-size:.78rem;">'+(isEN?"No harvest data yet.":"Nicio recoltă înregistrată.")+'</div>':"")
+    +'</div>';
+
+  // ── Eficienta sezon: kg/stup pe an ───────────────────────────
+  var nHives=D.hives.length||1;
+  var curYearTotal=D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return d.startsWith(String(curYear));}).reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  var prevYearTotal=D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return d.startsWith(String(prevYear));}).reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  var curEff=(curYearTotal/nHives).toFixed(2);
+  var prevEff=prevYearTotal>0?(prevYearTotal/nHives).toFixed(2):null;
+  var delta=prevYearTotal>0?(((curYearTotal-prevYearTotal)/prevYearTotal)*100).toFixed(0):null;
+  var deltaStr=delta!==null?((parseFloat(delta)>0?"+":"")+delta+"%"):"—";
+  var deltaPos=delta!==null?parseFloat(delta)>=0:null;
+
+  // Productie per sezon (tip miere)
+  var byFlowCur={},byFlowPrev={};
+  D.honeyHarvests.forEach(function(h){
+    var d=h.extractionDate||h.date||"",tp=h.honeyType||h.type||"?",qty=h.actualQty||h.qty||0;
+    if(d.startsWith(String(curYear)))byFlowCur[tp]=(byFlowCur[tp]||0)+qty;
+    if(d.startsWith(String(prevYear)))byFlowPrev[tp]=(byFlowPrev[tp]||0)+qty;
+  });
+  var allSeasonKeys=[].concat(Object.keys(byFlowCur),Object.keys(byFlowPrev)).filter(function(v,i,a){return a.indexOf(v)===i;});
+
+  var seasonRows=allSeasonKeys.map(function(tp){
+    var cur=byFlowCur[tp]||0,prev=byFlowPrev[tp]||0;
+    var curKH=(cur/nHives).toFixed(2),prevKH=prev>0?(prev/nHives).toFixed(2):"—";
+    var d=prev>0?((((cur-prev)/prev)*100).toFixed(0)):null;
+    var dStr=d!==null?((parseFloat(d)>0?"+":"")+d+"%"):"—";
+    var dCls=d===null?"color:var(--mut)":parseFloat(d)>=0?"color:var(--ok)":"color:var(--danger)";
+    return'<tr>'
+      +'<td style="font-size:.78rem;">'+tp+'</td>'
+      +'<td style="text-align:right;font-weight:700;color:var(--gold);">'+cur.toFixed(1)+'<br><span style="font-size:.65rem;color:var(--mut);font-weight:400;">'+curKH+' kg/'+( isEN?"hive":"stup")+'</span></td>'
+      +'<td style="text-align:right;font-size:.76rem;color:var(--mut);">'+(prev>0?prev.toFixed(1)+'<br><span style="font-size:.65rem;">'+prevKH+' kg</span>':'—')+'</td>'
+      +'<td style="text-align:right;font-weight:700;'+dCls+';">'+dStr+'</td>'
+      +'</tr>';
+  }).join("");
+
+  var seasonHTML=(curYearTotal>0||prevYearTotal>0)?
+    '<div class="c" style="margin-bottom:14px;">'
+    +'<div class="ct">📊 '+(isEN?"Season efficiency — kg/hive":"Eficiență sezon — kg/stup")+'</div>'
+    +'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 8px;">'
+    +'<div style="flex:1;min-width:110px;background:rgba(230,180,34,.08);border-radius:var(--rs);padding:10px;text-align:center;">'
+    +'<div style="font-size:.68rem;color:var(--mut);">'+curYear+'</div>'
+    +'<div style="font-size:1.4rem;font-weight:800;color:var(--gold);">'+curYearTotal.toFixed(1)+' kg</div>'
+    +'<div style="font-size:.72rem;color:var(--mut);">÷ '+nHives+' = <strong>'+curEff+'</strong> kg/'+(isEN?"hive":"stup")+'</div>'
     +'</div>'
-    +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_by_t")+'</div><canvas id="ch1" height="100"></canvas></div>'
-    +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_evol")+'</div><canvas id="ch2" height="100"></canvas></div>'
-    +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_dist")+'</div><canvas id="ch3" height="100"></canvas></div>'
-    +'<button class="btn" onclick="html2pdf().from(document.getElementById(\'pg\')).save(\'Report_'+new Date().getFullYear()+'.pdf\')">'+t("an_export")+'</button>');
+    +(prevYearTotal>0?
+      '<div style="flex:1;min-width:110px;background:rgba(255,255,255,.04);border-radius:var(--rs);padding:10px;text-align:center;">'
+      +'<div style="font-size:.68rem;color:var(--mut);">'+prevYear+'</div>'
+      +'<div style="font-size:1.4rem;font-weight:800;color:var(--mut);">'+prevYearTotal.toFixed(1)+' kg</div>'
+      +'<div style="font-size:.72rem;color:var(--mut);">÷ '+nHives+' = <strong>'+prevEff+'</strong> kg/'+(isEN?"hive":"stup")+'</div>'
+      +'</div>'
+      +'<div style="flex:1;min-width:90px;background:rgba('+(deltaPos?"111,191,76":"224,124,76")+',.1);border-radius:var(--rs);padding:10px;text-align:center;">'
+      +'<div style="font-size:.68rem;color:var(--mut);">'+(isEN?"vs last year":"față de "+prevYear)+'</div>'
+      +'<div style="font-size:1.4rem;font-weight:800;color:'+(deltaPos?"var(--ok)":"var(--danger)")+';">'+deltaStr+'</div>'
+      +'</div>'
+      :"")
+    +'</div>'
+    +(allSeasonKeys.length?
+      '<div class="rt-wrap"><table class="rt" style="white-space:normal;min-width:unset;">'
+      +'<thead><tr><th>'+(isEN?"Season":"Sezon")+'</th><th style="text-align:right;">'+curYear+'</th><th style="text-align:right;">'+prevYear+'</th><th style="text-align:right;">'+(isEN?"Change":"Variație")+'</th></tr></thead>'
+      +'<tbody>'+seasonRows+'</tbody></table></div>':'')
+    +'</div>':"";
+
+  // ── Inspectii per stup (an curent) ───────────────────────────
+  var inspYr=D.inspections.filter(function(i){return i.date&&i.date.startsWith(String(curYear));});
+  var hiveInspC=D.hives.map(function(h){
+    var cnt=inspYr.filter(function(i){return i.hiveId===h.id;}).length;
+    return{h:h,cnt:cnt};
+  }).sort(function(a,b){return b.cnt-a.cnt;});
+  var maxInsp=hiveInspC.length?Math.max.apply(null,hiveInspC.map(function(x){return Math.max(x.cnt,1);})):1;
+
+  var inspRows=hiveInspC.map(function(x){
+    var barW=Math.round((x.cnt/maxInsp)*100);
+    var cls=x.cnt===0?"gr":x.cnt<3?"gy":"gg";
+    return'<tr>'
+      +'<td style="font-weight:700;font-size:.8rem;">'+x.h.name+'</td>'
+      +'<td style="text-align:center;"><span class="bg '+cls+'" style="font-size:.7rem;">'+x.cnt+'</span></td>'
+      +'<td style="min-width:60px;"><div style="background:rgba(255,255,255,.07);border-radius:20px;height:5px;overflow:hidden;">'
+      +'<div style="width:'+barW+'%;height:100%;background:linear-gradient(90deg,var(--info),#74b3ff);border-radius:20px;"></div></div></td>'
+      +'</tr>';
+  }).join("");
+
+  var inspHiveHTML='<div class="c" style="margin-bottom:14px;">'
+    +'<div class="ct">🔍 '+(isEN?"Inspections per hive — "+curYear:"Inspecții per stup — "+curYear)+'</div>'
+    +'<div class="rt-wrap"><table class="rt" style="white-space:normal;min-width:unset;">'
+    +'<thead><tr><th>'+(isEN?"Hive":"Stup")+'</th><th style="text-align:center;">'+(isEN?"Nr.":"Nr.")+'</th><th></th></tr></thead>'
+    +'<tbody>'+inspRows+'</tbody></table></div>'
+    +'</div>';
+
+  // ── Botci trend per stup ──────────────────────────────────────
+  var hiveBotci=D.hives.map(function(h){
+    var insps=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+    var last4=insps.slice(-4);
+    var hasBotci=last4.some(function(i){return i.botci;});
+    if(!hasBotci)return null;
+    var vals=last4.map(function(i){return i.botciN||0;});
+    var trend="stable";
+    if(vals.length>=2){var first=vals[0],last=vals[vals.length-1];if(last>first)trend="up";else if(last<first)trend="down";}
+    return{h:h,insps:last4,trend:trend};
+  }).filter(Boolean);
+
+  var botciHTML="";
+  if(hiveBotci.length){
+    var botciCards=hiveBotci.map(function(x){
+      var ic=x.trend==="up"?"📈":x.trend==="down"?"📉":"➡️";
+      var lbl=x.trend==="up"?(isEN?"Increasing":"Creștere"):x.trend==="down"?(isEN?"Decreasing":"Scădere"):(isEN?"Stable":"Stabil");
+      var tcls=x.trend==="up"?"gy":x.trend==="down"?"gg":"gb";
+      var dots=x.insps.map(function(i){
+        return'<div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:1px solid var(--bdr);font-size:.73rem;">'
+          +'<span style="color:var(--mut);min-width:82px;flex-shrink:0;">'+i.date+'</span>'
+          +(i.botci?'<span class="bg gy">🐛 '+(i.botciN||0)+(i.botciS?' · '+i.botciS:'')+'</span>':'<span class="bg gg" style="font-size:.65rem;">✅ '+(isEN?"none":"fără")+'</span>')
+          +'</div>';
+      }).join("");
+      return'<div style="background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px;margin-bottom:6px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
+        +'<strong style="font-size:.82rem;">🏠 '+x.h.name+'</strong>'
+        +'<span class="bg '+tcls+'" style="font-size:.65rem;">'+ic+' '+lbl+'</span>'
+        +'</div>'+dots+'</div>';
+    }).join("");
+    botciHTML='<div class="c" style="margin-bottom:14px;">'
+      +'<div class="ct">🐛 '+(isEN?"Queen cells trend per hive":"Evoluție botci per stup")+'</div>'
+      +'<div style="margin-top:8px;">'+botciCards+'</div>'
+      +'</div>';
+  }
+
+  // ── Grafice miere pe tip si evolutie ─────────────────────────
+  var byT={};D.honeyHarvests.forEach(function(h){var tp=h.honeyType||"?";byT[tp]=(byT[tp]||0)+(h.actualQty||h.qty||0);});
+  var byTChart=Object.keys(byT).length?'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_by_t")+'</div><canvas id="ch1" height="90"></canvas></div>':"";
+  var evolChart='<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_evol")+'</div><canvas id="ch2" height="90"></canvas></div>';
+
+  // ── Distributie forta colonii — mic, doar daca ≥5 stupi ──────
+  var distHTML="";
+  if(D.hives.length>=5){
+    var tot2=sc.p+sc.m+sc.s||1;
+    var bars=[
+      {n:sc.p,c:"var(--ok)",l:isEN?"Strong":"Puternice"},
+      {n:sc.m,c:"var(--gold)",l:isEN?"Medium":"Medii"},
+      {n:sc.s,c:"var(--danger)",l:isEN?"Weak":"Slabe"}
+    ].map(function(b){
+      var h2=Math.max(6,Math.round((b.n/tot2)*52));
+      return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">'
+        +'<div style="font-size:.68rem;font-weight:800;color:'+b.c+';">'+b.n+'</div>'
+        +'<div style="width:100%;height:'+h2+'px;background:'+b.c+';border-radius:4px 4px 0 0;opacity:.8;"></div>'
+        +'<div style="font-size:.58rem;color:var(--mut);text-align:center;">'+b.l+'</div>'
+        +'</div>';
+    }).join("");
+    distHTML='<div class="c" style="margin-bottom:14px;max-width:260px;">'
+      +'<div class="ct" style="font-size:.8rem;">💪 '+(isEN?"Colony strength":"Forță colonii")+'</div>'
+      +'<div style="display:flex;gap:6px;align-items:flex-end;height:70px;margin:10px 0 4px;">'+bars+'</div>'
+      +'</div>';
+  }
+
+  // ── KPI cards ─────────────────────────────────────────────────
+  var kpiHTML='<div class="g gs" style="margin-bottom:14px;">'
+    +'<div class="c"><div class="cl">'+(isEN?"Total real":"Total real")+'</div><div class="cv">'+tR.toFixed(1)+' kg</div></div>'
+    +'<div class="c"><div class="cl">'+(isEN?"Estimated":"Estimat")+'</div><div class="cv">'+tE.toFixed(1)+' kg</div><div class="cs">'+t("an_eff")+' '+eff+'%</div></div>'
+    +'<div class="c"><div class="cl">'+(isEN?"Avg brood frames":"Rame puiet med.")+'</div><div class="cv">'+avgB+'</div></div>'
+    +'<div class="c"><div class="cl">'+(isEN?"Strong colonies":"Colonii puternice")+'</div><div class="cv">'+sc.p+'</div></div>'
+    +'<div class="c"><div class="cl">'+(isEN?"Inspections w/ queen cells":"Insp. cu botci")+'</div><div class="cv">'+D.inspections.filter(function(i){return i.botci;}).length+'</div></div>'
+    +'<div class="c"><div class="cl">'+(isEN?"Total inspections":"Total inspecții")+'</div><div class="cv">'+D.inspections.length+'</div></div>'
+    +'</div>';
+
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-chart-bar" style="color:var(--gold)"></i> '+t("an_title")+'</h2>'
+    +kpiHTML
+    +prodHTML
+    +seasonHTML
+    +inspHiveHTML
+    +(botciHTML||"")
+    +(byTChart||"")
+    +evolChart
+    +distHTML
+    +'<button class="btn" onclick="exportToPDF()" style="margin-top:4px;">'+t("an_export")+'</button>');
+
   setTimeout(function(){
-    var cO={responsive:true,plugins:{legend:{labels:{color:"#b9b5ae"}}},scales:{x:{ticks:{color:"#b9b5ae"},grid:{color:"rgba(255,255,255,.05)"}},y:{ticks:{color:"#b9b5ae"},grid:{color:"rgba(255,255,255,.05)"}}}};
-    var c1=document.getElementById("ch1");if(c1&&Object.keys(byT).length>0)new Chart(c1.getContext("2d"),{type:"bar",data:{labels:Object.keys(byT),datasets:[{label:"kg",data:Object.values(byT),backgroundColor:"rgba(230,180,34,.7)",borderColor:"#e6b422",borderWidth:2,borderRadius:8}]},options:{...cO,plugins:{legend:{display:false}}}});
+    var cO={responsive:true,plugins:{legend:{labels:{color:"#b9b5ae",font:{size:10}}}},scales:{x:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}},y:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}}}};
+    var c1=document.getElementById("ch1");
+    if(c1&&Object.keys(byT).length>0)new Chart(c1.getContext("2d"),{type:"bar",data:{labels:Object.keys(byT),datasets:[{label:"kg",data:Object.values(byT),backgroundColor:"rgba(230,180,34,.7)",borderColor:"#e6b422",borderWidth:2,borderRadius:6}]},options:{...cO,plugins:{legend:{display:false}}}});
     var sorted=[].concat(D.honeyHarvests).sort(function(a,b){return new Date(a.extractionDate||a.date)-new Date(b.extractionDate||b.date);});
-    var c2=document.getElementById("ch2");if(c2)new Chart(c2.getContext("2d"),{type:"line",data:{labels:sorted.map(function(h){return h.extractionDate||h.date||"";}),datasets:[{label:t("an_real_c"),data:sorted.map(function(h){return h.actualQty||h.qty||0;}),borderColor:"#e6b422",backgroundColor:"rgba(230,180,34,.15)",fill:true,tension:.4},{label:t("an_est_c"),data:sorted.map(function(h){return h.estQty||0;}),borderColor:"rgba(74,158,255,.7)",backgroundColor:"rgba(74,158,255,.05)",fill:true,tension:.4,borderDash:[5,5]}]},options:cO});
-    var c3=document.getElementById("ch3");if(c3)new Chart(c3.getContext("2d"),{type:"doughnut",data:{labels:[t("an_s"),t("an_m"),t("an_w")],datasets:[{data:[sc.p,sc.m,sc.s],backgroundColor:["rgba(111,191,76,.8)","rgba(230,180,34,.8)","rgba(224,124,76,.8)"],borderWidth:2}]},options:{responsive:true,plugins:{legend:{labels:{color:"#b9b5ae"}}}}});
+    var c2=document.getElementById("ch2");
+    if(c2&&sorted.length>0)new Chart(c2.getContext("2d"),{type:"line",data:{labels:sorted.map(function(h){return h.extractionDate||h.date||"";}),datasets:[{label:t("an_real_c"),data:sorted.map(function(h){return h.actualQty||h.qty||0;}),borderColor:"#e6b422",backgroundColor:"rgba(230,180,34,.15)",fill:true,tension:.4},{label:t("an_est_c"),data:sorted.map(function(h){return h.estQty||0;}),borderColor:"rgba(74,158,255,.7)",backgroundColor:"rgba(74,158,255,.05)",fill:true,tension:.4,borderDash:[5,5]}]},options:cO});
   },80);
 }
 
@@ -1523,7 +2183,117 @@ function renderAnalytics(){
 // ═══════════════════════════════════════════
 function renderSettings(){
   var totH=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders-h" style="color:var(--gold)"></i> '+t("se_title")+'</h2>'
+  var th=parseInt(D.settings.inspAlertThreshold)||7;
+  var isEN=D.settings.lang==="en";
+
+  // ── Archive build (unchanged logic) ──────────────────────────
+  var now2=new Date();
+  var allSorted2=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var seenHive2={};var shownIds2={};
+  allSorted2.forEach(function(i){if(i.date&&!seenHive2[i.hiveId]){seenHive2[i.hiveId]=true;shownIds2[i.id]=true;}});
+  var pastInsp2=allSorted2.filter(function(i){return i.date&&!shownIds2[i.id];});
+  var byMonth2={};
+  pastInsp2.forEach(function(i){var m=i.date.slice(0,7);if(!byMonth2[m])byMonth2[m]={};if(!byMonth2[m][i.hiveId])byMonth2[m][i.hiveId]=[];byMonth2[m][i.hiveId].push(i);});
+  var monthKeys2=Object.keys(byMonth2).sort().reverse();
+  var arcInnerHTML=monthKeys2.length===0?'<div class="al ali">'+t("insp_no_arc")+'</div>':monthKeys2.map(function(ym,mi){
+    var arcId2="se_arc_m"+mi;var hivesInMonth2=byMonth2[ym];var hiveKeys2=Object.keys(hivesInMonth2);
+    var total2=0;hiveKeys2.forEach(function(hid){total2+=hivesInMonth2[hid].length;});
+    var hivesHTML2=hiveKeys2.map(function(hid,hi){
+      var hv=D.hives.find(function(h){return h.id===hid;});var hivArcId2=arcId2+"_h"+hi;
+      var insps2=hivesInMonth2[hid].slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
+      var rows2=insps2.map(function(insp){
+        return'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;">'
+          +'<span style="font-size:.82rem;font-weight:700;min-width:95px;">📅 '+insp.date+'</span>'
+          +'<span class="bg '+(insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qSeen?"👑✅":"👑❓")+'</span>'
+          +'<span class="bg gb" style="font-size:.63rem;">🥚 '+(insp.fB||0)+'</span>'
+          +'<span class="bg gg" style="font-size:.63rem;">🍯 '+(insp.fH||0)+'</span>'
+          +'<div style="margin-left:auto;display:flex;gap:4px;">'
+          +'<button class="btn sm be" onclick="inspM(\''+insp.hiveId+'\',\''+insp.id+'\')">✏️</button>'
+          +'<button class="btn sm gh" onclick="exportInspPDF(\''+insp.id+'\')">📄</button>'
+          +'<button class="btn sm gh" onclick="exportInspXLS(\''+insp.id+'\')">📊</button>'
+          +'</div></div>';
+      }).join("");
+      return'<div style="margin:3px 0;"><div onclick="toggleArc(\''+hivArcId2+'\')" style="cursor:pointer;padding:9px 14px;background:rgba(230,180,34,.04);border:1px solid var(--bdr);border-radius:var(--rs);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
+        +'<span style="font-weight:700;font-size:.83rem;">🏠 '+(hv?hv.name:hid)+'</span>'
+        +'<div style="display:flex;gap:6px;align-items:center;"><span class="bg gy" style="font-size:.65rem;">'+insps2.length+' insp.</span><span style="color:var(--mut);font-size:.75rem;">▼</span></div>'
+        +'</div><div id="'+hivArcId2+'" style="display:none;border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--rs) var(--rs);overflow:hidden;">'+rows2+'</div></div>';
+    }).join("");
+    return'<div style="margin-bottom:10px;"><div onclick="toggleArc(\''+arcId2+'\')" style="cursor:pointer;padding:11px 16px;background:rgba(230,180,34,.09);border:1px solid rgba(230,180,34,.28);border-radius:var(--rm);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
+      +'<span style="font-weight:800;font-size:.92rem;">📅 '+monthName(ym)+'</span>'
+      +'<div style="display:flex;gap:7px;align-items:center;"><span class="bg gy" style="font-size:.68rem;">'+hiveKeys2.length+' stupi</span><span class="bg gb" style="font-size:.68rem;">'+total2+' insp.</span><span style="color:var(--gold);font-size:.8rem;">▼</span></div>'
+      +'</div><div id="'+arcId2+'" style="display:none;padding:8px 4px;">'+hivesHTML2+'</div></div>';
+  }).join("");
+
+  // ── Drive status HTML ─────────────────────────────────────────
+  var gConn=D.settings.gConnected;
+  var gEmail=D.settings.gEmail||"";
+  var gLastSync=D.settings.gLastSync;
+  var lastSyncStr=gLastSync?new Date(gLastSync).toLocaleTimeString():"—";
+  var onlineNow=navigator.onLine;
+  var driveStatusHTML=gConn
+    ?'<div class="drv-ok">'
+      +'<div class="drv-pulse"></div>'
+      +'<div style="flex:1;">'
+      +'<div style="font-weight:700;color:var(--ok);">☁️ Drive conectat</div>'
+      +(gEmail?'<div style="font-size:.72rem;color:var(--mut);">'+gEmail+'</div>':"")
+      +'<div id="driveLastSync" style="font-size:.7rem;color:var(--mut);">Ultimă sincronizare: '+lastSyncStr+'</div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:5px;">'
+      +'<button class="btn sm" onclick="GDR.sync();toast(\'Sincronizare…\',\'☁️\');" '+(onlineNow?"":"disabled title='Offline'")+'>⟳ Sync</button>'
+      +'<button class="btn sm gh" onclick="GDR.restore()">⬇️ Restaurează</button>'
+      +'<button class="btn sm bd" onclick="GDR.disconnect()">✕ Deconectare</button>'
+      +'</div></div>'
+    :'<div class="drv-no">'
+      +'<p style="margin:0 0 8px;font-size:.78rem;color:var(--mut);">'+(isEN?"Not connected. Enter your Google Client ID below to enable auto-sync.":"Neconectat. Introduceți Google Client ID pentru a activa sincronizarea automată.")+'</p>'
+      +L(isEN?"Google OAuth Client ID":"Google OAuth Client ID (de la console.cloud.google.com)")
+      +'<input id="gCidInput" placeholder="xxxx.apps.googleusercontent.com" value="'+(D.settings.gClientId||"")+'" oninput="D.settings.gClientId=this.value.trim();save(false);" style="font-size:.75rem;">'
+      +'<div style="font-size:.68rem;color:var(--mut);margin:5px 0 10px;line-height:1.4;">'
+      +'💡 '+(isEN?"Create a project at console.cloud.google.com → APIs → Drive API → OAuth 2.0 Client ID (Web app). Add this page URL as authorized origin.":"Creați proiect la console.cloud.google.com → APIs → Drive API → OAuth 2.0 Client ID (Web). Adăugați URL-ul acestei pagini ca origine autorizată.")
+      +'</div>'
+      +'<button class="btn" onclick="GDR.connect()" '+(onlineNow?"":"disabled title='Offline'")+'>☁️ '+(isEN?"Connect Google Drive":"Conectează Google Drive")+'</button>'
+      +'</div>';
+
+  var autoSyncHTML='<div class="ck" style="margin-top:10px;"><input type="checkbox" id="gAutoSyncTg"'+(D.settings.gAutoSync?" checked":"")
+    +' onchange="D.settings.gAutoSync=this.checked;save(false);"><label for="gAutoSyncTg">☁️ '+(isEN?"Auto-sync to Drive on every save":"Sincronizare automată pe Drive la fiecare salvare")+'</label></div>';
+
+  // ── Per-hive snapshots status ─────────────────────────────────
+  var hiveSnapHTML='';
+  if(D.hives.length>0){
+    var snapRows=D.hives.map(function(h){
+      var snap=null;try{var s=localStorage.getItem("bmp5_hive_"+h.id);if(s)snap=JSON.parse(s);}catch(e){}
+      var savedAt=snap?new Date(snap.savedAt).toLocaleString():"—";
+      var inspCnt=snap?(snap.inspections||[]).length:0;
+      return'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:.76rem;">'
+        +'<span style="font-weight:700;">🏠 '+h.name+'</span>'
+        +'<span style="color:var(--mut);font-size:.7rem;">'+inspCnt+' insp. · '+savedAt+'</span>'
+        +'<button class="btn sm gh" style="font-size:.65rem;" onclick="exportHivePDF(\''+h.id+'\')">📄</button>'
+        +'</div>';
+    }).join("");
+    hiveSnapHTML='<div class="c" style="margin-bottom:14px;"><div class="ct">🏠 '+(isEN?"Auto-save per hive":"Auto-salvare per stup")+'</div>'
+      +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Each hive has its own local snapshot updated on every save. Export individual hive reports below.":"Fiecare stup are propriul snapshot local, actualizat la fiecare salvare. Exportați rapoarte individuale mai jos.")+'</p>'
+      +hiveSnapHTML
+      +'</div>';
+  }
+
+  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders" style="color:var(--gold)"></i> '+t("se_title")+'</h2>'
+
+    // ── Cont & Drive ──
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">👤 '+(isEN?"Account & Cloud Sync":"Cont & Sincronizare Cloud")+'</div>'
+    +'<div style="margin-top:8px;">'
+    +L(isEN?"Your email (used for identification)":"Email-ul tău (identificare)")
+    +'<input type="email" id="userEmailInp" placeholder="exemplu@gmail.com" value="'+(D.settings.userEmail||"")+'" oninput="D.settings.userEmail=this.value.trim();save(false);">'
+    +'</div>'
+    +'<div style="margin:14px 0 6px;font-size:.78rem;font-weight:700;color:var(--gold);">☁️ Google Drive</div>'
+    +driveStatusHTML
+    +autoSyncHTML
+    +'</div>'
+
+    // ── Arhivă inspecții ──
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">📁 '+(isEN?"Inspection Archive":"Arhivă Inspecții")+'</div>'
+    +'<p style="font-size:.8rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"All inspections from previous months, organised by month and hive.":"Toate inspecțiile din lunile anterioare, organizate pe lună și stup.")+'</p>'
+    +arcInnerHTML+'</div>'
+
+    // ── Display ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_display")+'</div>'
     +'<div class="ck" style="margin-top:8px;"><input type="checkbox" id="dkTg"'+(D.settings.dark?" checked":"")
     +' onchange="D.settings.dark=this.checked;applyTheme();save();"><label for="dkTg">'+t("se_dark")+'</label></div>'
@@ -1537,24 +2307,95 @@ function renderSettings(){
     +'<button class="btn sm'+(D.settings.tempUnit==="C"?" ":" gh ")+'" onclick="setTempUnit(\'C\')">'+t("temp_C")+'</button>'
     +'<button class="btn sm'+(D.settings.tempUnit==="F"?" ":" gh ")+'" onclick="setTempUnit(\'F\')">'+t("temp_F")+'</button>'
     +'</div></div>'
+
+    // ── Alerte ──
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">🔔 '+(isEN?"Inspection Alerts":"Alerte Inspecții")+'</div>'
+    +'<p style="font-size:.8rem;color:var(--mut);margin:6px 0 10px;">'+(isEN?"Hives not inspected for more than this many days show a warning (default: 7).":"Stupi neverificați de mai mult decât atâtea zile afișează o avertizare (implicit: 7).")+'</p>'
+    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+    +'<span style="font-size:.82rem;font-weight:700;">'+(isEN?"Days without inspection → alert":"Zile fără inspecție → alertă")+'</span>'
+    +'<input type="number" inputmode="numeric" min="1" max="90" value="'+th+'" style="width:70px;" oninput="D.settings.inspAlertThreshold=parseInt(this.value)||7;save(false);">'
+    +'</div>'
+    +'<div class="ck" style="margin-top:12px;"><input type="checkbox" id="autoDlTg"'+(D.settings.autoDownloadInsp?" checked":"")
+    +' onchange="D.settings.autoDownloadInsp=this.checked;save(false);"><label for="autoDlTg">'+t("se_auto_dl")+'</label></div>'
+    +'</div>'
+
+    // ── Vreme ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_weather")+'</div>'
-    +'<p style="font-size:.82rem;color:var(--mut);margin-bottom:8px;">'+t("se_w_info")+'</p>'
-    +(D.weather?'<div class="al alo">'+t("se_w_ok")+' '+Math.round((Date.now()-D.weather.ts)/60000)+' '+t("se_w_min")+'</div>'
+    +'<p style="font-size:.82rem;color:var(--mut);margin-bottom:8px;">'+t("se_w_info")
+    +(D.weather&&D.weather.manual?" <span class='bg gy' style='font-size:.65rem;'>✍️ manual</span>":"")
+    +'</p>'
+    +(D.weather?'<div class="al alo">'+t("se_w_ok")+' '+Math.round((Date.now()-D.weather.ts)/60000)+' '+t("se_w_min")+(D.weather.manual?" (manual)":"")+'</div>'
     :'<div class="al alw">'+t("se_w_no")+'</div>')
-    +'<button class="btn sm" style="margin-top:9px;" onclick="if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon);else initLoc();">'+t("se_w_upd")+'</button></div>'
+    +'<div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap;">'
+    +'<button class="btn sm" onclick="if(navigator.onLine){if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon);else initLoc();}else{openManualWeather();}">'+(isEN?"Update weather":"Actualizează vreme")+'</button>'
+    +'<button class="btn sm gh" onclick="openManualWeather()">✍️ '+(isEN?"Manual entry":"Introdu manual")+'</button>'
+    +'</div></div>'
+
+    // ── Auto-save per stup ──
+    +hiveSnapHTML
+
+    // ── Backup & Export ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_backup")+'</div>'
-    +'<button class="btn" style="margin-top:9px;display:block;" onclick="exportToExcel()">📊 '+(D.settings.lang==="en"?"Export Excel":"Export Excel")+'</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="exportToPDF()">📄 '+(D.settings.lang==="en"?"Export PDF":"Export PDF")+'</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="expData()">'+t("se_exp")+'</button>'
+    +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Manual export: all hives + all inspections in one file.":"Export manual: toți stupii + toate inspecțiile într-un singur fișier.")+'</p>'
+    +'<button class="btn" style="margin-top:4px;display:block;" onclick="exportToExcel()">📊 Export Excel complet</button>'
+    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="exportToPDF()">📄 Export PDF complet</button>'
+    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="expData()">'+t("se_exp")+' (JSON)</button>'
     +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="impData()">'+t("se_imp")+'</button>'
     +'<button class="btn bd" style="margin-top:8px;display:block;" onclick="rstData()">'+t("se_rst")+'</button></div>'
+
+    // ── Stats ──
     +'<div class="c"><div class="ct">'+t("se_stats")+'</div>'
-    +'<p style="font-size:.83rem;margin-top:6px;">'+t("se_st_h")+' <strong>'+D.hives.length+'</strong> · '+t("se_st_i")+' <strong>'+D.inspections.length+'</strong> · '+t("se_st_hr")+' <strong>'+totH.toFixed(1)+' kg</strong> · '+t("se_st_inv")+' <strong>'+D.inventory.length+' '+t("se_st_a")+'</strong></p></div>');
+    +'<p style="font-size:.83rem;margin-top:6px;">'+t("se_st_h")+' <strong>'+D.hives.length+'</strong> · '+t("se_st_i")+' <strong>'+D.inspections.length+'</strong> · '+t("se_st_hr")+' <strong>'+totH.toFixed(1)+' kg</strong> · '+t("se_st_inv")+' <strong>'+D.inventory.length+' '+t("se_st_a")+'</strong></p>'
+    +'<p style="font-size:.72rem;color:var(--mut);margin-top:8px;">💾 Stocare locală: '+(Math.round(JSON.stringify(D).length/1024))+' KB · Conexiune: '+(navigator.onLine?'<span style="color:var(--ok)">Online</span>':'<span style="color:var(--danger)">Offline</span>')+'</p>'
+    +'</div>');
 }
 window.expData=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:"application/json"}));a.download="beemanager_backup_"+new Date().toISOString().slice(0,10)+".json";a.click();};
 window.impData=function(){var inp=document.createElement("input");inp.type="file";inp.accept=".json";inp.onchange=function(e){var r=new FileReader();r.onload=function(ev){Object.assign(D,JSON.parse(ev.target.result));save();setTimeout(function(){location.reload();},1000);};r.readAsText(e.target.files[0]);};inp.click();};
 window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");location.reload();});};
 
+// Export PDF per hive (individual hive report)
+window.exportHivePDF=function(hiveId){
+  var hive=D.hives.find(function(h){return h.id===hiveId;});
+  if(!hive){toast("Stupul nu a fost găsit","❌");return;}
+  var isEN=D.settings.lang==="en";
+  var insps=D.inspections.filter(function(i){return i.hiveId===hiveId;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var harvests=D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;});
+  var totalReal=harvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  var queens=D.queens?D.queens.filter(function(q){return q.hiveId===hiveId;}):"";
+  var lastInsp=insps[0];
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+hive.name+'</title>'
+    +'<style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:30px;}h1{color:#c8860a;font-size:18px;}h2{color:#555;font-size:13px;margin-top:18px;border-bottom:1px solid #eee;padding-bottom:4px;}table{width:100%;border-collapse:collapse;margin-top:8px;}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;}th{background:#f5f5f5;font-size:11px;}tr:nth-child(even){background:#fafafa;}.label{font-weight:bold;color:#666;font-size:11px;}.val{font-weight:bold;font-size:13px;}.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;margin-right:3px;}</style>'
+    +'</head><body>'
+    +'<h1>🏠 '+hive.name+(hive.loc?" — "+hive.loc:"")+'</h1>'
+    +'<p style="color:#888;font-size:11px;">'+(isEN?"Report generated":"Raport generat")+': '+new Date().toLocaleString()+'</p>'
+    +'<table><tr><th colspan="4">🐝 '+(isEN?"Hive info":"Informații stup")+'</th></tr>'
+    +'<tr><td><span class="label">'+(isEN?"Material":"Material")+'</span><br><span class="val">'+(hive.mat||"—")+'</span></td>'
+    +'<td><span class="label">'+(isEN?"Model":"Model")+'</span><br><span class="val">'+(hive.mod||"—")+'</span></td>'
+    +'<td><span class="label">'+(isEN?"Strength":"Forță")+'</span><br><span class="val">'+(hive.str||"—")+'</span></td>'
+    +'<td><span class="label">Magazie</span><br><span class="val">'+(hive.hasMag?"✅ Da":"❌ Nu")+'</span></td></tr>'
+    +'<tr><td><span class="label">'+(isEN?"Brood frames":"Rame puiet")+'</span><br><span class="val">'+(hive.fB||0)+'</span></td>'
+    +'<td><span class="label">'+(isEN?"Honey frames":"Rame miere")+'</span><br><span class="val">'+(hive.fH||0)+'</span></td>'
+    +'<td colspan="2"><span class="label">'+(isEN?"Total honey harvested":"Total miere recoltată")+'</span><br><span class="val">'+totalReal.toFixed(1)+' kg</span></td></tr></table>'
+    +(insps.length>0?
+      '<h2>📋 '+(isEN?"Inspections ("+insps.length+")":"Inspecții ("+insps.length+")")+'</h2>'
+      +'<table><tr><th>Data</th><th>'+(isEN?"Brood":"Puiet")+'</th><th>'+(isEN?"Honey":"Miere")+'</th><th>Regina</th><th>Botci</th><th>Note</th></tr>'
+      +insps.slice(0,15).map(function(i){
+        return'<tr><td>'+i.date+'</td><td>'+i.fB+'</td><td>'+i.fH+'</td>'
+          +'<td>'+(i.qSeen?"✅":"❓")+'</td>'
+          +'<td>'+(i.botci?"🐛 "+(i.botciN||0):"—")+'</td>'
+          +'<td style="font-size:10px;">'+(i.notes||"")+'</td></tr>';
+      }).join("")
+      +'</table>':"")
+    +(harvests.length>0?
+      '<h2>🍯 '+(isEN?"Honey harvests":"Recolte miere")+'</h2>'
+      +'<table><tr><th>Data</th><th>Tip</th><th>Estimat(kg)</th><th>Real(kg)</th><th>Umid.%</th></tr>'
+      +harvests.map(function(h){return'<tr><td>'+(h.extractionDate||h.date||"")+'</td><td>'+(h.honeyType||"")+'</td><td>'+(h.estQty||0)+'</td><td>'+(h.actualQty||h.qty||0)+'</td><td>'+(h.moisture||"")+'</td></tr>';}).join("")
+      +'</table>':"")
+    +'</body></html>';
+  var w=window.open("","_blank");if(!w)return;
+  w.document.write(html);w.document.close();
+  setTimeout(function(){w.print();},500);
+};
 
 // ═══════════════════════════════════════════
 // CALCULATOR APICOL
@@ -1764,15 +2605,161 @@ function exportToPDF(){
   html2pdf().set(opt).from(pg).save().then(function(){toast(isEN?"PDF exported!":"PDF exportat!","📄");});
 }
 // ═══════════════════════════════════════════
+// GOOGLE DRIVE SYNC MODULE
+// ═══════════════════════════════════════════
+var GDR={
+  _token:null,
+  _expiry:0,
+  _fileId:null,
+  _syncing:false,
+  _tokenClient:null,
+
+  isConnected:function(){return!!(D.settings.gConnected&&this._token&&Date.now()<this._expiry);},
+  clientId:function(){return(D.settings.gClientId||"").trim();},
+
+  // Initialize GIS token client (called lazily)
+  _initClient:function(){
+    if(this._tokenClient)return true;
+    if(typeof google==="undefined"||!google.accounts||!google.accounts.oauth2){return false;}
+    var self=this;
+    this._tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:self.clientId(),
+      scope:"https://www.googleapis.com/auth/drive.appdata",
+      callback:function(resp){
+        if(resp.error){toast("Google Drive: "+resp.error,"❌");return;}
+        self._token=resp.access_token;
+        self._expiry=Date.now()+(resp.expires_in||3600)*1000;
+        D.settings.gConnected=true;
+        D.settings.gLastSync=0;
+        save(false);
+        toast("✅ Google Drive conectat!","☁️");
+        if(curP==="settings")renderSettings();
+        self.sync();
+      }
+    });
+    return true;
+  },
+
+  connect:function(){
+    if(!this.clientId()){toast("Introduceți Client ID Google mai întâi","❌");return;}
+    if(!this._initClient()){toast("Google API nu s-a încărcat (verificați conexiunea)","❌");return;}
+    this._tokenClient.requestAccessToken({prompt:"consent"});
+  },
+
+  disconnect:function(){
+    if(this._token&&typeof google!=="undefined"&&google.accounts)google.accounts.oauth2.revoke(this._token,function(){});
+    this._token=null;this._fileId=null;this._tokenClient=null;
+    D.settings.gConnected=false;D.settings.gLastSync=0;
+    save(false);
+    if(curP==="settings")renderSettings();
+    toast("Deconectat de la Google Drive","📴");
+  },
+
+  // Refresh token silently (no prompt)
+  _refresh:function(cb){
+    var self=this;
+    if(!this._initClient()){if(cb)cb(false);return;}
+    this._tokenClient.callback=function(resp){
+      if(resp.error){if(cb)cb(false);return;}
+      self._token=resp.access_token;
+      self._expiry=Date.now()+(resp.expires_in||3600)*1000;
+      if(cb)cb(true);
+    };
+    this._tokenClient.requestAccessToken({prompt:""});
+  },
+
+  // Find or create the app data file on Drive
+  _findFile:async function(){
+    var r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27beemanager_data.json%27&fields=files(id)",
+      {headers:{Authorization:"Bearer "+this._token}});
+    var d=await r.json();
+    return(d.files&&d.files.length)?d.files[0].id:null;
+  },
+
+  _doSync:async function(){
+    var content=JSON.stringify(D);
+    var fid=this._fileId||await this._findFile();
+    if(fid){
+      await fetch("https://www.googleapis.com/upload/drive/v3/files/"+fid+"?uploadType=media",
+        {method:"PATCH",headers:{Authorization:"Bearer "+this._token,"Content-Type":"application/json"},body:content});
+      this._fileId=fid;
+    }else{
+      var boundary="bmp_bnd_"+Date.now();
+      var body="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"
+        +JSON.stringify({name:"beemanager_data.json",parents:["appDataFolder"]})
+        +"\r\n--"+boundary+"\r\nContent-Type: application/json\r\n\r\n"
+        +content+"\r\n--"+boundary+"--";
+      var r2=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
+        {method:"POST",headers:{Authorization:"Bearer "+this._token,"Content-Type":"multipart/related; boundary="+boundary},body:body});
+      var d2=await r2.json();this._fileId=d2.id;
+    }
+    D.settings.gLastSync=Date.now();localStorage.setItem("bmp5",JSON.stringify(D));
+    var el=document.getElementById("driveLastSync");
+    if(el)el.textContent="Sincronizat: acum câteva secunde";
+  },
+
+  sync:async function(){
+    if(this._syncing)return;
+    if(!navigator.onLine){return;}
+    // Refresh token if expired
+    if(!this._token||Date.now()>=this._expiry-60000){
+      var self=this;
+      if(D.settings.gConnected){this._refresh(function(ok){if(ok)self.sync();});} 
+      return;
+    }
+    this._syncing=true;
+    try{await this._doSync();}catch(e){console.warn("Drive sync error:",e);}
+    this._syncing=false;
+  },
+
+  loadFromDrive:async function(){
+    if(!this._token)return null;
+    try{
+      var fid=this._fileId||await this._findFile();
+      if(!fid)return null;this._fileId=fid;
+      var r=await fetch("https://www.googleapis.com/drive/v3/files/"+fid+"?alt=media",
+        {headers:{Authorization:"Bearer "+this._token}});
+      return await r.json();
+    }catch(e){return null;}
+  },
+
+  // Restore from Drive (merge with local, Drive wins)
+  restore:async function(){
+    if(!this.isConnected()){toast("Conectați mai întâi Drive-ul","❌");return;}
+    toast("Se încarcă din Drive…","☁️");
+    var remote=await this.loadFromDrive();
+    if(!remote){toast("Nu s-au găsit date pe Drive","❌");return;}
+    Object.assign(D,remote);
+    save(false);
+    location.reload();
+  }
+};
+
+// ═══════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════
 function init(){
   load();
+  updateOfflineBar();
+  // Init sidebar: collapsed by default on mobile, remember preference
+  try{var stored=localStorage.getItem("sbColl");
+    sbColl=(stored==="1")||(stored===null&&window.innerWidth<=650);}catch(e){sbColl=window.innerWidth<=650;}
+  applySBState();
   buildNav();
   go("dashboard");
-  document.getElementById("bgr").addEventListener("click",openSB);
+  document.getElementById("bgr").addEventListener("click",function(){toggleSB();});
   document.getElementById("ov").addEventListener("click",closeSB);
-  window.addEventListener("resize",function(){if(window.innerWidth>650)closeSB();});
+  window.addEventListener("resize",function(){if(window.innerWidth>650&&!sbColl)applySBState();});
+  // Swipe gesture: swipe right from left edge → expand; swipe left → collapse
+  var _tx=0,_ty=0;
+  document.addEventListener("touchstart",function(e){_tx=e.touches[0].clientX;_ty=e.touches[0].clientY;},{passive:true});
+  document.addEventListener("touchend",function(e){
+    var dx=e.changedTouches[0].clientX-_tx;
+    var dy=e.changedTouches[0].clientY-_ty;
+    if(Math.abs(dy)>Math.abs(dx)*1.5)return; // vertical scroll, ignore
+    if(_tx<40&&dx>55&&sbColl){toggleSB();} // swipe right from edge → open
+    else if(dx<-55&&!sbColl){toggleSB();} // swipe left → close
+  },{passive:true});
 }
 
 init();
