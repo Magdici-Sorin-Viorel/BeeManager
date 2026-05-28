@@ -585,7 +585,24 @@ ro:{
   calc_already_foraging:"🐝 ALBINELE SUNT DEJA LA CULES!",calc_already_laying:"🥚 Regina DEPUNE OUĂ deja!",
   calc_queen_active:"👑 REGINĂ ACTIVĂ",calc_days_left:"zile rămase",calc_days_to_lay:"zile până la depunere",
   calc_progress:"Progres până la cules:",calc_cycle:"Ciclu regină (botcă → depunere) complet: 26 zile",
-  calc_mating:"💞 ÎMPERECHERE",calc_laying_start:"🥚 DEBUT DEPUNERE",calc_stage_obs:"Stadiu observat:"
+  calc_mating:"💞 ÎMPERECHERE",calc_laying_start:"🥚 DEBUT DEPUNERE",calc_stage_obs:"Stadiu observat:",
+  nav_financiar:"Financiar",
+  fin_title:"Financiar — Venituri & Cheltuieli",
+  fin_new_income:"+ Adaugă venit",fin_new_expense:"+ Adaugă cheltuială",
+  fin_income:"💰 Venit",fin_expense:"💸 Cheltuială",
+  fin_profit:"🟢 Profit",fin_loss:"🔴 Pierdere",
+  fin_amount:"💵 Sumă (RON)",fin_category:"📂 Categorie",fin_date:"📅 Data",
+  fin_hive:"🏠 Stup (opțional)",fin_qty:"📦 Cantitate (kg)",fin_price_kg:"💵 Preț / kg",
+  fin_notes:"📝 Note",fin_no_data:"Nicio înregistrare financiară.",
+  fin_del_c:"Șterge înregistrarea?",fin_saved:"Salvat! ✅",
+  fin_tab_all:"Toate",fin_tab_income:"Venituri",fin_tab_expense:"Cheltuieli",
+  fin_total_income:"Total venituri",fin_total_expense:"Total cheltuieli",
+  fin_net:"Profit net",fin_cost_per_kg:"Cost / kg miere",
+  fin_income_cats:["Vânzare miere","Vânzare ceară","Vânzare propolis","Vânzare roi / nuclee","Vânzare mătci","Polenizare (serviciu)","Altul"],
+  fin_expense_cats:["Tratamente / medicamente","Hrănire (sirop, turte)","Echipament apicol","Transport / pastorală","Ambalaje (borcane, capace)","Ceri și foițe","Rame și cutii","Costum și protecție","Taxe și autorizații","Alte cheltuieli"],
+  fin_filter_year:"📅 An",fin_new_t_i:"💰 Adaugă venit",fin_new_t_e:"💸 Adaugă cheltuială",
+  fin_edit_t:"✏️ Editează",fin_auto_honey:"🍯 Auto din recoltă",
+  fin_dash_profit:"Profit / Pierdere",fin_dash_this_year:"anul acesta"
 },
 
 en:{
@@ -767,7 +784,24 @@ en:{
   calc_already_foraging:"🐝 BEES ARE ALREADY FORAGING!",calc_already_laying:"🥚 Queen IS ALREADY LAYING EGGS!",
   calc_queen_active:"👑 ACTIVE QUEEN",calc_days_left:"days remaining",calc_days_to_lay:"days to laying",
   calc_progress:"Progress to foraging:",calc_cycle:"Queen cycle (cell → laying) complete: 26 days",
-  calc_mating:"💞 MATING",calc_laying_start:"🥚 LAYING STARTS",calc_stage_obs:"Stage observed:"
+  calc_mating:"💞 MATING",calc_laying_start:"🥚 LAYING STARTS",calc_stage_obs:"Stage observed:",
+  nav_financiar:"Financials",
+  fin_title:"Financials — Income & Expenses",
+  fin_new_income:"+ Add Income",fin_new_expense:"+ Add Expense",
+  fin_income:"💰 Income",fin_expense:"💸 Expense",
+  fin_profit:"🟢 Profit",fin_loss:"🔴 Loss",
+  fin_amount:"💵 Amount (RON)",fin_category:"📂 Category",fin_date:"📅 Date",
+  fin_hive:"🏠 Hive (optional)",fin_qty:"📦 Quantity (kg)",fin_price_kg:"💵 Price / kg",
+  fin_notes:"📝 Notes",fin_no_data:"No financial records.",
+  fin_del_c:"Delete record?",fin_saved:"Saved! ✅",
+  fin_tab_all:"All",fin_tab_income:"Income",fin_tab_expense:"Expenses",
+  fin_total_income:"Total income",fin_total_expense:"Total expenses",
+  fin_net:"Net profit",fin_cost_per_kg:"Cost / kg honey",
+  fin_income_cats:["Honey sales","Beeswax sales","Propolis sales","Swarm / nucleus sales","Queen sales","Pollination service","Other"],
+  fin_expense_cats:["Treatments / medications","Feeding (syrup, candy)","Beekeeping equipment","Transport / migratory","Packaging (jars, lids)","Wax & foundations","Frames & boxes","Suit & protection","Taxes & licenses","Other expenses"],
+  fin_filter_year:"📅 Year",fin_new_t_i:"💰 Add Income",fin_new_t_e:"💸 Add Expense",
+  fin_edit_t:"✏️ Edit",fin_auto_honey:"🍯 Auto from harvest",
+  fin_dash_profit:"Profit / Loss",fin_dash_this_year:"this year"
 }
 };
 
@@ -791,7 +825,7 @@ function disName(lbl){return (lbl||"").replace(/^[^A-Za-zÀ-ÿ]*/,"").trim();}
 // ═══════════════════════════════════════════
 // DATA MODEL
 // ═══════════════════════════════════════════
-let D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],pastorage:[],userLoc:null,weather:null,settings:{dark:true,lang:"ro",tempUnit:"C"}};
+let D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],pastorage:[],finances:[],userLoc:null,weather:null,settings:{dark:true,lang:"ro",tempUnit:"C"}};
 
 const PLANTS=[
   {id:"sal",sm:5,sd:1,em:5,ed:25,nt:[15,28]},
@@ -840,6 +874,7 @@ function load(){
   if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=2;
   if(D.settings.autoDownloadInsp===undefined)D.settings.autoDownloadInsp=false;
   if(!D.pastorage)D.pastorage=[];
+  if(!D.finances)D.finances=[];
   applyTheme();
   initLoc();
 }
@@ -1057,6 +1092,7 @@ var PGS=[
   {id:"calendar",lk:"nav_calendar",i:"fa-calendar-days"},
   {id:"analytics",lk:"nav_analytics",i:"fa-chart-bar"},
   {id:"calculator",lk:"nav_calculator",i:"fa-calculator"},
+  {id:"financiar",lk:"nav_financiar",i:"fa-coins"},
   {id:"settings",lk:"nav_settings",i:"fa-sliders"}
 ];
 
@@ -1148,7 +1184,7 @@ function go(p){
   render();
 }
 
-function render(){({dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,treatments:renderTreatments,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,calculator:renderCalculator,settings:renderSettings,pastorare:renderPastorage}[curP]||renderDashboard)();}
+function render(){({dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,treatments:renderTreatments,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,calculator:renderCalculator,financiar:renderFinanciar,settings:renderSettings,pastorare:renderPastorage}[curP]||renderDashboard)();}
 function setP(h){document.getElementById("pg").innerHTML=h;}
 function openSB(){document.getElementById("sb").classList.add("open");document.getElementById("ov").classList.add("show");}
 function closeSB(){document.getElementById("sb").classList.remove("open");document.getElementById("ov").classList.remove("show");}
@@ -1194,6 +1230,11 @@ function renderDashboard(){
   var strong=D.hives.filter(function(h){return h.str==="puternic";}).length;
   var med=D.hives.filter(function(h){return h.str==="mediu";}).length;
   var slb=D.hives.filter(function(h){return h.str==="slab";}).length;
+  var curYr=new Date().getFullYear();
+  var finYr=(D.finances||[]).filter(function(f){return(f.date||"").startsWith(String(curYr));});
+  var finInc=finYr.filter(function(f){return f.type==="income";}).reduce(function(s,f){return s+f.amount;},0);
+  var finExp=finYr.filter(function(f){return f.type==="expense";}).reduce(function(s,f){return s+f.amount;},0);
+  var finNet=finInc-finExp;
 
   // Flow card
   var culesH="";
@@ -1246,6 +1287,7 @@ function renderDashboard(){
   }
 
   var lastHiveName=last?D.hives.find(function(h){return h.id===last.hiveId;})?.name||"":"";
+  var finCardH='<div class="c" style="cursor:pointer;" onclick="go(\'financiar\')"><div class="cl">'+t("fin_dash_profit")+' <span style="font-size:.6rem;font-weight:400;color:var(--mut);">'+t("fin_dash_this_year")+'</span></div><div class="cv" style="color:'+(finNet>=0?"var(--ok)":"var(--danger)")+';">'+(finNet>=0?"+":"")+finNet.toFixed(0)+' RON</div><div class="cs">'+(finInc>0||finExp>0?'↑ '+finInc.toFixed(0)+' · ↓ '+finExp.toFixed(0):(D.settings.lang==="en"?"No data yet":"Fără date"))+'</div></div>';
 
   setP('<h1 style="margin-bottom:16px;font-size:1.35rem;"><i class="fas fa-tachometer-alt" style="color:var(--gold)"></i> '+t("dash_title")+'</h1>'
     +stockA
@@ -1256,6 +1298,7 @@ function renderDashboard(){
     +'<div class="c"><div class="cl">'+t("dash_treatments")+'</div><div class="cv">'+pend+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_last_insp")+'</div><div class="cv" style="font-size:1rem">'+(last?last.date:"—")+'</div><div class="cs">'+lastHiveName+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_low_stock")+'</div><div class="cv" style="color:'+(low.length?"var(--danger)":"var(--ok)")+'">'+low.length+'</div></div>'
+    +finCardH
     +'</div>'+wCard+pastHTML);
 }
 
@@ -2756,6 +2799,237 @@ window.calcRender=function(){
   }
 };
 
+// ═══════════════════════════════════════════
+// FINANCIAR — Venituri & Cheltuieli
+// ═══════════════════════════════════════════
+var _finTab="all";
+var _finYear=new Date().getFullYear();
+
+function renderFinanciar(){
+  var isEN=D.settings.lang==="en";
+  var fins=D.finances||[];
+  var allYears=[new Date().getFullYear()];
+  fins.forEach(function(f){var y=parseInt((f.date||"").slice(0,4));if(y&&allYears.indexOf(y)===-1)allYears.push(y);});
+  allYears.sort(function(a,b){return b-a;});
+  if(allYears.indexOf(_finYear)===-1)_finYear=allYears[0];
+
+  var yearFins=fins.filter(function(f){return(f.date||"").startsWith(String(_finYear));});
+  var tabFins=_finTab==="income"?yearFins.filter(function(f){return f.type==="income";}):_finTab==="expense"?yearFins.filter(function(f){return f.type==="expense";}):yearFins;
+  tabFins=[].concat(tabFins).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+
+  var totInc=yearFins.filter(function(f){return f.type==="income";}).reduce(function(s,f){return s+f.amount;},0);
+  var totExp=yearFins.filter(function(f){return f.type==="expense";}).reduce(function(s,f){return s+f.amount;},0);
+  var netPL=totInc-totExp;
+  var totHoney=fins.filter(function(f){return(f.date||"").startsWith(String(_finYear))&&f.type==="expense";}).reduce(function(s,f){return s+f.amount;},0);
+  var totKg=D.honeyHarvests.filter(function(h){return(h.extractionDate||h.date||"").startsWith(String(_finYear));}).reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
+  var cpkg=totKg>0?(totExp/totKg).toFixed(2):"—";
+
+  // KPI cards
+  var kpiH='<div class="g gs" style="margin-bottom:14px;">'
+    +'<div class="c"><div class="cl">'+t("fin_total_income")+'</div><div class="cv" style="color:var(--ok)">'+totInc.toFixed(0)+'</div><div class="cs">RON</div></div>'
+    +'<div class="c"><div class="cl">'+t("fin_total_expense")+'</div><div class="cv" style="color:var(--danger)">'+totExp.toFixed(0)+'</div><div class="cs">RON</div></div>'
+    +'<div class="c"><div class="cl">'+t("fin_net")+'</div><div class="cv" style="color:'+(netPL>=0?"var(--ok)":"var(--danger)");
+  kpiH+=(netPL>=0?"+":"")+netPL.toFixed(0)+'</div><div class="cs">RON</div></div>'
+    +'<div class="c"><div class="cl">'+t("fin_cost_per_kg")+'</div><div class="cv" style="font-size:1.1rem">'+cpkg+'</div><div class="cs">'+(cpkg==="—"?"":"RON / kg")+'</div></div>'
+    +'</div>';
+
+  // Monthly income/expense bar chart data
+  var months=Array.from({length:12},function(_,i){return i;});
+  var incByM=months.map(function(m){return yearFins.filter(function(f){return f.type==="income"&&parseInt((f.date||"").slice(5,7))-1===m;}).reduce(function(s,f){return s+f.amount;},0);});
+  var expByM=months.map(function(m){return yearFins.filter(function(f){return f.type==="expense"&&parseInt((f.date||"").slice(5,7))-1===m;}).reduce(function(s,f){return s+f.amount;},0);});
+  var hasMonthlyData=incByM.some(function(v){return v>0;})||expByM.some(function(v){return v>0;});
+  var chartH=hasMonthlyData?'<div class="c" style="margin-bottom:14px;"><div class="ct">📊 '+(isEN?"Monthly overview — "+_finYear:"Evoluție lunară — "+_finYear)+'</div><canvas id="finChart" height="80"></canvas></div>':"";
+
+  // Category breakdown
+  var incCats={},expCats={};
+  yearFins.forEach(function(f){
+    if(f.type==="income"){incCats[f.category]=(incCats[f.category]||0)+f.amount;}
+    else{expCats[f.category]=(expCats[f.category]||0)+f.amount;}
+  });
+  var incCatRows=Object.keys(incCats).sort(function(a,b){return incCats[b]-incCats[a];}).map(function(c){
+    var pct=totInc>0?((incCats[c]/totInc)*100).toFixed(0):0;
+    return'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);">'
+      +'<span style="font-size:.78rem;flex:1;color:var(--txt);">'+c+'</span>'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--ok);">'+incCats[c].toFixed(0)+' RON</span>'
+      +'<div style="width:50px;background:rgba(111,191,76,.15);border-radius:20px;height:4px;overflow:hidden;">'
+      +'<div style="width:'+pct+'%;height:100%;background:var(--ok);border-radius:20px;"></div></div>'
+      +'</div>';
+  }).join("");
+  var expCatRows=Object.keys(expCats).sort(function(a,b){return expCats[b]-expCats[a];}).map(function(c){
+    var pct=totExp>0?((expCats[c]/totExp)*100).toFixed(0):0;
+    return'<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);">'
+      +'<span style="font-size:.78rem;flex:1;color:var(--txt);">'+c+'</span>'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--danger);">'+expCats[c].toFixed(0)+' RON</span>'
+      +'<div style="width:50px;background:rgba(224,124,76,.15);border-radius:20px;height:4px;overflow:hidden;">'
+      +'<div style="width:'+pct+'%;height:100%;background:var(--danger);border-radius:20px;"></div></div>'
+      +'</div>';
+  }).join("");
+  var catH=(Object.keys(incCats).length||Object.keys(expCats).length)?
+    '<div class="g" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">'
+    +(Object.keys(incCats).length?'<div class="c"><div class="ct" style="color:var(--ok)">💰 '+(isEN?"By income category":"Pe categorii venituri")+'</div>'+incCatRows+'</div>':"")
+    +(Object.keys(expCats).length?'<div class="c"><div class="ct" style="color:var(--danger)">💸 '+(isEN?"By expense category":"Pe categorii cheltuieli")+'</div>'+expCatRows+'</div>':"")
+    +'</div>':"";
+
+  // Year selector
+  var yearSel='<select onchange="_finYear=parseInt(this.value);renderFinanciar();" style="font-size:.8rem;padding:5px 8px;border-radius:var(--rs);background:var(--sur);border:1px solid var(--bdr);color:var(--txt);margin-left:8px;">'
+    +allYears.map(function(y){return'<option value="'+y+'"'+(y===_finYear?" selected":"")+'>'+y+'</option>';}).join("")+'</select>';
+
+  // Tabs
+  var tabs='<div style="display:flex;gap:6px;margin:12px 0 10px;flex-wrap:wrap;">'
+    +[["all",t("fin_tab_all")],["income",t("fin_tab_income")],["expense",t("fin_tab_expense")]].map(function(tb){
+      return'<button class="btn sm'+(tb[0]===_finTab?"":" gh")+'" onclick="_finTab=\''+tb[0]+'\';renderFinanciar();">'+tb[1]+'</button>';
+    }).join("")+'</div>';
+
+  // Transaction list
+  var rows=tabFins.map(function(f){
+    var hv=D.hives.find(function(h){return h.id===f.hiveId;});
+    var isInc=f.type==="income";
+    return'<div class="c" style="padding:10px 13px;margin-bottom:7px;">'
+      +'<div style="display:flex;align-items:flex-start;gap:9px;">'
+      +'<div style="width:34px;height:34px;border-radius:50%;background:'+(isInc?"rgba(111,191,76,.15)":"rgba(224,124,76,.15)")+';display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">'+(isInc?"💰":"💸")+'</div>'
+      +'<div style="flex:1;min-width:0;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">'
+      +'<div style="font-size:.86rem;font-weight:700;color:'+(isInc?"var(--ok)":"var(--danger)");
+      var rowH=(isInc?"+":"-")+f.amount.toFixed(2)+' RON</div>'
+      +'<span class="bg '+(isInc?"gg":"gr")+'" style="font-size:.65rem;">'+f.category+'</span>'
+      +'</div>'
+      +'<div style="font-size:.74rem;color:var(--mut);margin-top:2px;">📅 '+f.date+(hv?'  ·  🏠 '+hv.name:"")+(f.qty?'  ·  📦 '+f.qty+' kg @'+f.pricePerUnit+' RON/kg':"")+'</div>'
+      +(f.notes?'<div style="font-size:.72rem;color:var(--mut);font-style:italic;margin-top:2px;">'+f.notes+'</div>':"")
+      +'</div>'
+      +'<div style="display:flex;gap:4px;flex-shrink:0;">'
+      +'<button class="btn sm be" onclick="finM(\''+f.id+'\')">✏️</button>'
+      +'<button class="btn sm bd" onclick="delFin(\''+f.id+'\')">🗑️</button>'
+      +'</div></div></div>';
+  }).join("");
+
+  setP('<h2 style="margin-bottom:4px;font-size:1.2rem;"><i class="fas fa-coins" style="color:var(--gold)"></i> '+t("fin_title")+'</h2>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap;">'
+    +t("fin_filter_year")+yearSel
+    +'<button class="btn sm" style="margin-left:auto;" onclick="finM(\'\',-1)">'+t("fin_new_income")+'</button>'
+    +'<button class="btn sm gh" onclick="finM(\'\',-2)">'+t("fin_new_expense")+'</button>'
+    +'<button class="btn sm be" onclick="finAutoHoney()">'+t("fin_auto_honey")+'</button>'
+    +'</div>'
+    +kpiH+chartH+catH
+    +tabs
+    +(tabFins.length?rows:'<div class="al ali">'+t("fin_no_data")+'</div>'));
+
+  if(hasMonthlyData){
+    setTimeout(function(){
+      var c=document.getElementById("finChart");if(!c)return;
+      var mLbls=isEN?["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]:["Ian","Feb","Mar","Apr","Mai","Iun","Iul","Aug","Sep","Oct","Nov","Dec"];
+      new Chart(c.getContext("2d"),{
+        type:"bar",
+        data:{labels:mLbls,datasets:[
+          {label:isEN?"Income":"Venituri",data:incByM,backgroundColor:"rgba(111,191,76,.65)",borderColor:"#6fbf4c",borderWidth:1.5,borderRadius:4},
+          {label:isEN?"Expenses":"Cheltuieli",data:expByM,backgroundColor:"rgba(224,124,76,.65)",borderColor:"#e07c4c",borderWidth:1.5,borderRadius:4}
+        ]},
+        options:{responsive:true,plugins:{legend:{labels:{color:"#b9b5ae",font:{size:10}}}},
+          scales:{x:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.04)"}},
+                  y:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}}}}
+      });
+    },80);
+  }
+}
+
+window.delFin=function(id){
+  showConfirm(t("fin_del_c"),function(){
+    D.finances=D.finances.filter(function(f){return f.id!==id;});
+    save();renderFinanciar();
+  });
+};
+
+function finM(id,preset){
+  // preset: -1 = force income, -2 = force expense, undefined = free choice
+  var ex=id?D.finances.find(function(f){return f.id===id;}):null;
+  var isInc=ex?ex.type==="income":preset!==-2;
+  var isEN=D.settings.lang==="en";
+  var incCats=t("fin_income_cats"),expCats=t("fin_expense_cats");
+  var iTitle=ex?t("fin_edit_t"):(isInc?t("fin_new_t_i"):t("fin_new_t_e"));
+
+  // Type selector (hidden if preset from button)
+  var typeRow=(ex||preset===-1||preset===-2)?""
+    :'<div style="display:flex;gap:8px;margin-bottom:10px;">'
+    +'<button id="finTpInc" class="btn sm'+(isInc?"":" gh")+'" type="button" onclick="finToggleType(true)">💰 '+(isEN?"Income":"Venit")+'</button>'
+    +'<button id="finTpExp" class="btn sm'+(isInc?" gh":"")+'" type="button" onclick="finToggleType(false)">💸 '+(isEN?"Expense":"Cheltuială")+'</button>'
+    +'</div>';
+
+  var catOpts=function(type){
+    var cats=type==="income"?incCats:expCats;
+    return cats.map(function(c){return'<option'+(xv(ex,"category","")=== c?" selected":"")+'>'+c+'</option>';}).join("");
+  };
+
+  openM('<div class="mt">'+iTitle+'</div>'
+    +'<input type="hidden" id="finType" value="'+(isInc?"income":"expense")+'">'
+    +typeRow
+    +'<div class="r2">'
+    +'<div>'+L(t("fin_date"))+'<input type="date" id="finDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
+    +'<div>'+L(t("fin_amount"))+'<input type="number" inputmode="decimal" step="0.01" id="finAmt" value="'+(xv(ex,"amount",""))+'" placeholder="0.00" oninput="finCalcAmt()"></div>'
+    +'</div>'
+    +L(t("fin_category"))+'<select id="finCat">'+catOpts(isInc?"income":"expense")+'</select>'
+    +'<div id="finHoneyExtra">'+(isInc?'<div class="r2" style="margin-top:6px;"><div>'+L(t("fin_qty"))+'<input type="number" inputmode="decimal" step="0.1" id="finQty" value="'+(xv(ex,"qty",""))+'" placeholder="0.0" oninput="finCalcAmt()"></div><div>'+L(t("fin_price_kg"))+'<input type="number" inputmode="decimal" step="0.01" id="finPpk" value="'+(xv(ex,"pricePerUnit",""))+'" placeholder="0.00" oninput="finCalcAmt()"></div></div>':"")+'</div>'
+    +L(t("fin_hive"))+'<select id="finHv"><option value="">—</option>'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    +L(t("fin_notes"))+'<textarea id="finNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
+    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveFin(\''+(id||"")+'\')" >'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
+}
+
+window.finToggleType=function(isInc){
+  var incCats=t("fin_income_cats"),expCats=t("fin_expense_cats");
+  document.getElementById("finType").value=isInc?"income":"expense";
+  var catSel=document.getElementById("finCat");
+  if(catSel){catSel.innerHTML=(isInc?incCats:expCats).map(function(c){return'<option>'+c+'</option>';}).join("");}
+  var incBtn=document.getElementById("finTpInc"),expBtn=document.getElementById("finTpExp");
+  if(incBtn){incBtn.className="btn sm"+(isInc?"":" gh");}
+  if(expBtn){expBtn.className="btn sm"+(isInc?" gh":"");}
+  var extra=document.getElementById("finHoneyExtra");
+  if(extra){extra.innerHTML=isInc?('<div class="r2" style="margin-top:6px;"><div>'+L(t("fin_qty"))+'<input type="number" inputmode="decimal" step="0.1" id="finQty" placeholder="0.0" oninput="finCalcAmt()"></div><div>'+L(t("fin_price_kg"))+'<input type="number" inputmode="decimal" step="0.01" id="finPpk" placeholder="0.00" oninput="finCalcAmt()"></div></div>'):"";} 
+};
+
+window.finCalcAmt=function(){
+  var qty=parseFloat(($q("finQty")||{}).value)||0;
+  var ppk=parseFloat(($q("finPpk")||{}).value)||0;
+  var amtEl=$q("finAmt");
+  if(qty>0&&ppk>0&&amtEl&&!amtEl._userEdited){amtEl.value=(qty*ppk).toFixed(2);}
+};
+
+window.saveFin=function(id){
+  var type=($q("finType")||{}).value||"expense";
+  var amt=parseFloat(($q("finAmt")||{}).value)||0;
+  if(!amt){toast("⚠️ "+(D.settings.lang==="en"?"Enter an amount!":"Introduceți suma!"));return;}
+  var qty=parseFloat(($q("finQty")||{}).value)||null;
+  var ppk=parseFloat(($q("finPpk")||{}).value)||null;
+  var o={id:id||uid(),type:type,
+    date:($q("finDt")||{}).value||new Date().toISOString().slice(0,10),
+    amount:amt,
+    category:($q("finCat")||{}).value||"",
+    hiveId:($q("finHv")||{}).value||null,
+    qty:qty,pricePerUnit:ppk,
+    notes:($q("finNt")||{}).value||""};
+  if(id){var ex=D.finances.find(function(f){return f.id===id;});if(ex)Object.assign(ex,o);}
+  else{D.finances.push(o);}
+  save();closeM();renderFinanciar();toast(t("fin_saved"),"💰");
+};
+
+// Auto-import honey harvest as income entries
+window.finAutoHoney=function(){
+  var isEN=D.settings.lang==="en";
+  var ppkStr=prompt(isEN?"Enter honey price per kg (RON):":"Introduceți prețul pe kg de miere (RON):");
+  if(!ppkStr)return;
+  var ppk=parseFloat(ppkStr.replace(",","."));
+  if(!ppk||ppk<=0){toast("⚠️ "+(isEN?"Invalid price!":"Preț invalid!"));return;}
+  var added=0;
+  D.honeyHarvests.forEach(function(h){
+    var qty=h.actualQty||h.qty||0;
+    if(!qty)return;
+    // Check not already imported (by source ref)
+    if(D.finances.some(function(f){return f._srcHarvestId===h.id;}))return;
+    var cat=isEN?"Honey sales":"Vânzare miere";
+    D.finances.push({id:uid(),type:"income",date:h.extractionDate||h.date||new Date().toISOString().slice(0,10),amount:parseFloat((qty*ppk).toFixed(2)),category:cat,hiveId:h.hiveId||null,qty:qty,pricePerUnit:ppk,notes:(h.honeyType||h.type||""),_srcHarvestId:h.id});
+    added++;
+  });
+  if(added){save();renderFinanciar();toast(added+(isEN?" harvest entries imported as income!":" intrări importate ca venituri!"),"💰");}
+  else toast(isEN?"All harvests already imported!":"Toate recoltele sunt deja importate!","ℹ️");
+};
+
 function renderCalculator(){
   var isEN=D.settings.lang==="en";
   var today=new Date().toISOString().slice(0,10);
@@ -2837,6 +3111,17 @@ function exportToExcel(){
       rows6.push([hv?hv.name:"?",p.location||"",p.target||"",p.startDate||"",p.endDate||"",p.notes||""]);
     });
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows6),isEN?"Migratory":"Pastorare");
+  }
+
+  // Sheet: Finances
+  if(D.finances&&D.finances.length){
+    var hdrF=isEN?["Type","Date","Category","Amount (RON)","Hive","Qty (kg)","Price/kg","Notes"]:["Tip","Data","Categorie","Suma (RON)","Stup","Cant. (kg)","Pret/kg","Note"];
+    var rowsF=[hdrF];
+    D.finances.forEach(function(f){
+      var hv=D.hives.find(function(h){return h.id===f.hiveId;});
+      rowsF.push([isEN?(f.type==="income"?"Income":"Expense"):(f.type==="income"?"Venit":"Cheltuiala"),f.date||"",f.category||"",f.amount||0,hv?hv.name:"",f.qty||"",f.pricePerUnit||"",f.notes||""]);
+    });
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rowsF),isEN?"Financials":"Financiar");
   }
 
   var fname="BeeManager_"+new Date().toISOString().slice(0,10)+".xlsx";
