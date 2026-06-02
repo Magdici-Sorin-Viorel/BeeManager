@@ -16,7 +16,7 @@ window.addEventListener('error', function(e) {
   }
 }, true);
 </script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
 :root{--bg:#0f0e0e;--sur:#1a1919;--card:#222121;--bdr:#2c2b2b;--txt:#f5f3ef;--mut:#b9b5ae;--gold:#e6b422;--gold2:#f5c542;--danger:#e07c4c;--ok:#6fbf4c;--info:#4a9eff;--sh:0 8px 24px rgba(0,0,0,.45);--rl:20px;--rm:14px;--rs:10px;--sw:256px;}
@@ -226,51 +226,38 @@ input[type=checkbox],input[type=radio]{width:auto;margin-right:5px;}
   /* Carduri: padding mai mic */
   .c{padding:13px;}
 
-  /* Modal bottom sheet — nu se suprapune cu bottom nav */
+  /* Modal bottom sheet — acoperă tot ecranul disponibil */
   .mb{
     padding:0;
+    padding-bottom:60px; /* spatiu bottom nav */
     align-items:flex-end;
     background:rgba(0,0,0,.72);
-    padding-bottom:60px; /* spatiu pentru bottom nav */
   }
   .mb-b{
-    max-height:calc(88vh - 60px);  /* nu depaseste zona vizibila */
+    max-height:calc(100vh - 60px);
     max-width:100%;width:100%;
     border-radius:22px 22px 0 0;
     border-top:3px solid var(--gold);
-    padding:18px 14px 0;         /* 0 jos — .br sticky are propriul padding */
-    overflow-y:auto !important;  /* scroll explicit */
+    padding:16px 14px 32px;
+    overflow-y:scroll !important;
     -webkit-overflow-scrolling:touch;
     overscroll-behavior:contain;
-    display:flex;
-    flex-direction:column;
   }
-  /* Butoane Save/Anulare — sticky la baza modalului, mereu vizibile */
-  .mb-b .br{
-    position:sticky;
-    bottom:0;
-    background:var(--sur);
-    padding:14px 0 20px;
-    margin-top:10px;
-    border-top:1px solid var(--bdr);
-    flex-shrink:0;
-    z-index:5;
-  }
-  /* Titlu modal */
+  /* Titlu modal — scrollează cu pagina, nu sticky */
   .mt{
     font-size:1.05rem;
     margin-bottom:14px;
     padding-bottom:10px;
     border-bottom:1px solid var(--bdr);
-    position:sticky;top:0;
-    background:var(--sur);
-    z-index:5;
-    margin-top:-18px;
-    padding-top:18px;
+    position:static !important;
   }
-
-  /* Toast deasupra bottom nav */
-  .toast{left:10px;right:10px;bottom:70px;text-align:center;font-size:.82rem;}
+  /* Save/Anulează — la finalul formularului, nu sticky */
+  .mb-b .br{
+    position:static !important;
+    padding:20px 0 12px;
+    margin-top:16px;
+    border-top:1px solid var(--bdr);
+  }
 
   /* Offline bar */
   body.is-offline .main{padding-top:86px !important;}
@@ -477,12 +464,37 @@ ro:{
   tr_title:"Tratamente",tr_new:"+ Înregistrează Tratament",tr_new_t:"💊 Tratament",tr_edit_t:"✏️ Editează Tratament",
   tr_product:"🧪 Produs",tr_hive:"🎯 Aplicat la",tr_all_h:"Toți stupii (general)",
   tr_date:"📅 Data",tr_dose:"⚖️ Doză",tr_dose_ph:"ex: 2g, 1 bandă",
-  tr_eff:"📈 Eficacitate observată",tr_notes:"📝 Observații",
+  tr_notes:"📝 Observații",
   tr_done:"Efectuat",tr_planned:"Planificat",tr_all_d:"Toți stupii",
   tr_no:"Niciun tratament înregistrat.",tr_del_c:"Ștergi tratamentul?",
   tr_saved:"Tratament salvat!",tr_upd:"Tratament actualizat!",
-  tr_products:["Acid oxalic (sublimare)","Acid oxalic (picurare)","Acid formic (benzi)","Apivar (amitraz)","Apiguard (timol)","Nosevit","Terramicină","Alt produs"],
-  tr_eff_opts:["ridicată (>90%)","medie (60-90%)","scăzută (<60%)"],
+  tr_products:[
+    "🧪 Acid oxalic — vaporizare/sublimare",
+    "💧 Acid oxalic — picurare (soluție zahăr 3%)",
+    "🍬 Acid oxalic — stropire rame",
+    "📋 Acid formic — benzi Maqs",
+    "📋 Acid formic — benzi Formidol",
+    "📋 Acid formic — FORAPI (benzi)",
+    "📋 Amitraz — Apivar (benzi)",
+    "📋 Amitraz — Apitraz (benzi)",
+    "📋 Amitraz — Klartan (benzi)",
+    "📋 Amitraz — Varromed (benzi)",
+    "📋 Timol — Apiguard (gel)",
+    "📋 Timol — ApiLife VAR (benzi)",
+    "📋 Timol — Thymovar (benzi)",
+    "📋 Flumetrin — Bayvarol (benzi)",
+    "📋 Coumaphos — Perizin (soluție)",
+    "💊 Oxitetraciclină — locă americană",
+    "💊 Nosevit (Nosemoză)",
+    "💊 Nozevit Plus",
+    "🌿 Mite-Away Quick Strips (MAQS)",
+    "🌿 Hop Guard (benzi hop)",
+    "🌿 Timol preparat propriu",
+    "📦 Alt produs"
+  ],
+  tr_eff_opts:["ridicată (>90%)","moderată (60–90%)","scăzută (<60%)"],
+  tr_post_t:"🔬 Inspecție post-tratament",
+  tr_post_none:"Nicio inspecție post-tratament înregistrată.",
   inv_title:"Inventar",inv_new:"+ Adaugă Material",inv_new_t:"📦 Adaugă Material",inv_edit_t:"✏️ Editează Material",
   inv_sel:"🔧 Selectează din listă",inv_sel_ph:"— Selectează —",
   inv_man:"✏️ sau scrie manual",inv_man_ph:"Denumire material…",
@@ -558,6 +570,14 @@ ro:{
   insp_archive:"📁 Arhivă inspecții lunile anterioare",
   insp_no_cur:"Nicio inspecție în luna curentă.",
   insp_no_arc:"Nicio inspecție arhivată.",
+  insp_post_tr_t:"🔬 Evaluare post-tratament",
+  insp_post_tr_chk:"Această inspecție evaluează eficacitatea unui tratament",
+  insp_post_tr_prod:"💊 Tratamentul evaluat",
+  insp_post_tr_date:"📅 Data tratamentului aplicat",
+  insp_post_tr_eff:"📈 Eficacitate observată",
+  insp_post_tr_hint:"Evaluarea se face ideal la 3 săptămâni după tratament (după ieșirea puietului căpăcit)",
+  insp_post_tr_varroa:"🕷️ Cădere acarieni post-tratament (24h)",
+  insp_post_tr_notes:"📝 Observații eficacitate",
   se_insp_th:"🔔 Runde de inspecție permise înainte de alertă stup",
   se_insp_th_h:"Dacă un stup lipsește din atâtea runde consecutive, apare notificare (implicit: 2)",
   se_auto_dl:"⬇️ Descarcă automat PDF + Excel după salvarea unei inspecții",
@@ -752,12 +772,37 @@ en:{
   tr_title:"Treatments",tr_new:"+ Log Treatment",tr_new_t:"💊 Treatment",tr_edit_t:"✏️ Edit Treatment",
   tr_product:"🧪 Product",tr_hive:"🎯 Applied to",tr_all_h:"All hives (general)",
   tr_date:"📅 Date",tr_dose:"⚖️ Dose",tr_dose_ph:"e.g. 2g, 1 strip",
-  tr_eff:"📈 Observed efficacy",tr_notes:"📝 Notes",
+  tr_notes:"📝 Notes",
   tr_done:"Completed",tr_planned:"Planned",tr_all_d:"All hives",
   tr_no:"No treatments recorded.",tr_del_c:"Delete treatment?",
   tr_saved:"Treatment saved!",tr_upd:"Treatment updated!",
-  tr_products:["Oxalic Acid (vaporization)","Oxalic Acid (drizzle/trickle)","Formic Acid (strips)","Apivar (amitraz)","Apiguard (thymol)","Nosevit","Oxytetracycline","Hop Guard","Other product"],
+  tr_products:[
+    "🧪 Oxalic Acid — vaporization/sublimation",
+    "💧 Oxalic Acid — drizzle/trickle (3% sugar solution)",
+    "🍬 Oxalic Acid — frame spray",
+    "📋 Formic Acid — Maqs strips",
+    "📋 Formic Acid — Formidol strips",
+    "📋 Formic Acid — FORAPI strips",
+    "📋 Amitraz — Apivar (strips)",
+    "📋 Amitraz — Apitraz (strips)",
+    "📋 Amitraz — Klartan (strips)",
+    "📋 Amitraz — Varromed (strips)",
+    "📋 Thymol — Apiguard (gel)",
+    "📋 Thymol — ApiLife VAR (strips)",
+    "📋 Thymol — Thymovar (strips)",
+    "📋 Flumethrin — Bayvarol (strips)",
+    "📋 Coumaphos — Perizin (solution)",
+    "💊 Oxytetracycline — AFB",
+    "💊 Nosevit (Nosema)",
+    "💊 Nozevit Plus",
+    "🌿 Mite-Away Quick Strips (MAQS)",
+    "🌿 Hop Guard (hop strips)",
+    "🌿 Thymol (homemade preparation)",
+    "📦 Other product"
+  ],
   tr_eff_opts:["high (>90%)","moderate (60–90%)","low (<60%)"],
+  tr_post_t:"🔬 Post-treatment Inspection",
+  tr_post_none:"No post-treatment inspection recorded.",
   inv_title:"Inventory",inv_new:"+ Add Item",inv_new_t:"📦 Add Item",inv_edit_t:"✏️ Edit Item",
   inv_sel:"🔧 Select from list",inv_sel_ph:"— Select —",
   inv_man:"✏️ or type manually",inv_man_ph:"Item name…",
@@ -833,6 +878,14 @@ en:{
   insp_archive:"📁 Inspection archive — previous months",
   insp_no_cur:"No inspections this month.",
   insp_no_arc:"No archived inspections.",
+  insp_post_tr_t:"🔬 Post-treatment Evaluation",
+  insp_post_tr_chk:"This inspection evaluates a treatment's efficacy",
+  insp_post_tr_prod:"💊 Treatment evaluated",
+  insp_post_tr_date:"📅 Date treatment was applied",
+  insp_post_tr_eff:"📈 Observed efficacy",
+  insp_post_tr_hint:"Evaluation is ideally done ~3 weeks after treatment (after capped brood has emerged)",
+  insp_post_tr_varroa:"🕷️ Post-treatment mite drop (24h)",
+  insp_post_tr_notes:"📝 Efficacy observations",
   se_insp_th:"🔔 Inspection rounds allowed before hive alert",
   se_insp_th_h:"If a hive is missing from this many consecutive rounds, a notification appears (default: 2)",
   se_auto_dl:"⬇️ Auto-download PDF + Excel after saving an inspection",
@@ -1240,7 +1293,7 @@ var PGS=[
   {id:"queens",lk:"nav_queens",i:"fa-crown"},
   {id:"inspections",lk:"nav_inspections",i:"fa-book-open"},
   {id:"honey",lk:"nav_honey",i:"fa-droplet"},
-  {id:"hranire",lk:"nav_hranire",i:"fa-bowl-food"},
+  {id:"hranire",lk:"nav_hranire",i:"fa-bowl-rice"},
   {id:"treatments",lk:"nav_treatments",i:"fa-syringe"},
   {id:"varroa",lk:"nav_varroa",i:"fa-bug"},
   {id:"pastorare",lk:"nav_pastorare",i:"fa-truck"},
@@ -1333,7 +1386,7 @@ function go(p){
   buildNav();
   var pg=PGS.find(function(x){return x.id===p;});
   var tbt=document.getElementById("tbt");
-  if(tbt)tbt.textContent=pg?t(pg.lk):p;
+  if(tbt){tbt.innerHTML=pg?'<i class="fas '+pg.i+'" style="margin-right:7px;opacity:.85;"></i>'+t(pg.lk):p;}
   // Update topbar weather mini-widget
   var twi=document.getElementById("tbWIcon");
   var twt=document.getElementById("tbWTemp");
@@ -1357,6 +1410,16 @@ function openM(html){
   bg.innerHTML='<div class="mb-b">'+html+'</div>';
   document.body.appendChild(bg);
   bg.addEventListener("click",function(e){if(e.target===bg)closeM();});
+
+  // ── ScrollIntoView la focus pe orice câmp ──────────────────
+  bg.addEventListener("focusin",function(e){
+    var el=e.target;
+    if(!el||!["INPUT","SELECT","TEXTAREA"].includes(el.tagName))return;
+    setTimeout(function(){
+      el.scrollIntoView({behavior:"smooth",block:"center"});
+    },320);
+  });
+
   // FIX: Auto-focus first input in modal for better UX
   setTimeout(function(){
     var first=bg.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="date"]),select');
@@ -1713,6 +1776,7 @@ function inspCardHTML(i,showHiveName){
     +'<div style="font-size:.78rem;">'+t("insp_brood")+': <b>'+(i.fB||0)+'</b> · '+t("insp_honey")+': <b>'+(i.fH||0)+'</b></div>'
     +(i.botci?'<div class="al alw" style="padding:4px 8px;margin:4px 0;font-size:.75rem;">🐛 '+i.botciN+' · '+(i.botciS||"")+(i.botciF?" — "+i.botciF:"")+'</div>':"")
     +'<div style="font-size:.78rem;">🦠 '+((i.diseases||[]).join(", ")||"—")+'</div>'
+    +(i.postTr&&i.postTrEff?'<div style="font-size:.73rem;margin-top:3px;"><span class="bg gb" style="font-size:.65rem;">🔬 '+t("insp_post_tr_t")+'</span> <span class="bg '+(i.postTrEff&&i.postTrEff.indexOf("90")>=0?"gg":i.postTrEff&&i.postTrEff.indexOf("60")>=0?"gy":"gr")+'" style="font-size:.65rem;">📈 '+i.postTrEff+'</span>'+(i.postTrVarroa!==null&&i.postTrVarroa!==undefined?' <span class="bg" style="font-size:.63rem;background:rgba(255,255,255,.08);">🕷️ '+i.postTrVarroa+'/24h</span>':"")+'</div>':"")
     +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+i.notes+'</div>':"")
     +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️</button>'
     +'<button class="btn sm gh" onclick="exportInspPDF(\''+i.id+'\')">📄 PDF</button>'
@@ -1989,6 +2053,24 @@ function inspM(hiveId,editId){
     +dis.map(function(d){return'<div class="ck"><input type="checkbox" id="'+d[0]+'"'+(disArr.some(function(x){return disName(x)===disName(d[1]);})?" checked":"")+'>  <label for="'+d[0]+'">'+d[1]+'</label></div>';}).join("")
     +'</div>'
     +'<input id="iDN" value="'+(xv(ex,"diseaseN",""))+'" placeholder="'+t("insp_dis_ph")+'">'
+    +'<div class="dv"><div class="stt">'+t("insp_post_tr_t")+'</div></div>'
+    +'<div class="ck" style="margin-bottom:8px;"><input type="checkbox" id="iPostTr"'+(xv(ex,"postTr",false)?" checked":"")+' onchange="togglePostTrSec(this.checked)"> <label for="iPostTr">'+t("insp_post_tr_chk")+'</label></div>'
+    +'<div id="postTrSec" style="display:'+(xv(ex,"postTr",false)?"block":"none")+';background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.2);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;">'
+    +'<div style="font-size:.72rem;color:var(--info);margin-bottom:8px;">💡 '+t("insp_post_tr_hint")+'</div>'
+    +L(t("insp_post_tr_prod"))
+    +'<select id="iPostTrProd">'
+    +'<option value="">—</option>'
+    +(D.treatments||[]).filter(function(tr){return !hiveId||!tr.hiveId||tr.hiveId===hiveId||tr.hiveId===(ex?ex.hiveId:null);}).slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).map(function(tr){return'<option value="'+tr.id+'"'+(xv(ex,"postTrId","")=== tr.id?" selected":"")+'>💊 '+tr.product+' ('+tr.date+')</option>';}).join("")
+    +'</select>'
+    +'<div class="r2">'
+    +'<div>'+L(t("insp_post_tr_eff"))+'<select id="iPostTrEff">'
+    +'<option value="">—</option>'
+    +t("tr_eff_opts").map(function(e){return'<option'+(xv(ex,"postTrEff","")=== e?" selected":"")+'>'+e+'</option>';}).join("")
+    +'</select></div>'
+    +'<div>'+L(t("insp_post_tr_varroa"))+'<input type="number" inputmode="numeric" id="iPostTrVarroa" value="'+(xv(ex,"postTrVarroa",""))+'" placeholder="0" min="0"></div>'
+    +'</div>'
+    +L(t("insp_post_tr_notes"))+'<textarea id="iPostTrNotes" rows="2">'+xv(ex,"postTrNotes","")+'</textarea>'
+    +'</div>'
     +'<div class="dv"></div>'+L(t("insp_notes"))+'<textarea id="iNt" rows="3">'+(xv(ex,"notes",""))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveInsp(\''+(editId||"")+'\',\''+(effHid||"")+'\')">'+t("insp_save")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
@@ -2023,6 +2105,11 @@ function buildMagRadios(mag, ex, hive){
     +' onchange="onMagRadio(\'add\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lAdd+'</label>'
     +'</div></div>';
 }
+
+window.togglePostTrSec=function(show){
+  var el=document.getElementById("postTrSec");
+  if(el)el.style.display=show?"block":"none";
+};
 
 window.onMagRadio=function(val){
   var el=document.getElementById("magSec");if(!el)return;
@@ -2096,7 +2183,12 @@ window.saveInsp=function(editId,hiveId){
     hasMag:!!document.getElementById("iMgT"),
     magT:parseInt(($q("iMgT")||{}).value)||0,magFull:parseInt(($q("iMgFl")||{}).value)||0,
     magCap:parseInt(($q("iMgCp")||{}).value)||0,magNew:parseInt(($q("iMgNw")||{}).value)||0,magNewB:parseInt(($q("iMgNwB")||{}).value)||0,
-    diseases:dis,diseaseN:($q("iDN")||{}).value||"",notes:($q("iNt")||{}).value||""
+    diseases:dis,diseaseN:($q("iDN")||{}).value||"",notes:($q("iNt")||{}).value||"",
+    postTr:!!($q("iPostTr")||{}).checked,
+    postTrId:($q("iPostTrProd")||{}).value||null,
+    postTrEff:($q("iPostTrEff")||{}).value||"",
+    postTrVarroa:($q("iPostTrVarroa")||{}).value?parseInt(($q("iPostTrVarroa")||{}).value):null,
+    postTrNotes:($q("iPostTrNotes")||{}).value||""
   };
   if(editId){var ei=D.inspections.find(function(i){return i.id===editId;});if(ei)Object.assign(ei,o);}
   else{D.inspections.push(o);}
@@ -2207,11 +2299,27 @@ function honeyM(id){
     +'<div class="dv"><div class="stt">'+t("hn_est_t")+'</div></div>'
     +'<div class="est"><div style="font-size:.76rem;color:var(--mut);margin-bottom:8px;">'+t("hn_est_h")+'</div>'
     +'<div id="fgL">'
-    +'<div class="er"><input type="number" inputmode="numeric" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+Object.keys(FW).map(function(k){return'<option value="'+k+'">'+((fwl[k])||k)+'</option>';}).join("")+'</select><span class="esb">≈ 0 kg</span></div>'
-    +'<div class="er"><input type="number" inputmode="numeric" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+Object.keys(FW).map(function(k,i){return'<option value="'+k+'"'+(i===1?" selected":"")+'>'+((fwl[k])||k)+'</option>';}).join("")+'</select><span class="esb">≈ 0 kg</span></div>'
+    +(function(){
+      var fwl=t("fw_labels")||{};
+      var fwKeys=Object.keys(FW);
+      // If editing and frames were saved, reload them; otherwise show 2 empty rows
+      var savedFrames=ex&&ex.frames&&ex.frames.length?ex.frames:null;
+      if(savedFrames){
+        return savedFrames.map(function(fr){
+          var selOpts=fwKeys.map(function(k){return'<option value="'+k+'"'+(fr.typ===k?" selected":"")+'>'+((fwl[k])||k)+'</option>';}).join("");
+          var sub=(fr.cnt||0)*(FW[fr.typ]||2);
+          return'<div class="er"><input type="number" inputmode="numeric" class="fgC" placeholder="nr" value="'+(fr.cnt||0)+'" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+selOpts+'</select><span class="esb">≈ '+sub.toFixed(1)+' kg</span></div>';
+        }).join("");
+      } else {
+        var d0=fwKeys.map(function(k){return'<option value="'+k+'">'+((fwl[k])||k)+'</option>';}).join("");
+        var d1=fwKeys.map(function(k,i){return'<option value="'+k+'"'+(i===1?" selected":"")+'>'+((fwl[k])||k)+'</option>';}).join("");
+        return'<div class="er"><input type="number" inputmode="numeric" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+d0+'</select><span class="esb">≈ 0 kg</span></div>'
+          +'<div class="er"><input type="number" inputmode="numeric" class="fgC" placeholder="nr" value="0" min="0" oninput="recE()"><select class="fgT" onchange="recE()" style="margin:0;">'+d1+'</select><span class="esb">≈ 0 kg</span></div>';
+      }
+    })()
     +'</div>'
     +'<button class="btn sm gh" type="button" onclick="addFR()" style="margin-top:5px;">'+t("hn_add_fr")+'</button>'
-    +'<div class="etot" id="eT">'+t("hn_est_pfx")+' <strong>0.0 kg</strong></div>'
+    +'<div class="etot" id="eT">'+t("hn_est_pfx")+' <strong>'+(ex&&ex.estQty?ex.estQty.toFixed(1):"0.0")+' kg</strong></div>'
     +'<div style="font-size:.66rem;color:var(--mut);margin-top:3px;">'+t("hn_fw_note")+'</div></div>'
     +'<div class="dv"><div class="stt">'+t("hn_real_t")+'</div></div>'
     +'<div class="r2"><div>'+L(t("hn_actual"))+'<input id="hAq" type="number" inputmode="numeric" step="0.1" value="'+(xv(ex,"actualQty",xv(ex,"qty","")))+'" placeholder="'+t("hn_actual_ph")+'"><span class="hint">'+t("hn_actual_h")+'</span></div>'
@@ -2219,6 +2327,7 @@ function honeyM(id){
     +L(t("hn_qual"))+'<select id="hQl">'+quals.map(function(o){return'<option'+(xv(ex,"quality","")=== o?" selected":"")+'>'+o+'</option>';}).join("")+'</select>'
     +L(t("hn_notes"))+'<textarea id="hNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveHn(\''+(id||"")+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
+  if(ex)setTimeout(recE,60);
 }
 window.recE=function(){
   var tot=0;
@@ -2238,8 +2347,15 @@ window.addFR=function(){
   var list=document.getElementById("fgL");if(list)list.appendChild(d);
 };
 window.saveHn=function(id){
+  // Collect frames data before recE() clears anything
+  var frames=[];
+  document.querySelectorAll("#MB .er").forEach(function(row){
+    var cnt=parseInt((row.querySelector(".fgC")||{}).value)||0;
+    var typ=(row.querySelector(".fgT")||{}).value||"";
+    if(typ)frames.push({cnt:cnt,typ:typ});
+  });
   var est=recE(),aqRaw=($q("hAq")||{}).value,aq=aqRaw?parseFloat(aqRaw):null;
-  var o={id:id||uid(),hiveId:($q("hHv")||{}).value||null,honeyType:($q("hTp")||{}).value,type:($q("hTp")||{}).value,extractionDate:($q("hDt")||{}).value,estQty:parseFloat(est.toFixed(2)),actualQty:aq,qty:aq||est,humidity:parseFloat(($q("hHm")||{}).value)||null,quality:($q("hQl")||{}).value,notes:($q("hNt")||{}).value};
+  var o={id:id||uid(),hiveId:($q("hHv")||{}).value||null,honeyType:($q("hTp")||{}).value,type:($q("hTp")||{}).value,extractionDate:($q("hDt")||{}).value,estQty:parseFloat(est.toFixed(2)),actualQty:aq,qty:aq||est,humidity:parseFloat(($q("hHm")||{}).value)||null,quality:($q("hQl")||{}).value,notes:($q("hNt")||{}).value,frames:frames};
   if(id){var ex=D.honeyHarvests.find(function(h){return h.id===id;});if(ex)Object.assign(ex,o);}else{D.honeyHarvests.push(o);}
   save();closeM();renderHoney();toast(id?t("hn_upd"):t("hn_saved"),"🍯");
 };
@@ -2251,9 +2367,15 @@ function renderTreatments(){
   var sorted=[].concat(D.treatments).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var cards=sorted.map(function(tr){
     var hv=D.hives.find(function(h){return h.id===tr.hiveId;});var past=new Date(tr.date)<=new Date();
+    // Count post-treatment inspections linked to this treatment
+    var postInsp=(D.inspections||[]).filter(function(i){return i.postTrId===tr.id;});
+    var postBadge=postInsp.length?'<span class="bg gg" style="font-size:.63rem;">🔬 '+postInsp.length+(D.settings.lang==="en"?" eval.":" eval.")+'</span>':'';
+    var lastEff=postInsp.length?(postInsp.sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0].postTrEff||""):"";
+    var effBadge=lastEff?'<span class="bg gb" style="font-size:.63rem;">📈 '+lastEff+'</span>':"";
     return'<div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><h3 style="font-size:.92rem;">💊 '+tr.product+'</h3><span class="bg '+(past?"gy":"gb")+'">'+(past?t("tr_done"):t("tr_planned"))+'</span></div>'
       +'<div style="font-size:.8rem;">🏠 '+(hv?hv.name:t("tr_all_d"))+' · 📅 '+tr.date+'</div>'
-      +'<div style="font-size:.8rem;">⚖️ '+(tr.dosage||"—")+' · 📈 '+(tr.efficacy||"—")+'</div>'
+      +'<div style="font-size:.8rem;margin-top:2px;">⚖️ '+(tr.dosage||"—")+'</div>'
+      +(postInsp.length||effBadge?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">'+postBadge+effBadge+'</div>':"")
       +(tr.notes?'<div style="font-size:.74rem;color:var(--mut);margin-top:3px;font-style:italic">'+tr.notes+'</div>':"")
       +'<div class="br"><button class="btn sm be" onclick="treatM(\''+tr.id+'\')">✏️</button><button class="btn sm bd" onclick="delTr(\''+tr.id+'\')">🗑️</button></div>'
       +'</div>';
@@ -2265,18 +2387,20 @@ function renderTreatments(){
 window.delTr=function(id){showConfirm(t("tr_del_c"),function(){D.treatments=D.treatments.filter(function(t2){return t2.id!==id;});save();renderTreatments();});};
 function treatM(id){
   var ex=id?D.treatments.find(function(t2){return t2.id===id;}):null;
-  var prods=t("tr_products"),effs=t("tr_eff_opts");
+  var prods=t("tr_products");
   openM('<div class="mt">'+(ex?t("tr_edit_t"):t("tr_new_t"))+'</div>'
     +L(t("tr_product"))+'<select id="tPr">'+prods.map(function(p){return'<option'+(xv(ex,"product","")=== p?" selected":"")+'>'+p+'</option>';}).join("")+'</select>'
     +L(t("tr_hive"))+'<select id="tHv"><option value="">'+t("tr_all_h")+'</option>'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
     +'<div class="r2"><div>'+L(t("tr_date"))+'<input type="date" id="tDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
     +'<div>'+L(t("tr_dose"))+'<input id="tDs" value="'+(xv(ex,"dosage",""))+'" placeholder="'+t("tr_dose_ph")+'"></div></div>'
-    +L(t("tr_eff"))+'<select id="tEf">'+effs.map(function(e){return'<option'+(xv(ex,"efficacy","")=== e?" selected":"")+'>'+e+'</option>';}).join("")+'</select>'
+    +'<div class="al ali" style="font-size:.76rem;padding:6px 10px;margin:8px 0;">'
+    +'💡 '+(D.settings.lang==="en"?"Efficacy is recorded during a post-treatment inspection (~3 weeks later). Use the Inspections module.":"Eficacitatea se înregistrează la inspecția post-tratament (~3 săptămâni mai târziu). Folosește modulul Inspecții.")
+    +'</div>'
     +L(t("tr_notes"))+'<textarea id="tNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveTr(\''+(id||'')+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
 window.saveTr=function(id){
-  var o={id:id||uid(),product:($q("tPr")||{}).value,hiveId:($q("tHv")||{}).value||null,date:($q("tDt")||{}).value,dosage:($q("tDs")||{}).value,efficacy:($q("tEf")||{}).value,notes:($q("tNt")||{}).value};
+  var o={id:id||uid(),product:($q("tPr")||{}).value,hiveId:($q("tHv")||{}).value||null,date:($q("tDt")||{}).value,dosage:($q("tDs")||{}).value,notes:($q("tNt")||{}).value};
   if(id){var ex=D.treatments.find(function(t2){return t2.id===id;});if(ex)Object.assign(ex,o);}else{D.treatments.push(o);}
   save();closeM();renderTreatments();toast(id?t("tr_upd"):t("tr_saved"),"💊");
 };
@@ -3107,7 +3231,7 @@ function renderHranire(){
   var isEN=D.settings.lang==="en";
   var feedings=D.feedings||[];
   if(!D.hives.length){
-    setP('<h2 style="margin-bottom:12px;"><i class="fas fa-bowl-food" style="color:var(--gold)"></i> '+t("hr_title")+'</h2><div class="al alw">'+t("hr_no_hives")+'</div>');
+    setP('<h2 style="margin-bottom:12px;"><i class="fas fa-bowl-rice" style="color:var(--gold)"></i> '+t("hr_title")+'</h2><div class="al alw">'+t("hr_no_hives")+'</div>');
     return;
   }
 
@@ -3209,7 +3333,7 @@ function renderHranire(){
   var selStyle='font-size:.8rem;padding:5px 8px;border-radius:var(--rs);background:var(--sur);border:1px solid var(--bdr);color:var(--txt);';
 
   setP('<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">'
-    +'<h2 style="margin:0;font-size:1.2rem;"><i class="fas fa-bowl-food" style="color:var(--gold)"></i> '+t("hr_title")+'</h2>'
+    +'<h2 style="margin:0;font-size:1.2rem;"><i class="fas fa-bowl-rice" style="color:var(--gold)"></i> '+t("hr_title")+'</h2>'
     +'<button class="btn sm" onclick="hrM(\'\')">'+t("hr_new")+'</button>'
     +'</div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">'
