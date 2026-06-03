@@ -550,8 +550,10 @@ ro:{
     "Hrănitoare":["Hrănitoare cadru","Hrănitoare exterioară","Sticle hrănire 1L"],
     "Protecție":["Mască apicol","Mănuși apicole","Combinezon","Fumigător mic","Fumigător mare","Combustibil fumigător"],
     "Tratamente":["Acid oxalic lichid (Api-Bioxal)","Acid oxalic cristale","Acid oxalic — Oxuvar 5,7%","Acid oxalic — OxyBee benzi","Acid formic 65% lichid","Acid formic — MAQS benzi","Acid formic — Formidol","Acid formic — FORAPI benzi","Acid formic — Varromed","Amitraz — Apivar benzi","Amitraz — Apitraz benzi","Amitraz — Klartan benzi","Amitraz — Biovar benzi","Flumetrin — Bayvarol benzi","Flumetrin — Polyvar Yellow","Coumaphos — Perizin soluție","Timol — Apiguard gel","Timol — ApiLife VAR","Timol — Thymovar","Timol cristale preparat propriu","Nozevit (Nosemoză)","Nozevit Plus","Fumagilină sirop","Oxitetraciclină","Tylosin","Hop Guard benzi","Mentol cristale","Oxibee"],
-    "Unelte":["Daltă apicol","Perie albine","Cuțit decapsulat plat","Cuțit decapsulat dințat","Extractor miere","Refractometru","Sită miere","Bidon 30kg"]
+    "Unelte":["Daltă apicol","Perie albine","Cuțit decapsulat plat","Cuțit decapsulat dințat","Extractor miere","Refractometru","Sită miere","Bidon 30kg"],
+    "Ambalaje":["Borcan 0.4kg","Borcan 0.72kg","Borcan 0.94kg","Borcan 1kg","Borcan hexagonal 0.5kg","Borcan hexagonal 0.75kg","Borcan hexagonal 1kg","Flacon sport 500ml","Eprubetă design 50ml","Eprubetă design 100ml","Borcan vintage 250g","Borcan vintage 500g","Borcan plastic 1kg","Bidon 5kg","Bidon 10kg"]
   },
+  inv_pkg_honey_kg:"🍯 Miere per unitate (kg)",inv_pkg_label:"Ambalaj",inv_pkg_hint:"Completează doar pentru ambalaje cu miere",inv_sell_title:"🍯 Vânzare Miere",inv_sell_add_line:"+ Adaugă tip ambalaj",inv_sell_jar:"Ambalaj",inv_sell_pcs:"Buc",inv_sell_price:"Preț/buc (RON)",inv_sell_total:"Total",inv_sell_stock_warn:"⚠️ Stoc insuficient!",inv_sell_no_pkg:"Nu există ambalaje cu miere în inventar. Adaugă din Inventar → categorie Ambalaje.",inv_sell_saved:"Vânzare salvată! Stoc actualizat.",
   cal_title:"Calendar Apicol",cal_active:"🌼 Cules activ curent",cal_upcoming:"📅 Culesuri preconizate",
   cal_no_active:"Niciun cules principal activ acum.",cal_no_up:"Nu sunt culesuri majore preconizate.",
   cal_between:"⏳ Perioadă între culesuri",cal_days_until:"zile până la",
@@ -898,8 +900,10 @@ en:{
     "Feeders":["Frame Feeder","External Feeder","1L Feeding Bottles"],
     "Protection":["Beekeeping Veil","Beekeeping Gloves","Beekeeping Suit","Small Smoker","Large Smoker","Smoker Fuel"],
     "Treatments":["Oxalic Acid liquid (Api-Bioxal)","Oxalic Acid crystals","Oxuvar 5.7%","OxyBee strips","Formic Acid 65% liquid","Formic Acid — MAQS strips","Formic Acid — Formidol","Formic Acid — FORAPI strips","Formic Acid — Varromed","Amitraz — Apivar strips","Amitraz — Apitraz strips","Amitraz — Klartan strips","Amitraz — Biovar strips","Flumethrin — Bayvarol strips","Flumethrin — Polyvar Yellow","Coumaphos — Perizin solution","Thymol — Apiguard gel","Thymol — ApiLife VAR","Thymol — Thymovar","Thymol crystals homemade","Nozevit (Nosema)","Nozevit Plus","Fumagillin","Oxytetracycline","Tylosin","Hop Guard strips","Menthol crystals","Oxibee"],
-    "Tools":["Hive Tool","Bee Brush","Flat Uncapping Knife","Serrated Uncapping Knife","Honey Extractor","Refractometer","Honey Strainer","30kg Container"]
+    "Tools":["Hive Tool","Bee Brush","Flat Uncapping Knife","Serrated Uncapping Knife","Honey Extractor","Refractometer","Honey Strainer","30kg Container"],
+    "Packaging":["Jar 0.4kg","Jar 0.72kg","Jar 0.94kg","Jar 1kg","Hexagonal Jar 0.5kg","Hexagonal Jar 0.75kg","Hexagonal Jar 1kg","Sport Bottle 500ml","Design Tube 50ml","Design Tube 100ml","Vintage Jar 250g","Vintage Jar 500g","Plastic Jar 1kg","Bucket 5kg","Bucket 10kg"]
   },
+  inv_pkg_honey_kg:"🍯 Honey per unit (kg)",inv_pkg_label:"Packaging",inv_pkg_hint:"Fill only for honey packaging",inv_sell_title:"🍯 Honey Sale",inv_sell_add_line:"+ Add packaging type",inv_sell_jar:"Packaging",inv_sell_pcs:"Pcs",inv_sell_price:"Price/unit (RON)",inv_sell_total:"Total",inv_sell_stock_warn:"⚠️ Insufficient stock!",inv_sell_no_pkg:"No honey packaging in inventory. Add from Inventory → Packaging category.",inv_sell_saved:"Sale saved! Stock updated.",
   cal_title:"Beekeeping Calendar",cal_active:"🌼 Current active nectar flow",cal_upcoming:"📅 Upcoming nectar flows",
   cal_no_active:"No major nectar flow active now.",cal_no_up:"No major nectar flows expected.",
   cal_between:"⏳ Between nectar flows",cal_days_until:"days until",
@@ -1628,6 +1632,28 @@ function renderDashboard(){
     vrCardH='<div class="c" style="cursor:pointer;" onclick="go(\'varroa\')"><div class="cl">🕷️ Varroa</div><div class="cv" style="color:'+vrCol+';font-size:1.1rem;">'+vrPctStr+'</div><div class="cs">'+(vrHv?vrHv.name:"")+" · "+vrLatest.date+'</div></div>';
   }
 
+  // ── Stoc miere rămas ──────────────────────────────────────────
+  // Total vândut = suma kg din toate vânzările de miere (din saleLines × honeyKg/buc)
+  var totHoneySold=(D.finances||[]).reduce(function(s,f){
+    if(f.saleLines&&f.saleLines.length){
+      return s+f.saleLines.reduce(function(s2,ln){
+        var pkg=D.inventory.find(function(p){return p.id===ln.invId;});
+        return s2+(pkg?pkg.honeyKg||0:0)*(parseInt(ln.pcs)||0);
+      },0);
+    }
+    // fallback pentru vânzări vechi salvate cu câmpul qty
+    if(f.qty&&(f.category==="Vânzare miere"||f.category==="Honey sale"||f.category==="Cadou miere"||f.category==="Honey gift"))return s+(f.qty||0);
+    return s;
+  },0);
+  var honeyStock=Math.max(0,totH-totHoneySold);
+  var isEN=D.settings.lang==="en";
+  var honeyStockColor=honeyStock<=0?"var(--mut)":honeyStock<10?"var(--gold)":"var(--ok)";
+  var honeyCardH='<div class="c" style="cursor:pointer;" onclick="go(\'honey\')">'
+    +'<div class="cl">🍯 '+(isEN?"Honey in stock":"Stoc miere")+'</div>'
+    +'<div class="cv" style="color:'+honeyStockColor+';">'+honeyStock.toFixed(1)+' kg</div>'
+    +'<div class="cs">'+(isEN?"harvested":"recoltat")+' '+totH.toFixed(1)+' · '+(isEN?"sold":"vândut")+' '+totHoneySold.toFixed(1)+' kg</div>'
+    +'</div>';
+
   var finCardH='<div class="c" style="cursor:pointer;" onclick="go(\'financiar\')"><div class="cl">'+t("fin_dash_profit")+' <span style="font-size:.6rem;font-weight:400;color:var(--mut);">'+t("fin_dash_this_year")+'</span></div><div class="cv" style="color:'+(finNet>=0?"var(--ok)":"var(--danger)")+';">'+(finNet>=0?"+":"")+finNet.toFixed(0)+' RON</div><div class="cs">'+(finInc>0||finExp>0?'↑ '+finInc.toFixed(0)+' · ↓ '+finExp.toFixed(0):(D.settings.lang==="en"?"No data yet":"Fără date"))+'</div></div>';
 
   // ── Tasks: build alerts + urgent panel + KPI ──────────────────
@@ -1723,6 +1749,7 @@ function renderDashboard(){
     +'<div class="c"><div class="cl">'+t("dash_colonies")+'</div><div class="cv">'+D.hives.length+'</div><div class="cs">'+strong+' '+t("dash_s")+' · '+med+' '+t("dash_m")+' · '+slb+' '+t("dash_w")+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_queens_active")+'</div><div class="cv">'+D.queens.filter(function(q){return q.status==="activă";}).length+'</div><div class="cs">'+D.queens.filter(function(q){return q.status==="în imperechere";}).length+' '+t("dash_mating")+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_honey_kg")+'</div><div class="cv">'+totH.toFixed(1)+'</div><div class="cs">'+D.honeyHarvests.length+' '+t("dash_sessions")+'</div></div>'
+    +honeyCardH
     +'<div class="c"><div class="cl">'+t("dash_treatments")+'</div><div class="cv">'+pend+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_last_insp")+'</div><div class="cv" style="font-size:1rem">'+(last?last.date:"—")+'</div><div class="cs">'+lastHiveName+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_low_stock")+'</div><div class="cv" style="color:'+(low.length?"var(--danger)":"var(--ok)")+'">'+low.length+'</div></div>'
@@ -2526,19 +2553,33 @@ window.delI=function(id){showConfirm(t("inv_del_c"),function(){D.inventory=D.inv
 function invM(id){
   var ex=id?D.inventory.find(function(i){return i.id===id;}):null;
   var ic=t("icat")||{};var allIt=Object.values(ic).reduce(function(a,b){return a.concat(b);},[]);
+  var isPkg=ex&&(ex.cat==="Ambalaje"||ex.cat==="Packaging");
+  var catOnChange="invCatChanged(this.value)";
+  var selectOnChange="var v=this.value;document.getElementById('iMN').value=v;var ct=getCt(v)||document.getElementById('iCt').value;document.getElementById('iCt').value=ct;invCatChanged(ct);";
   openM('<div class="mt">'+(ex?t("inv_edit_t"):t("inv_new_t"))+'</div>'
-    +L(t("inv_sel"))+'<select id="iSN" onchange="document.getElementById(\'iMN\').value=this.value;document.getElementById(\'iCt\').value=getCt(this.value)||document.getElementById(\'iCt\').value;"><option value="">'+t("inv_sel_ph")+'</option>'+allIt.map(function(n){return'<option value="'+n+'"'+(xv(ex,"name","")=== n?" selected":"")+'>'+n+'</option>';}).join("")+'</select>'
+    +L(t("inv_sel"))+'<select id="iSN" onchange="'+selectOnChange+'"><option value="">'+t("inv_sel_ph")+'</option>'+allIt.map(function(n){return'<option value="'+n+'"'+(xv(ex,"name","")=== n?" selected":"")+'>'+n+'</option>';}).join("")+'</select>'
     +L(t("inv_man"))+'<input id="iMN" value="'+(xv(ex,"name",""))+'" placeholder="'+t("inv_man_ph")+'">'
-    +L(t("inv_cat"))+'<select id="iCt">'+Object.keys(ic).map(function(c){return'<option'+(xv(ex,"cat","")=== c?" selected":"")+'>'+c+'</option>';}).join("")+'</select>'
+    +L(t("inv_cat"))+'<select id="iCt" onchange="'+catOnChange+'">'+Object.keys(ic).map(function(c){return'<option'+(xv(ex,"cat","")=== c?" selected":"")+'>'+c+'</option>';}).join("")+'</select>'
     +'<div class="r2"><div>'+L(t("inv_qty"))+'<input id="iQt" type="number" inputmode="numeric" value="'+(xv(ex,"qty",0))+'"></div>'
     +'<div>'+L(t("inv_min"))+'<input id="iMn" type="number" inputmode="numeric" value="'+(xv(ex,"min",5))+'"></div></div>'
+    +'<div id="invPkgBox" style="'+(isPkg?"":"display:none;")+'">'
+    +L(t("inv_pkg_honey_kg"))+'<input id="iHkg" type="number" inputmode="decimal" step="0.001" value="'+(xv(ex,"honeyKg",""))+'" placeholder="ex: 0.950">'
+    +'<div style="font-size:.73rem;color:var(--mut);margin-top:-4px;margin-bottom:6px;">'+t("inv_pkg_hint")+'</div>'
+    +'</div>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveI(\''+(id||'')+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
+window.invCatChanged=function(cat){
+  var box=document.getElementById("invPkgBox");
+  if(box)box.style.display=(cat==="Ambalaje"||cat==="Packaging")?"":"none";
+};
 window.getCt=function(n){var ic=t("icat")||{};var cats=Object.keys(ic);for(var i=0;i<cats.length;i++){if(ic[cats[i]].indexOf(n)>=0)return cats[i];}return null;};
 window.saveI=function(id){
   var nm=(($q("iMN")||{}).value||($q("iSN")||{}).value||"").trim();
   if(!nm){toast("⚠️ "+t("inv_name_r"));return;}
-  var o={id:id||uid(),name:nm,cat:($q("iCt")||{}).value,qty:parseInt(($q("iQt")||{}).value)||0,min:parseInt(($q("iMn")||{}).value)||5};
+  var cat=($q("iCt")||{}).value;
+  var hkgVal=parseFloat(($q("iHkg")||{}).value)||null;
+  var o={id:id||uid(),name:nm,cat:cat,qty:parseInt(($q("iQt")||{}).value)||0,min:parseInt(($q("iMn")||{}).value)||5};
+  if(cat==="Ambalaje"||cat==="Packaging")o.honeyKg=hkgVal;
   if(id){var ex=D.inventory.find(function(i){return i.id===id;});if(ex)Object.assign(ex,o);}else{D.inventory.push(o);}
   save();closeM();renderInventory();
 };
@@ -4146,8 +4187,7 @@ function renderFinanciar(){
       +'<div style="width:34px;height:34px;border-radius:50%;background:'+(isInc?"rgba(111,191,76,.15)":"rgba(224,124,76,.15)")+';display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">'+(isInc?"💰":"💸")+'</div>'
       +'<div style="flex:1;min-width:0;">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">'
-      +'<div style="font-size:.86rem;font-weight:700;color:'+(isInc?"var(--ok)":"var(--danger)");
-      var rowH=(isInc?"+":"-")+f.amount.toFixed(2)+' RON</div>'
+      +'<div style="font-size:.86rem;font-weight:700;color:'+(isInc?"var(--ok)":"var(--danger)")+';">'+(isInc?"+":"-")+f.amount.toFixed(2)+' RON</div>'
       +'<span class="bg '+(isInc?"gg":"gr")+'" style="font-size:.65rem;">'+f.category+'</span>'
       +'</div>'
       +'<div style="font-size:.74rem;color:var(--mut);margin-top:2px;">📅 '+f.date+(hv?'  ·  🏠 '+hv.name:"")+(f.qty?'  ·  📦 '+f.qty+' kg @'+f.pricePerUnit+' RON/kg':"")+'</div>'
@@ -4165,6 +4205,7 @@ function renderFinanciar(){
     +'<button class="btn sm" style="margin-left:auto;" onclick="finM(\'\',-1)">'+t("fin_new_income")+'</button>'
     +'<button class="btn sm gh" onclick="finM(\'\',-2)">'+t("fin_new_expense")+'</button>'
     +'<button class="btn sm be" onclick="finAutoHoney()">'+t("fin_auto_honey")+'</button>'
+    +'<button class="btn sm" style="background:linear-gradient(135deg,var(--gold),#c8860a);color:#1a1a1a;font-weight:700;" onclick="honeySaleM()">🍯 '+t("inv_sell_title")+'</button>'
     +'</div>'
     +kpiH+chartH+catH
     +tabs
@@ -4190,10 +4231,175 @@ function renderFinanciar(){
 
 window.delFin=function(id){
   showConfirm(t("fin_del_c"),function(){
+    var fin=D.finances.find(function(f){return f.id===id;});
+    // Restaurează inventarul dacă e o vânzare de miere cu saleLines
+    if(fin&&fin.saleLines&&fin.saleLines.length){
+      fin.saleLines.forEach(function(ln){
+        var pkg=D.inventory.find(function(p){return p.id===ln.invId;});
+        if(pkg)pkg.qty=(pkg.qty||0)+(parseInt(ln.pcs)||0);
+      });
+    }
     D.finances=D.finances.filter(function(f){return f.id!==id;});
     save();renderFinanciar();
   });
 };
+
+// ── Honey Sale Modal ──────────────────────────────────────────
+var _hSaleLines=[];
+
+// Recalculează totalurile din DOM fără a re-randa modalul
+function _hsUpdateTotals(){
+  var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
+  var grandTotal=0,grandHoney=0;
+  _hSaleLines.forEach(function(ln,idx){
+    var pkg=pkgItems.find(function(i){return i.id===ln.invId;})||pkgItems[0];
+    var hkg=pkg?pkg.honeyKg||0:0;
+    var pcs=parseInt(ln.pcs)||0;
+    var price=parseFloat(ln.price)||0;
+    var lineTotal=price*pcs;
+    grandTotal+=lineTotal;
+    grandHoney+=hkg*pcs;
+    var lineTotEl=document.getElementById("hsLT_"+idx);
+    if(lineTotEl)lineTotEl.textContent=lineTotal.toFixed(2)+" RON";
+    var honeyEl=document.getElementById("hsLH_"+idx);
+    if(honeyEl)honeyEl.textContent="\ud83c\udf6f "+(hkg*pcs>0?(hkg*pcs).toFixed(3)+" kg miere":(hkg?hkg+" kg/buc":"\u2014 kg nedefinit"));
+  });
+  var gtEl=document.getElementById("hsGrandTotal");
+  if(gtEl)gtEl.textContent=grandTotal.toFixed(2)+" RON";
+  var ghEl=document.getElementById("hsGrandHoney");
+  if(ghEl)ghEl.textContent=grandHoney>0?grandHoney.toFixed(3)+" kg":"\u2014";
+}
+
+window.honeySaleM=function(){
+  var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
+  if(!pkgItems.length){toast("\u26a0\ufe0f "+t("inv_sell_no_pkg"));return;}
+  _hSaleLines=[{invId:pkgItems[0].id,pcs:1,price:""}];
+  _renderHoneySaleM(pkgItems);
+};
+
+function _renderHoneySaleM(pkgItems){
+  var isEN=D.settings.lang==="en";
+  var linesHTML=_hSaleLines.map(function(ln,idx){
+    var pkg=pkgItems.find(function(i){return i.id===ln.invId;})||pkgItems[0];
+    var hkg=pkg?pkg.honeyKg||0:0;
+    var lineTotal=((parseFloat(ln.price)||0)*(parseInt(ln.pcs)||0)).toFixed(2);
+    var honeyTotal=hkg*(parseInt(ln.pcs)||0);
+    return'<div id="hsLine_'+idx+'" style="background:var(--sur2,rgba(255,255,255,.04));border:1px solid var(--bdr);border-radius:var(--rs);padding:10px;margin-bottom:8px;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--gold);">\ud83e\udd6f '+(isEN?"Line":"Linie")+' '+(idx+1)+'</span>'
+      +(_hSaleLines.length>1?'<button class="btn sm bd" onclick="hsRemoveLine('+idx+')">\u2715</button>':"")
+      +'</div>'
+      +'<div>'+L(isEN?"Packaging":"Ambalaj")
+      +'<select onchange="hsSelectChange('+idx+',this.value)">'
+      +pkgItems.map(function(i){return'<option value="'+i.id+'"'+(i.id===ln.invId?" selected":"")+'>'+i.name+' (stoc: '+i.qty+')</option>';}).join("")
+      +'</select></div>'
+      +'<div class="r2" style="margin-top:6px;">'
+      +'<div>'+L(isEN?"Quantity (pcs)":"Cantitate (buc)")
+        +'<input type="number" inputmode="numeric" min="1" value="'+(ln.pcs||1)+'"'
+        +' onchange="_hSaleLines['+idx+'].pcs=parseInt(this.value)||1;_hsUpdateTotals();"'
+        +' oninput="_hSaleLines['+idx+'].pcs=parseInt(this.value)||1;_hsUpdateTotals();">'
+      +'</div>'
+      +'<div>'+L(isEN?"Price/unit (RON)":"Pre\u021b/buc (RON)")
+        +'<input type="number" inputmode="decimal" step="0.01" value="'+(ln.price||"")+'" placeholder="0.00"'
+        +' onchange="_hSaleLines['+idx+'].price=this.value;_hsUpdateTotals();"'
+        +' oninput="_hSaleLines['+idx+'].price=this.value;_hsUpdateTotals();">'
+      +'</div>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:7px;font-size:.78rem;">'
+      +'<span id="hsLH_'+idx+'" style="color:var(--mut);">\ud83c\udf6f '+(honeyTotal>0?honeyTotal.toFixed(3)+' kg miere':(hkg?hkg+" kg/buc":"\u2014 kg nedefinit"))+'</span>'
+      +'<span id="hsLT_'+idx+'" style="color:var(--ok);font-weight:700;">'+lineTotal+' RON</span>'
+      +'</div>'
+      +'</div>';
+  }).join("");
+
+  var grandTotal=_hSaleLines.reduce(function(s,ln){return s+(parseFloat(ln.price)||0)*(parseInt(ln.pcs)||0);},0);
+  var grandHoney=_hSaleLines.reduce(function(s,ln){
+    var pkg=pkgItems.find(function(i){return i.id===ln.invId;})||pkgItems[0];
+    return s+(pkg?pkg.honeyKg||0:0)*(parseInt(ln.pcs)||0);
+  },0);
+
+  var innerHTML='<div class="mt">\ud83c\udf6f '+t("inv_sell_title")+'</div>'
+    +'<div style="margin-bottom:8px;">'
+    +L(isEN?"Sale date":"Data v\u00e2nz\u0103rii")+'<input type="date" id="hsSaleDate" value="'+new Date().toISOString().slice(0,10)+'">'
+    +'</div>'
+    +linesHTML
+    +'<button class="btn sm gh" style="width:100%;margin-bottom:10px;" onclick="hsAddLine()">'+t("inv_sell_add_line")+'</button>'
+    +'<div style="background:var(--sur2,rgba(255,255,255,.05));border-radius:var(--rs);padding:10px 12px;border:1px solid var(--bdr);margin-bottom:12px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+    +'<span style="font-size:.82rem;color:var(--mut);">\ud83c\udf6f Total miere: <strong id="hsGrandHoney" style="color:var(--txt);">'+(grandHoney>0?grandHoney.toFixed(3)+' kg':"\u2014")+'</strong></span>'
+    +'<span id="hsGrandTotal" style="font-size:1.05rem;font-weight:800;color:var(--ok);">'+grandTotal.toFixed(2)+' RON</span>'
+    +'</div>'
+    +'</div>'
+    +L(isEN?"Notes":"Note")+'<textarea id="hsNotes" rows="2" placeholder="'+(isEN?"Optional notes...":"Note op\u021bionale...")+'"></textarea>'
+    +'<div class="br" style="margin-top:10px;"><button class="btn" onclick="saveHoneySale()">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>';
+
+  // Dacă modalul e deja deschis, actualizăm conținutul fără a deschide unul nou
+  var existingMB=document.getElementById("MB");
+  if(existingMB){
+    var mbBody=existingMB.querySelector(".mb-b");
+    if(mbBody){mbBody.innerHTML=innerHTML;return;}
+  }
+  openM(innerHTML);
+}
+
+// Schimbarea select-ului de ambalaj — necesită re-randare pentru a actualiza stocul afișat
+window.hsSelectChange=function(idx,val){
+  if(!_hSaleLines[idx])return;
+  _hSaleLines[idx].invId=val;
+  var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
+  _renderHoneySaleM(pkgItems);
+};
+window.hsAddLine=function(){
+  var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
+  _hSaleLines.push({invId:pkgItems[0].id,pcs:1,price:""});
+  _renderHoneySaleM(pkgItems);
+};
+window.hsRemoveLine=function(idx){
+  _hSaleLines.splice(idx,1);
+  var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
+  _renderHoneySaleM(pkgItems);
+};
+window.saveHoneySale=function(){
+  var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
+  var isEN=D.settings.lang==="en";
+  for(var i=0;i<_hSaleLines.length;i++){
+    var ln=_hSaleLines[i];
+    var pkg=pkgItems.find(function(p){return p.id===ln.invId;});
+    if(!pkg)continue;
+    if((parseInt(ln.pcs)||0)<1){toast("\u26a0\ufe0f "+(isEN?"Quantity must be at least 1":"Cantitatea trebuie s\u0103 fie cel pu\u021bin 1"));return;}
+    if(ln.price===undefined||ln.price===null||ln.price===""||parseFloat(ln.price)<0){toast("\u26a0\ufe0f "+(isEN?"Enter price (0 for gift/donation)":"Introduce\u021bi pre\u021bul (0 pentru cadou)"));return;}
+    if((parseInt(ln.pcs)||0)>pkg.qty){toast("\u26a0\ufe0f "+pkg.name+": "+t("inv_sell_stock_warn")+" (stoc: "+pkg.qty+")");return;}
+  }
+  var grandTotal=_hSaleLines.reduce(function(s,ln){return s+(parseFloat(ln.price)||0)*(parseInt(ln.pcs)||0);},0);
+  var grandHoney=_hSaleLines.reduce(function(s,ln){
+    var pkg=pkgItems.find(function(p){return p.id===ln.invId;})||pkgItems[0];
+    return s+(pkg?pkg.honeyKg||0:0)*(parseInt(ln.pcs)||0);
+  },0);
+  var isGift=grandTotal===0;
+  var saleDate=($q("hsSaleDate")||{}).value||new Date().toISOString().slice(0,10);
+  var notes=($q("hsNotes")||{}).value||"";
+  var desc=_hSaleLines.map(function(ln){
+    var pkg=pkgItems.find(function(p){return p.id===ln.invId;})||pkgItems[0];
+    var priceStr=parseFloat(ln.price)===0?(isEN?"gift":"cadou"):(parseFloat(ln.price)||0).toFixed(2)+" RON";
+    return(parseInt(ln.pcs)||0)+"\u00d7 "+pkg.name+" @ "+priceStr;
+  }).join(", ");
+  _hSaleLines.forEach(function(ln){
+    var pkg=D.inventory.find(function(p){return p.id===ln.invId;});
+    if(pkg)pkg.qty=Math.max(0,pkg.qty-(parseInt(ln.pcs)||0));
+  });
+  D.finances.push({
+    id:uid(),type:"income",
+    date:saleDate,
+    amount:grandTotal,
+    category:isGift?(isEN?"Honey gift":"Cadou miere"):(isEN?"Honey sale":"V\u00e2nzare miere"),
+    qty:grandHoney>0?parseFloat(grandHoney.toFixed(3)):null,
+    notes:(notes?(notes+"\n"):"")+desc,
+    saleLines:JSON.parse(JSON.stringify(_hSaleLines))
+  });
+  save();closeM();renderFinanciar();
+  toast(isGift?"\ud83c\udf81 "+(isEN?"Gift saved! Stock updated.":"Cadou salvat! Stoc actualizat."):"\ud83c\udf6f "+t("inv_sell_saved"));
+};
+// ── End Honey Sale ────────────────────────────────────────────
 
 function finM(id,preset){
   // preset: -1 = force income, -2 = force expense, undefined = free choice
@@ -4215,6 +4421,26 @@ function finM(id,preset){
     return cats.map(function(c){return'<option'+(xv(ex,"category","")=== c?" selected":"")+'>'+c+'</option>';}).join("");
   };
 
+  // Build multi-checkbox category selector for expenses
+  var buildExpCatCheckboxes=function(selectedRaw){
+    var sel=selectedRaw?selectedRaw.split(" + "):[];
+    return expCats.map(function(c,i){
+      var chk=sel.indexOf(c)!==-1?" checked":"";
+      return'<label style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;cursor:pointer;background:rgba(255,255,255,.03);margin-bottom:3px;">'
+        +'<input type="checkbox" id="finExpCat_'+i+'" name="finExpCats" value="'+c+'"'+chk+' style="width:16px;height:16px;accent-color:var(--danger);cursor:pointer;">'
+        +'<span style="font-size:.83rem;color:var(--txt);">'+c+'</span>'
+        +'</label>';
+    }).join("");
+  };
+
+  var catHTML=isInc
+    ? L(t("fin_category"))+'<select id="finCat">'+catOpts("income")+'</select>'
+    : L(t("fin_category"))
+      +'<div id="finExpCatBox" style="background:var(--sur2,var(--sur));border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px;max-height:200px;overflow-y:auto;">'
+      +buildExpCatCheckboxes(xv(ex,"category",""))
+      +'</div>'
+      +'<input type="hidden" id="finCat" value="'+xv(ex,"category","")+'">';
+
   openM('<div class="mt">'+iTitle+'</div>'
     +'<input type="hidden" id="finType" value="'+(isInc?"income":"expense")+'">'
     +typeRow
@@ -4222,7 +4448,7 @@ function finM(id,preset){
     +'<div>'+L(t("fin_date"))+'<input type="date" id="finDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
     +'<div>'+L(t("fin_amount"))+'<input type="number" inputmode="decimal" step="0.01" id="finAmt" value="'+(xv(ex,"amount",""))+'" placeholder="0.00" oninput="finCalcAmt()"></div>'
     +'</div>'
-    +L(t("fin_category"))+'<select id="finCat">'+catOpts(isInc?"income":"expense")+'</select>'
+    +catHTML
     +'<div id="finHoneyExtra">'+(isInc?'<div class="r2" style="margin-top:6px;"><div>'+L(t("fin_qty"))+'<input type="number" inputmode="decimal" step="0.1" id="finQty" value="'+(xv(ex,"qty",""))+'" placeholder="0.0" oninput="finCalcAmt()"></div><div>'+L(t("fin_price_kg"))+'<input type="number" inputmode="decimal" step="0.01" id="finPpk" value="'+(xv(ex,"pricePerUnit",""))+'" placeholder="0.00" oninput="finCalcAmt()"></div></div>':"")+'</div>'
     +L(t("fin_hive"))+'<select id="finHv"><option value="">—</option>'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
     +L(t("fin_notes"))+'<textarea id="finNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
@@ -4232,11 +4458,42 @@ function finM(id,preset){
 window.finToggleType=function(isInc){
   var incCats=t("fin_income_cats"),expCats=t("fin_expense_cats");
   document.getElementById("finType").value=isInc?"income":"expense";
-  var catSel=document.getElementById("finCat");
-  if(catSel){catSel.innerHTML=(isInc?incCats:expCats).map(function(c){return'<option>'+c+'</option>';}).join("");}
   var incBtn=document.getElementById("finTpInc"),expBtn=document.getElementById("finTpExp");
   if(incBtn){incBtn.className="btn sm"+(isInc?"":" gh");}
   if(expBtn){expBtn.className="btn sm"+(isInc?" gh":"");}
+  // Replace category selector depending on type
+  var catContainer=document.getElementById("finCat")?document.getElementById("finCat").parentNode:null;
+  // Find label before finCat and the finCat element
+  if(isInc){
+    // Restore select for income
+    var expBox=document.getElementById("finExpCatBox");
+    var hiddenCat=document.getElementById("finCat");
+    var container=expBox?expBox.parentNode:(hiddenCat?hiddenCat.parentNode:null);
+    if(expBox&&hiddenCat&&container){
+      var sel=document.createElement("select");sel.id="finCat";
+      sel.innerHTML=incCats.map(function(c){return'<option>'+c+'</option>';}).join("");
+      container.replaceChild(sel,expBox);
+      hiddenCat.parentNode&&hiddenCat.parentNode.removeChild(hiddenCat);
+    }
+  } else {
+    // Replace select with checkboxes for expense
+    var selEl=document.getElementById("finCat");
+    if(selEl&&selEl.tagName==="SELECT"){
+      var par=selEl.parentNode;
+      var boxDiv=document.createElement("div");
+      boxDiv.id="finExpCatBox";
+      boxDiv.style.cssText="background:var(--sur2,var(--sur));border:1px solid var(--bdr);border-radius:var(--rs);padding:8px 10px;max-height:200px;overflow-y:auto;";
+      boxDiv.innerHTML=expCats.map(function(c,i){
+        return'<label style="display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:6px;cursor:pointer;background:rgba(255,255,255,.03);margin-bottom:3px;">'
+          +'<input type="checkbox" id="finExpCat_'+i+'" name="finExpCats" value="'+c+'" style="width:16px;height:16px;accent-color:var(--danger);cursor:pointer;">'
+          +'<span style="font-size:.83rem;color:var(--txt);">'+c+'</span>'
+          +'</label>';
+      }).join("");
+      var hidInp=document.createElement("input");hidInp.type="hidden";hidInp.id="finCat";hidInp.value="";
+      par.replaceChild(boxDiv,selEl);
+      par.insertBefore(hidInp,boxDiv.nextSibling);
+    }
+  }
   var extra=document.getElementById("finHoneyExtra");
   if(extra){extra.innerHTML=isInc?('<div class="r2" style="margin-top:6px;"><div>'+L(t("fin_qty"))+'<input type="number" inputmode="decimal" step="0.1" id="finQty" placeholder="0.0" oninput="finCalcAmt()"></div><div>'+L(t("fin_price_kg"))+'<input type="number" inputmode="decimal" step="0.01" id="finPpk" placeholder="0.00" oninput="finCalcAmt()"></div></div>'):"";} 
 };
@@ -4254,10 +4511,21 @@ window.saveFin=function(id){
   if(!amt){toast("⚠️ "+(D.settings.lang==="en"?"Enter an amount!":"Introduceți suma!"));return;}
   var qty=parseFloat(($q("finQty")||{}).value)||null;
   var ppk=parseFloat(($q("finPpk")||{}).value)||null;
+  // Read category: for expense use checkboxes, for income use select
+  var category="";
+  if(type==="expense"){
+    var checked=document.querySelectorAll('input[name="finExpCats"]:checked');
+    var cats=[];
+    checked.forEach(function(cb){cats.push(cb.value);});
+    category=cats.join(" + ");
+    if(!category){toast("⚠️ "+(D.settings.lang==="en"?"Select at least one category!":"Selectați cel puțin o categorie!"));return;}
+  } else {
+    category=($q("finCat")||{}).value||"";
+  }
   var o={id:id||uid(),type:type,
     date:($q("finDt")||{}).value||new Date().toISOString().slice(0,10),
     amount:amt,
-    category:($q("finCat")||{}).value||"",
+    category:category,
     hiveId:($q("finHv")||{}).value||null,
     qty:qty,pricePerUnit:ppk,
     notes:($q("finNt")||{}).value||""};
