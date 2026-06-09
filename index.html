@@ -1288,7 +1288,68 @@ async function fetchW(lat,lon){
   }catch(e){console.warn("Weather failed",e);if(!D.weather)toast("⚠️ Vreme indisponibilă — introduceți manual","🌡️");}
 }
 
+// ─── Sunrise / Sunset (formulă astronomică simplificată) ────────────────────
+// Returnează {sunrise, sunset} în ore locale (ex: 6.5 = 06:30)
+// Funcționează bine pentru latitudini 35°N–65°N cu eroare <10 min
+function getSunTimes(lat, lon) {
+  var now = new Date();
+  var J = Math.floor(now.getTime() / 86400000) + 2440587.5; // Julian date
+  var n = Math.floor(J - 2451545.0 + 0.0008);
+  var Jstar = n - lon / 360;
+  var M = (357.5291 + 0.98560028 * Jstar) % 360;
+  var Mr = M * Math.PI / 180;
+  var C = 1.9148 * Math.sin(Mr) + 0.0200 * Math.sin(2 * Mr) + 0.0003 * Math.sin(3 * Mr);
+  var lam = (M + C + 180 + 102.9372) % 360;
+  var Jtransit = 2451545.0 + Jstar + 0.0053 * Math.sin(Mr) - 0.0069 * Math.sin(2 * lam * Math.PI / 180);
+  var sinDec = Math.sin(lam * Math.PI / 180) * Math.sin(23.4397 * Math.PI / 180);
+  var cosDec = Math.cos(Math.asin(sinDec));
+  var cosH = (Math.sin(-0.8333 * Math.PI / 180) - Math.sin(lat * Math.PI / 180) * sinDec) / (Math.cos(lat * Math.PI / 180) * cosDec);
+  if (cosH > 1) return { sunrise: 0, sunset: 24, polarNight: true };
+  if (cosH < -1) return { sunrise: 0, sunset: 24, midnightSun: true };
+  var H = Math.acos(cosH) * 180 / Math.PI;
+  var Jset = Jtransit + H / 360;
+  var Jrise = Jtransit - H / 360;
+  // Convert Julian to local time hours
+  function jToLocalH(j) {
+    var ms = (j - 2440587.5) * 86400000;
+    var d = new Date(ms);
+    return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+  }
+  return { sunrise: jToLocalH(Jrise), sunset: jToLocalH(Jset) };
+}
+
+// Returnează true dacă acum este ziuă (albinele pot să culeagă)
+// Adaugă 30 min după răsărit și cu 30 min înainte de apus ca marjă
+function isBeeDaytime() {
+  var lat = D.userLoc ? D.userLoc.lat : 45.0;
+  var lon = D.userLoc ? D.userLoc.lon : 25.0;
+  var sun = getSunTimes(lat, lon);
+  var now = new Date();
+  var h = now.getHours() + now.getMinutes() / 60;
+  // Albinele activ după 30 min de la răsărit și până la 30 min înainte de apus
+  return h >= (sun.sunrise + 0.5) && h <= (sun.sunset - 0.5);
+}
+
+// Returnează ora răsăritului și apusului ca string "HH:MM"
+function getSunTimesStr() {
+  var lat = D.userLoc ? D.userLoc.lat : 45.0;
+  var lon = D.userLoc ? D.userLoc.lon : 25.0;
+  var sun = getSunTimes(lat, lon);
+  function toHHMM(h) {
+    var hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+    if (mm === 60) { hh++; mm = 0; }
+    return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  }
+  return { sunrise: toHHMM(sun.sunrise), sunset: toHHMM(sun.sunset) };
+}
+
 function beeAct(w){
+  var isEN=D.settings.lang==="en";
+  // Verifică dacă e noapte — albinele nu culeg noaptea
+  if(!isBeeDaytime()){
+    var sunStr=getSunTimesStr();
+    return{ic:"🌙",ttl:isEN?"Bees are resting":"Albinele se odihnesc",det:isEN?"Night — foraging resumes after sunrise ("+sunStr.sunrise+")":"Noapte — culesul reia după răsărit ("+sunStr.sunrise+")",bg:"rgba(74,100,200,.1)",isNight:true};
+  }
   if(!w)return{ic:"❓",ttl:t("bee_unknown_t"),det:t("bee_unknown_d"),bg:"rgba(255,255,255,.04)"};
   var temp=w.temp,rain=w.rain||(w.prec>0),wind=w.wind;
   if(rain)return{ic:"🌧️",ttl:t("bee_rain_t"),det:t("bee_rain_d"),bg:"rgba(74,158,255,.12)"};
@@ -1314,6 +1375,13 @@ function getLatOffset(){
   return Math.round((D.userLoc.lat-45.5)*4);
 }
 function getFlow(){
+  // Noaptea albinele nu culeg — nu afișăm cules activ
+  if(!isBeeDaytime()) return null;
+  var cd=cdoy(),yr=new Date().getFullYear(),off=getLatOffset();
+  return PLANTS.find(function(p){return cd>=doy(yr,p.sm,p.sd)+off&&cd<=doy(yr,p.em,p.ed)+off;})||null;
+}
+// Versiune separată care returnează culesul calendaristic (fără filtrare noapte) — pt. calendar/planificare
+function getFlowCalendar(){
   var cd=cdoy(),yr=new Date().getFullYear(),off=getLatOffset();
   return PLANTS.find(function(p){return cd>=doy(yr,p.sm,p.sd)+off&&cd<=doy(yr,p.em,p.ed)+off;})||null;
 }
@@ -1538,8 +1606,17 @@ function renderDashboard(){
   var finNet=finInc-finExp;
 
   // Flow card
+  var isNight=!isBeeDaytime();
+  var flCalendar=getFlowCalendar(); // culesul calendaristic (ignoră ora)
   var culesH="";
-  if(w&&(w.rain||(w.prec>0))){
+  if(isNight){
+    var sunStr=getSunTimesStr();
+    var isEN2=D.settings.lang==="en";
+    culesH='<div class="bb" style="background:rgba(74,100,200,.1)"><span style="font-size:1.6rem">🌙</span><div>'
+      +'<strong>'+(isEN2?"Bees are resting":"Albinele se odihnesc")+'</strong>'
+      +(flCalendar?'<br><small style="color:var(--mut);">🌸 '+(isEN2?"Flow season: ":"Sezon cules: ")+plantN(flCalendar)+' — '+(isEN2?"resumes after sunrise":"reia după răsărit")+' '+sunStr.sunrise+'</small>':'<br><small style="color:var(--mut);">'+(isEN2?"Foraging resumes after sunrise at ":"Culesul reia după răsărit la ")+sunStr.sunrise+'</small>')
+      +'</div></div>';
+  } else if(w&&(w.rain||(w.prec>0))){
     culesH='<div class="bb" style="background:rgba(74,158,255,.12)"><span style="font-size:1.6rem">🌧️</span><div><strong>'+t("fl_rain")+'</strong><br><small style="color:var(--mut)">'+t("fl_rain_d")+'</small></div></div>';
   } else if(fl){
     var tmpOk=w&&w.temp>=fl.nt[0]&&w.temp<=fl.nt[1];
@@ -1552,7 +1629,10 @@ function renderDashboard(){
   var wCard="";
   if(w){
     var wLbl=w.wc!==undefined?wmoLabel(w.wc):(w.lbl||"");
-    wCard='<div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><div class="cl">🌦️ '+(agoL?'— '+agoL:'')+'</div><button class="btn sm gh" onclick="if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon)">'+t("w_refresh")+'</button></div>'
+    var sunStrDash=getSunTimesStr();
+    var isEN3=D.settings.lang==="en";
+    var sunInfo='<span style="font-size:.68rem;color:var(--mut);margin-left:8px;">🌅 '+sunStrDash.sunrise+' · 🌇 '+sunStrDash.sunset+'</span>';
+    wCard='<div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;flex-wrap:wrap;gap:4px;"><div class="cl">🌦️ '+(agoL?'— '+agoL:'')+sunInfo+'</div><button class="btn sm gh" onclick="if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon)">'+t("w_refresh")+'</button></div>'
       +'<div class="wp" style="background:'+act.bg+'"><span class="wi">'+w.ic+'</span><div>'
       +'<div style="font-size:1.4rem;font-weight:800">'+showTemp(w.temp)+' <small style="font-size:.9rem;font-weight:400">'+wLbl+'</small></div>'
       +'<div style="font-size:.76rem;color:var(--mut)">💨 '+w.wind+' km/h · 💧 '+w.hum+'% · 🌧️ '+w.prec+' mm</div>'
@@ -2972,7 +3052,13 @@ window.savePast=function(id){
 // ═══════════════════════════════════════════
 function renderCalendar(){
   var isEN=D.settings.lang==="en";
-  var yr=new Date().getFullYear(),cd=cdoy(),fl=getFlow(),w=D.weather,off=getLatOffset();
+  var yr=new Date().getFullYear(),cd=cdoy(),off=getLatOffset();
+  // Calendarul folosește culesul calendaristic (sezonier), nu filtrează după oră
+  // Ora contează doar pentru dashboard/acum — calendarul e planificare
+  var fl=getFlowCalendar();
+  var w=D.weather;
+  var isNightNow=!isBeeDaytime();
+  var sunStr=getSunTimesStr();
 
   function foragQuality(plant,wx){
     if(!wx||wx.temp===null||wx.temp===undefined)return{cls:"gy",ic:"❓",lbl:isEN?"No weather data":"Fără date meteo",score:0,pct:0}; // FIX: null safety
@@ -3045,6 +3131,10 @@ function renderCalendar(){
       +(w.prec>0?'<span>🌧️ '+w.prec+'mm</span>':'')+'<span>'+wmoLabel(w.wc)+'</span></div>':"";
 
     flCard='<div class="c"><div class="ct">'+t("cal_active")+'</div>'
+      +(isNightNow?'<div class="bb" style="background:rgba(74,100,200,.12);border:1px solid rgba(74,100,200,.25);border-radius:var(--rs);padding:10px;margin-top:8px;margin-bottom:6px;">'
+        +'<span style="font-size:1.4rem;">🌙</span>'
+        +'<div><strong>'+(isEN?"Bees are resting — night":"Albinele se odihnesc — noapte")+'</strong>'
+        +'<br><small style="color:var(--mut);">'+(isEN?"Foraging resumes after sunrise at ":"Culesul reia după răsărit la ")+sunStr.sunrise+'</small></div></div>':"")
       +'<div style="background:rgba(111,191,76,.07);border:1px solid rgba(111,191,76,.2);border-radius:var(--rm);padding:14px;margin-top:9px;">'
       +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:7px;">'
       +'<span style="font-size:2.2rem;line-height:1;">'+plantIC(fl)+'</span>'
@@ -3058,6 +3148,10 @@ function renderCalendar(){
   } else {
     var noNext=next.length?'<br><small style="color:var(--mut);">⏭️ '+(isEN?"Next: ":"Următor: ")+plantIC(next[0])+' '+plantN(next[0])+' — '+(isEN?"in ~":"în ~")+((doy(yr,next[0].sm,next[0].sd)+off)-cd)+(isEN?" days":" zile")+'</small>':"";
     flCard='<div class="c"><div class="ct">'+t("cal_active")+'</div>'
+      +(isNightNow?'<div class="bb" style="background:rgba(74,100,200,.12);border:1px solid rgba(74,100,200,.25);border-radius:var(--rs);padding:10px;margin-top:8px;margin-bottom:4px;">'
+        +'<span style="font-size:1.4rem;">🌙</span>'
+        +'<div><strong>'+(isEN?"Bees are resting — night":"Albinele se odihnesc — noapte")+'</strong>'
+        +'<br><small style="color:var(--mut);">'+(isEN?"Foraging resumes after sunrise at ":"Culesul reia după răsărit la ")+sunStr.sunrise+'</small></div></div>':"")
       +'<div class="bb" style="background:rgba(224,124,76,.07);border:1px solid rgba(224,124,76,.2);border-radius:var(--rm);padding:12px;margin-top:9px;">'
       +'<span style="font-size:1.8rem;">⏸️</span>'
       +'<div><div style="font-weight:700;">'+t("cal_no_active")+'</div>'+noNext+'</div></div>'
