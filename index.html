@@ -107,6 +107,7 @@ input[type=checkbox],input[type=radio]{width:auto;margin-right:5px;}
 .sa{background:rgba(224,124,76,.12);border:1px solid var(--danger);border-radius:var(--rm);padding:12px;margin-bottom:13px;}
 .toast{position:fixed;bottom:20px;right:20px;background:var(--card);border-left:5px solid var(--gold);padding:10px 18px;border-radius:40px;z-index:2000;box-shadow:var(--sh);font-size:.86rem;animation:ti .3s;}
 @keyframes ti{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.65;}}
 @media(max-width:900px){:root{--sw:215px;}.main{padding:14px;}.gs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}}
 /* TOP NAV (mobile) — dezactivat */
 .tnav{display:none!important;}
@@ -346,15 +347,12 @@ input.err,select.err{border-color:var(--danger);background:rgba(224,124,76,.07);
 body.is-offline .sb{top:32px;}
 body.is-offline .main{padding-top:52px;}
 /* ── Drive status badges ── */
-.drv-ok{background:rgba(111,191,76,.1);border:1px solid var(--ok);border-radius:var(--rs);padding:9px 12px;font-size:.8rem;display:flex;align-items:center;gap:8px;}
-.drv-no{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);padding:9px 12px;font-size:.8rem;}
-.drv-pulse{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
 /* ── Per-hive save indicator ── */
 .hive-save-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;margin-left:4px;opacity:0;transition:opacity .4s;}
 .hive-save-dot.show{opacity:1;}
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 </head>
 <body>
 <div id="offlineBar" class="offline-bar">
@@ -571,7 +569,7 @@ ro:{
   se_w_ok:"✅ Locație detectată · Actualizat acum",se_w_min:"min",
   se_w_no:"📍 Locația nu a fost detectată. Permiteți accesul la locație în browser.",
   se_w_upd:"🔄 Actualizează acum",
-  se_backup:"💾 Backup & Date",se_exp:"📤 Export JSON",se_imp:"📥 Import JSON",se_rst:"⚠️ Resetare toate datele",
+  se_backup:"💾 Backup & Date",se_exp:"📤 Export Backup",se_imp:"📥 Import Backup",se_rst:"⚠️ Resetare toate datele",
   se_stats:"📊 Statistici rapide",se_st_h:"Stupi:",se_st_i:"Inspecții:",se_st_hr:"Recoltă:",se_st_inv:"Inventar:",se_st_a:"art.",
   past_title:"Pastorare",past_new:"+ Adaugă Pastorare",past_new_t:"🚚 Pastorare Nouă",past_edit_t:"✏️ Editează Pastorare",
   past_hive:"🏠 Stup",past_loc:"📍 Locație pastorare",past_loc_ph:"Ex: Câmpul de salcâm, jud. Vâlcea",
@@ -921,7 +919,7 @@ en:{
   se_w_ok:"✅ Location detected · Updated",se_w_min:"min ago",
   se_w_no:"📍 Location not detected. Allow location access in browser.",
   se_w_upd:"🔄 Update now",
-  se_backup:"💾 Backup & Data",se_exp:"📤 Export JSON",se_imp:"📥 Import JSON",se_rst:"⚠️ Reset all data",
+  se_backup:"💾 Backup & Data",se_exp:"📤 Export Backup",se_imp:"📥 Import Backup",se_rst:"⚠️ Reset all data",
   se_stats:"📊 Quick statistics",se_st_h:"Hives:",se_st_i:"Inspections:",se_st_hr:"Harvest:",se_st_inv:"Inventory:",se_st_a:"items",
   past_title:"Migratory Beekeeping",past_new:"+ Add Migration",past_new_t:"🚚 New Migration",past_edit_t:"✏️ Edit Migration",
   past_hive:"🏠 Hive",past_loc:"📍 Migration location",past_loc_ph:"Ex: Acacia field, County X",
@@ -1175,8 +1173,6 @@ function save(showToast){
   if(showToast===undefined)showToast=true;
   localStorage.setItem("bmp5",JSON.stringify(D));
   if(showToast)toast(D.settings.lang==="en"?"Saved ✅":"Salvat ✅","🍯");
-  // Auto-sync to Google Drive if connected and enabled
-  if(D.settings.gAutoSync&&GDR.isConnected())GDR.sync();
 }
 
 // Per-hive snapshot: save individual hive data + its inspections in a separate localStorage key
@@ -1496,7 +1492,7 @@ function openM(html){
   document.body.appendChild(bg);
   bg.addEventListener("click",function(e){if(e.target===bg)closeM();});
 
-  // ── ScrollIntoView la focus pe orice câmp ──────────────────
+  // ── ScrollIntoView on focus for any input field ─────────────
   bg.addEventListener("focusin",function(e){
     var el=e.target;
     if(!el||!["INPUT","SELECT","TEXTAREA"].includes(el.tagName))return;
@@ -1632,8 +1628,8 @@ function renderDashboard(){
     vrCardH='<div class="c" style="cursor:pointer;" onclick="go(\'varroa\')"><div class="cl">🕷️ Varroa</div><div class="cv" style="color:'+vrCol+';font-size:1.1rem;">'+vrPctStr+'</div><div class="cs">'+(vrHv?vrHv.name:"")+" · "+vrLatest.date+'</div></div>';
   }
 
-  // ── Stoc miere rămas ──────────────────────────────────────────
-  // Total vândut = suma kg din toate vânzările de miere (din saleLines × honeyKg/buc)
+  // ── Remaining honey stock ─────────────────────────────────────
+  // Total sold = sum of kg from all honey sales (from saleLines × honeyKg/unit)
   var totHoneySold=(D.finances||[]).reduce(function(s,f){
     if(f.saleLines&&f.saleLines.length){
       return s+f.saleLines.reduce(function(s2,ln){
@@ -1641,7 +1637,7 @@ function renderDashboard(){
         return s2+(pkg?pkg.honeyKg||0:0)*(parseInt(ln.pcs)||0);
       },0);
     }
-    // fallback pentru vânzări vechi salvate cu câmpul qty
+    // Fallback for old sales saved with the qty field
     if(f.qty&&(f.category==="Vânzare miere"||f.category==="Honey sale"||f.category==="Cadou miere"||f.category==="Honey gift"))return s+(f.qty||0);
     return s;
   },0);
@@ -1743,6 +1739,81 @@ function renderDashboard(){
   }
   hrPanelH+='</div>';
 
+  // ── Treatment countdown panel ─────────────────────────────────
+  var trNow=new Date(); trNow.setHours(0,0,0,0);
+  var activeTreatments=(D.treatments||[]).filter(function(tr){
+    var startD=new Date(tr.date); startD.setHours(0,0,0,0);
+    var endDateStr=tr.endDate||getTreatmentEndDate(tr.date, tr.product);
+    var endD=new Date(endDateStr); endD.setHours(0,0,0,0);
+    return startD<=trNow && endD>=trNow;
+  });
+
+  var trCountdownH="";
+  if(activeTreatments.length>0){
+    // Group: if all active treatments use the same product → single countdown
+    // Otherwise → one countdown per hive (or per product group)
+    var trGroups=[];
+    activeTreatments.forEach(function(tr){
+      var recD=getTreatmentDuration(tr.product);
+      var durDays=tr.customDays||recD;
+      var isCustomDur=!!(tr.customDays&&tr.customDays!==recD);
+      var d4=new Date(tr.date); d4.setDate(d4.getDate()+(durDays<=1?0:durDays));
+      var endDateStr=durDays<=1?tr.date:d4.toISOString().slice(0,10);
+      var endD=new Date(endDateStr); endD.setHours(0,0,0,0);
+      var daysLeft=Math.ceil((endD-trNow)/86400000);
+      var startD2=new Date(tr.date); startD2.setHours(0,0,0,0);
+      var elapsed=Math.ceil((trNow-startD2)/86400000);
+      var pct=Math.min(100,Math.round((elapsed/durDays)*100));
+      var hv=D.hives.find(function(h){return h.id===tr.hiveId;});
+      // Group by same product AND same duration (dacă duratele diferă, grupuri separate)
+      var grpKey=tr.product+"__"+durDays;
+      var grp=trGroups.find(function(g){return g.key===grpKey;});
+      if(!grp){
+        trGroups.push({key:grpKey,product:tr.product,hives:[],daysLeft:daysLeft,endDateStr:endDateStr,durDays:durDays,isCustomDur:isCustomDur,recDays:recD,pct:pct});
+        grp=trGroups[trGroups.length-1];
+      }
+      grp.hives.push(hv?hv.name:t("tr_all_d"));
+    });
+
+    trCountdownH='<div class="c" style="margin-top:14px;border-color:rgba(74,158,255,.35);">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
+      +'<div class="ct" style="margin:0;color:var(--info);">💊 '+(isEN?"Active Treatments":"Tratamente Active")+'</div>'
+      +'<button class="btn sm be" onclick="go(\'tratamente\')" style="font-size:.72rem;padding:4px 10px;">'+(isEN?"Details":"Detalii")+' →</button>'
+      +'</div>';
+
+    trGroups.forEach(function(grp){
+      var urgColor=grp.daysLeft<=3?"var(--danger)":grp.daysLeft<=7?"var(--gold)":"var(--ok)";
+      var hivesStr=grp.hives.join(", ");
+      var isSingleApp=grp.durDays<=1;
+      trCountdownH+='<div style="background:rgba(74,158,255,.06);border:1px solid rgba(74,158,255,.15);border-radius:var(--rm);padding:12px 13px;margin-bottom:10px;">'
+        +'<div style="font-size:.84rem;font-weight:700;color:var(--txt);margin-bottom:4px;">💊 '+grp.product+'</div>'
+        +'<div style="font-size:.75rem;color:var(--mut);margin-bottom:6px;">🏠 '+hivesStr+'</div>';
+      if(!isSingleApp){
+        // Big countdown number
+        trCountdownH+='<div style="display:flex;align-items:center;gap:12px;margin:8px 0;">'
+          +'<div style="text-align:center;background:rgba(0,0,0,.18);border-radius:var(--rs);padding:10px 16px;min-width:70px;">'
+          +'<div style="font-size:2rem;font-weight:900;color:'+urgColor+';line-height:1;">'+grp.daysLeft+'</div>'
+          +'<div style="font-size:.6rem;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;">'+(isEN?"days left":"zile rămase")+'</div>'
+          +'</div>'
+          +'<div style="flex:1;">'
+          +'<div style="font-size:.72rem;color:var(--mut);margin-bottom:5px;">🏁 '+(isEN?"Ends: ":"Sfârșit: ")+'<strong>'+grp.endDateStr+'</strong></div>'
+          +'<div style="background:rgba(0,0,0,.25);border-radius:20px;height:8px;overflow:hidden;">'
+          +'<div style="width:'+grp.pct+'%;height:100%;background:linear-gradient(90deg,var(--info),#74b3ff);border-radius:20px;"></div>'
+          +'</div>'
+          +'<div style="font-size:.63rem;color:var(--mut);margin-top:3px;">'+grp.pct+'% '+(isEN?"complete":"efectuat")+' · '
+          +(grp.isCustomDur
+            ?'<span style="color:var(--gold);">⚙️ '+(isEN?"Custom: ":"Personalizat: ")+grp.durDays+(isEN?" days":" zile")+' (rec. '+grp.recDays+(isEN?"d":"z")+')</span>'
+            :(isEN?"Duration: ":"Durată: ")+grp.durDays+(isEN?" days":" zile"))
+          +'</div>'
+          +'</div></div>';
+      } else {
+        trCountdownH+='<div style="font-size:.78rem;color:var(--ok);">⚡ '+(isEN?"Single application":"Aplicare unică")+'</div>';
+      }
+      trCountdownH+='</div>';
+    });
+    trCountdownH+='</div>';
+  }
+
   setP('<h1 style="margin-bottom:16px;font-size:1.35rem;"><i class="fas fa-tachometer-alt" style="color:var(--gold)"></i> '+t("dash_title")+'</h1>'
     +stockA+vrAlertA+tkAlertA
     +'<div class="g gs">'
@@ -1750,11 +1821,11 @@ function renderDashboard(){
     +'<div class="c"><div class="cl">'+t("dash_queens_active")+'</div><div class="cv">'+D.queens.filter(function(q){return q.status==="activă";}).length+'</div><div class="cs">'+D.queens.filter(function(q){return q.status==="în imperechere";}).length+' '+t("dash_mating")+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_honey_kg")+'</div><div class="cv">'+totH.toFixed(1)+'</div><div class="cs">'+D.honeyHarvests.length+' '+t("dash_sessions")+'</div></div>'
     +honeyCardH
-    +'<div class="c"><div class="cl">'+t("dash_treatments")+'</div><div class="cv">'+pend+'</div></div>'
+    +'<div class="c"><div class="cl">'+t("dash_treatments")+'</div><div class="cv"'+(activeTreatments.length?' style="color:var(--info);"':'')+'>'+pend+'</div>'+(activeTreatments.length?'<div class="cs" style="color:var(--info);">'+activeTreatments.length+(isEN?" active":" active")+'</div>':'')+'</div>'
     +'<div class="c"><div class="cl">'+t("dash_last_insp")+'</div><div class="cv" style="font-size:1rem">'+(last?last.date:"—")+'</div><div class="cs">'+lastHiveName+'</div></div>'
     +'<div class="c"><div class="cl">'+t("dash_low_stock")+'</div><div class="cv" style="color:'+(low.length?"var(--danger)":"var(--ok)")+'">'+low.length+'</div></div>'
     +finCardH+(vrCardH||'')+tkKpiH+hrKpiH
-    +'</div>'+tkPanelH+hrPanelH+wCard+pastHTML);
+    +'</div>'+tkPanelH+hrPanelH+trCountdownH+wCard+pastHTML);
 }
 
 window.tkQuickDone=function(id){
@@ -2088,7 +2159,7 @@ function inspM(hiveId,editId){
   var effHid=ex?ex.hiveId:hiveId;
   var hive=effHid?D.hives.find(function(h){return h.id===effHid;}):null;
   var disArr=ex?ex.diseases||[]:[];
-  // Determina daca stupul are magazie: verifica hive.hasMag SAU ultima inspectie salvata cu hasMag=true
+  // Determine if hive has a super: check hive.hasMag OR last saved inspection with hasMag=true
   function hiveEffHasMag(hid){
     if(!hid)return false;
     var hv=D.hives.find(function(h){return h.id===hid;});
@@ -2183,7 +2254,7 @@ function inspM(hiveId,editId){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveInsp(\''+(editId||"")+'\',\''+(effHid||"")+'\')">'+t("insp_save")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
 
-// ── Magazie: build radio group ───────────────────────────────
+// ── Super box: build radio group ────────────────────────────
 function buildMagRadios(mag, ex, hive){
   var isEN=D.settings.lang==="en";
   // Determine initial selection:
@@ -2471,18 +2542,179 @@ window.saveHn=function(id){
 // ═══════════════════════════════════════════
 // TREATMENTS
 // ═══════════════════════════════════════════
+// ─── Durate tratamente apicole (zile) ─────────────────────────────────────
+// Surse: EMA, ANSVSA, producători, literatura apicolă
+var TREATMENT_DURATION = {
+  // ACID OXALIC — vaporizare (3 tratamente la 5 zile interval = ~10 zile, sau o singură aplicare cu puiet absent)
+  "🧪 Acid oxalic — vaporizare/sublimare (Api-Bioxal)": 10,
+  "🧪 Acid oxalic — vaporizare/sublimare (Oxuvar)": 10,
+  "🧪 Acid oxalic — vaporizare/sublimare (preparat propriu)": 10,
+  // ACID OXALIC — picurare (o singură aplicare, efect imediat, fără puiet)
+  "💧 Acid oxalic — picurare lichid (Api-Bioxal)": 1,
+  "💧 Acid oxalic — picurare lichid (Oxuvar 5,7%)": 1,
+  "💧 Acid oxalic — picurare lichid (preparat propriu soluție 3%)": 1,
+  "🍬 Acid oxalic — stropire/pulbere pe rame": 1,
+  // ACID OXALIC — bandă impregnată (eliberare lentă, ~3 luni max, recomandat 6-8 săpt.)
+  "🍬 Acid oxalic — bandă impregnată (OxyBee)": 42,
+  // ACID FORMIC — MAQS (7 zile cu puiet, 2 benzi succesive)
+  "📋 Acid formic — MAQS (benzi)": 7,
+  // ACID FORMIC — Formidol (2 x 10 zile, total 20)
+  "📋 Acid formic — Formidol (benzi/plăci)": 20,
+  // ACID FORMIC — FORAPI (2 aplicări x 10 zile)
+  "📋 Acid formic — FORAPI (benzi)": 20,
+  // ACID FORMIC — Apitol evaporare lentă (~3-4 săpt.)
+  "📋 Acid formic — Apitol (evaporare lentă)": 21,
+  // ACID FORMIC — Varromed picurare (2 aplicări la 7 zile)
+  "📋 Acid formic — Varromed (lichid picurare)": 14,
+  "💧 Acid formic — picurare lichid 65% (preparat propriu)": 14,
+  "💧 Acid formic — evaporare lentă (tăviță)": 21,
+  // FLUMETRIN — Bayvarol (6-8 săptămâni, maxim 8)
+  "📋 Flumetrin — Bayvarol (benzi)": 42,
+  // FLUMETRIN — Polyvar Yellow (fundul stupului, ~4-6 luni, recomandat retras după 8 săpt.)
+  "📋 Flumetrin — Polyvar Yellow (benzi insert fund)": 56,
+  // AMITRAZ — benzi (6-8 săptămâni tipic, unele recomandă 8)
+  "📋 Amitraz — Apivar (benzi)": 56,
+  "📋 Amitraz — Apitraz (benzi)": 56,
+  "📋 Amitraz — Klartan (benzi)": 56,
+  "📋 Amitraz — Biovar (benzi)": 42,
+  "📋 Amitraz — Apitik (benzi)": 42,
+  // AMITRAZ — fogger (efect imediat)
+  "💨 Amitraz — fogger/vaporizare (soluție lichidă)": 1,
+  // COUMAPHOS — Perizin (2 aplicări la 7 zile)
+  "💧 Coumaphos — Perizin (picurare pe rame)": 14,
+  // COUMAPHOS — CheckMite+ (6-8 săptămâni)
+  "📋 Coumaphos — CheckMite+ (benzi)": 42,
+  // TIMOL — Apiguard (4 săptămâni în 2 aplicări)
+  "📋 Timol — Apiguard (gel/tablete)": 28,
+  // TIMOL — ApiLife VAR (2-3 aplicări x 7-10 zile = ~21-24 zile)
+  "📋 Timol — ApiLife VAR (tablete/plăcuțe)": 21,
+  // TIMOL — Thymovar (3-4 săptămâni)
+  "📋 Timol — Thymovar (benzi/plăci)": 28,
+  // TIMOL — preparat propriu (similar Thymovar)
+  "🌿 Timol — preparat propriu (cristale)": 21,
+  // ULEIURI ESENȚIALE — efect în 2-3 săptămâni
+  "🌿 Ulei de cimbru — tablete/pastile": 21,
+  "🌿 Ulei de cimbru — sirop în hrană": 14,
+  "🌿 Mentol — cristale/tablete": 21,
+  "🌿 Eucalipt — lichid picurare": 14,
+  "🌿 Ulei esențial — combinație (preparat propriu)": 21,
+  // EXTRACTE VEGETALE
+  "🌱 Extract vegetal — sirop în hrană": 14,
+  "🌱 Macerat plante — lichid aplicat direct": 14,
+  "🌱 Nozevit — macerat din tărâțe orez (Nosemoză)": 21,
+  "🌱 Nozevit Plus — formulă îmbunătățită": 21,
+  // FUMIGAȚIE — efect imediat/scurt
+  "💨 Fumigație — Folbex VA (benzi arse)": 1,
+  "💨 Fumigație — combinație lichid pe cărbuni": 1,
+  "💨 Fumigație — acid oxalic sublimat (cupă/rezistență)": 10,
+  // ANTIBIOTICE — cure de 7-14 zile
+  "💊 Oxitetraciclină — locă americană (Terramicin)": 14,
+  "💊 Fumagilină — sirop în hrană (Nosemoză)": 21,
+  "💊 Tylosin — locă americană": 14,
+  // NUTRITIVE — perioade de stimulare
+  "🍯 Apifortil — stimulent de primăvară": 14,
+  "🍯 Apistimul — sirop cu aminoacizi": 14,
+  "🍯 Vitamine apicole — sirop în hrană": 14,
+  // ALTE
+  "🌿 Hop Guard (benzi hop)": 30,
+  "🌿 Oxibee (acid oxalic + zahar + glicerol)": 14,
+  "🌿 Hivestamp / Apitol (diverse forme)": 21,
+  "📦 Alt produs (specificați în observații)": 21
+};
+
+// Helper: returnează durata în zile pentru un produs; default 21 dacă nu e găsit
+function getTreatmentDuration(product) {
+  if(!product) return 21;
+  // caută exact
+  if(TREATMENT_DURATION[product] !== undefined) return TREATMENT_DURATION[product];
+  // caută parțial (pentru produse cu text modificat)
+  var keys = Object.keys(TREATMENT_DURATION);
+  for(var i=0;i<keys.length;i++){
+    if(product.indexOf(keys[i])>=0 || keys[i].indexOf(product)>=0) return TREATMENT_DURATION[keys[i]];
+  }
+  return 21;
+}
+
+// Helper: calculează data de sfârșit a tratamentului
+function getTreatmentEndDate(startDateStr, product) {
+  var days = getTreatmentDuration(product);
+  if(days <= 1) return startDateStr; // aplicare unică
+  var d = new Date(startDateStr);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0,10);
+}
+
 function renderTreatments(){
+  var isEN=D.settings.lang==="en";
+  var today=new Date(); today.setHours(0,0,0,0);
   var sorted=[].concat(D.treatments).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var cards=sorted.map(function(tr){
-    var hv=D.hives.find(function(h){return h.id===tr.hiveId;});var past=new Date(tr.date)<=new Date();
+    var hv=D.hives.find(function(h){return h.id===tr.hiveId;});
+    var startDate=new Date(tr.date); startDate.setHours(0,0,0,0);
+    var recDays=getTreatmentDuration(tr.product);
+    var durDays=tr.customDays||recDays;
+    var isCustomDur=!!(tr.customDays&&tr.customDays!==recDays);
+    // endDate: dacă există salvat și e corespunzător duratei curente, folosim; altfel recalculăm
+    var d3=new Date(tr.date); d3.setDate(d3.getDate()+(durDays<=1?0:durDays));
+    var endDateStr=durDays<=1?tr.date:d3.toISOString().slice(0,10);
+    var endDate=new Date(endDateStr); endDate.setHours(0,0,0,0);
+    var isActive=startDate<=today && endDate>=today;
+    var isFuture=startDate>today;
+    var isFinished=endDate<today;
+    var daysLeft=Math.ceil((endDate-today)/86400000);
+    var daysSince=Math.ceil((today-endDate)/86400000);
+    var daysUntilStart=Math.ceil((startDate-today)/86400000);
     // Count post-treatment inspections linked to this treatment
     var postInsp=(D.inspections||[]).filter(function(i){return i.postTrId===tr.id;});
-    var postBadge=postInsp.length?'<span class="bg gg" style="font-size:.63rem;">🔬 '+postInsp.length+(D.settings.lang==="en"?" eval.":" eval.")+'</span>':'';
-    var lastEff=postInsp.length?(postInsp.sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0].postTrEff||""):"";
+    var postBadge=postInsp.length?'<span class="bg gg" style="font-size:.63rem;">🔬 '+postInsp.length+(isEN?" eval.":" eval.")+'</span>':'';
+    var lastEff=postInsp.length?(postInsp.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0].postTrEff||""):"";
     var effBadge=lastEff?'<span class="bg gb" style="font-size:.63rem;">📈 '+lastEff+'</span>':"";
-    return'<div class="c"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><h3 style="font-size:.92rem;">💊 '+tr.product+'</h3><span class="bg '+(past?"gy":"gb")+'">'+(past?t("tr_done"):t("tr_planned"))+'</span></div>'
-      +'<div style="font-size:.8rem;">🏠 '+(hv?hv.name:t("tr_all_d"))+' · 📅 '+tr.date+'</div>'
-      +'<div style="font-size:.8rem;margin-top:2px;">⚖️ '+(tr.dosage||"—")+'</div>'
+
+    // Status badge
+    var statusBadge, statusColor;
+    if(isFuture){
+      statusBadge='<span class="bg gb">'+t("tr_planned")+'</span>';
+    } else if(isActive){
+      statusBadge='<span class="bg gg" style="animation:pulse 2s infinite;">⏳ '+(isEN?"Active":"Activ")+'</span>';
+      statusColor='border-color:var(--ok);';
+    } else {
+      statusBadge='<span class="bg gy">'+t("tr_done")+'</span>';
+    }
+
+    // Duration info bar
+    var durInfo='';
+    if(durDays>1){
+      var totalDays=durDays;
+      var elapsed=Math.max(0,Math.ceil((today-startDate)/86400000));
+      var pct=Math.min(100,Math.round((elapsed/totalDays)*100));
+      if(isActive){
+        durInfo='<div style="margin:8px 0 4px;">'
+          +'<div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--mut);margin-bottom:3px;">'
+          +'<span>📅 '+(isEN?"Started: ":"Început: ")+tr.date
+          +(isCustomDur?' <span class="bg gy" style="font-size:.6rem;">⚙️ '+(isEN?"custom":"personalizat")+' '+durDays+(isEN?"d":"z")+'</span>':'')+'</span>'
+          +'<span style="color:var(--ok);font-weight:700;">⏳ '+daysLeft+(isEN?" days left":" zile rămase")+'</span>'
+          +'</div>'
+          +'<div style="background:rgba(0,0,0,.25);border-radius:20px;height:6px;overflow:hidden;">'
+          +'<div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--ok),#8de860);border-radius:20px;transition:width .5s;"></div>'
+          +'</div>'
+          +'<div style="display:flex;justify-content:space-between;font-size:.63rem;color:var(--mut);margin-top:2px;">'
+          +'<span>'+elapsed+' / '+totalDays+' '+(isEN?"days":"zile")+'</span>'
+          +'<span>🏁 '+endDateStr+'</span>'
+          +'</div></div>';
+      } else if(isFuture){
+        durInfo='<div style="font-size:.75rem;color:var(--info);margin-top:4px;">⏭️ '+(isEN?"Starts in ":"Începe în ")+daysUntilStart+(isEN?" days · Duration: ":" zile · Durată: ")+durDays+(isEN?" days":" zile")+'</div>'
+          +'<div style="font-size:.73rem;color:var(--mut);">🏁 '+(isEN?"Ends: ":"Sfârșit: ")+endDateStr+'</div>';
+      } else {
+        durInfo='<div style="font-size:.74rem;color:var(--mut);margin-top:3px;">✅ '+(isEN?"Completed ":"Finalizat acum ")+daysSince+(isEN?" days ago. Duration was ":" zile. Durată: ")+durDays+(isEN?" days.":" zile.")+'</div>';
+      }
+    } else {
+      durInfo='<div style="font-size:.73rem;color:var(--mut);margin-top:3px;">⚡ '+(isEN?"Single application":"Aplicare unică")+'</div>';
+    }
+
+    return'<div class="c" style="'+(isActive?statusColor:"")+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:6px;"><h3 style="font-size:.88rem;flex:1;">💊 '+tr.product+'</h3>'+statusBadge+'</div>'
+      +'<div style="font-size:.8rem;">🏠 '+(hv?hv.name:t("tr_all_d"))+'</div>'
+      +'<div style="font-size:.78rem;margin-top:2px;">⚖️ '+(tr.dosage||"—")+'</div>'
+      +durInfo
       +(postInsp.length||effBadge?'<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">'+postBadge+effBadge+'</div>':"")
       +(tr.notes?'<div style="font-size:.74rem;color:var(--mut);margin-top:3px;font-style:italic">'+tr.notes+'</div>':"")
       +'<div class="br"><button class="btn sm be" onclick="treatM(\''+tr.id+'\')">✏️</button><button class="btn sm bd" onclick="delTr(\''+tr.id+'\')">🗑️</button></div>'
@@ -2495,31 +2727,131 @@ function renderTreatments(){
 window.delTr=function(id){showConfirm(t("tr_del_c"),function(){D.treatments=D.treatments.filter(function(t2){return t2.id!==id;});save();renderTreatments();});};
 function treatM(id){
   var ex=id?D.treatments.find(function(t2){return t2.id===id;}):null;
+  var isEN=D.settings.lang==="en";
   var prods=t("tr_products");
+  var savedCustomDays=ex&&ex.customDays?ex.customDays:"";
+  var recDays=getTreatmentDuration(xv(ex,"product",""));
   openM('<div class="mt">'+(ex?t("tr_edit_t"):t("tr_new_t"))+'</div>'
-    +L(t("tr_product"))+'<select id="tPr">'+prods.map(function(p){var isSep=p.startsWith("──");return'<option'+(isSep?' disabled style="color:var(--gold);font-weight:700;font-size:.8rem;"':'')+((xv(ex,"product","")=== p&&!isSep)?" selected":"")+'>'+p+'</option>';}).join("")+'</select>'
-    +L(t("tr_hive"))+'<select id="tHv"><option value="">'+t("tr_all_h")+'</option>'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
-    +'<div class="r2"><div>'+L(t("tr_date"))+'<input type="date" id="tDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
-    +'<div>'+L(t("tr_dose"))+'<input id="tDs" value="'+(xv(ex,"dosage",""))+'" placeholder="'+t("tr_dose_ph")+'"></div></div>'
-    +'<div class="al ali" style="font-size:.76rem;padding:6px 10px;margin:8px 0;">'
-    +'💡 '+(D.settings.lang==="en"?"Efficacy is recorded during a post-treatment inspection (~3 weeks later). Use the Inspections module.":"Eficacitatea se înregistrează la inspecția post-tratament (~3 săptămâni mai târziu). Folosește modulul Inspecții.")
+    +L(t("tr_product"))+'<select id="tPr" onchange="trUpdateDuration()">'+prods.map(function(p){var isSep=p.startsWith("──");return'<option'+(isSep?' disabled style="color:var(--gold);font-weight:700;font-size:.8rem;"':'')+((xv(ex,"product","")=== p&&!isSep)?" selected":"")+'>'+p+'</option>';}).join("")+'</select>'
+    +'<div id="trDurInfo" style="background:rgba(74,158,255,.09);border:1px solid rgba(74,158,255,.2);border-radius:var(--rs);padding:8px 12px;margin:8px 0;font-size:.8rem;"></div>'
+    +'<div style="background:rgba(230,180,34,.07);border:1px solid rgba(230,180,34,.2);border-radius:var(--rs);padding:10px 12px;margin:6px 0;">'
+    +'<div style="font-size:.76rem;font-weight:700;color:var(--gold);margin-bottom:6px;">⚙️ '+(isEN?"Custom duration (optional)":"Durată personalizată (opțional)")+'</div>'
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+    +'<input type="number" id="tCustomDays" inputmode="numeric" min="1" max="365" value="'+savedCustomDays+'" placeholder="'+(isEN?"days":"zile")+'" style="width:80px;margin:0;" oninput="trUpdateDuration()">'
+    +'<span style="font-size:.8rem;color:var(--mut);">'+(isEN?"days (overrides recommendation)":"zile (suprascrie recomandarea)")+'</span>'
+    +'<button class="btn sm gh" type="button" onclick="trResetDuration()" style="font-size:.72rem;padding:4px 10px;">↺ '+(isEN?"Reset to recommended":"Reset recomandat")+'</button>'
     +'</div>'
+    +'<div id="trCustomNote" style="font-size:.7rem;color:var(--mut);margin-top:5px;"></div>'
+    +'</div>'
+    +L(t("tr_hive"))+'<select id="tHv"><option value="">'+t("tr_all_h")+'</option>'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    +'<div class="r2"><div>'+L(t("tr_date"))+'<input type="date" id="tDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'" oninput="trUpdateDuration()"></div>'
+    +'<div>'+L(t("tr_dose"))+'<input id="tDs" value="'+(xv(ex,"dosage",""))+'" placeholder="'+t("tr_dose_ph")+'"></div></div>'
     +L(t("tr_notes"))+'<textarea id="tNt" rows="2">'+(xv(ex,"notes",""))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveTr(\''+(id||'')+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
+  // Initialize duration display
+  setTimeout(trUpdateDuration, 60);
 }
+window.trUpdateDuration=function(){
+  var isEN=D.settings.lang==="en";
+  var prod=($q("tPr")||{}).value||"";
+  var dateStr=($q("tDt")||{}).value||new Date().toISOString().slice(0,10);
+  var el=document.getElementById("trDurInfo");
+  var noteEl=document.getElementById("trCustomNote");
+  if(!el)return;
+  if(!prod||prod.startsWith("──")){el.innerHTML='';if(noteEl)noteEl.innerHTML='';return;}
+
+  var recDays=getTreatmentDuration(prod);  // recomandare
+  var customInput=document.getElementById("tCustomDays");
+  var customVal=customInput?parseInt(customInput.value)||0:0;
+  var dur=customVal>0?customVal:recDays;   // folosește custom dacă e setat
+  var isCustom=customVal>0&&customVal!==recDays;
+
+  // Calculează data de sfârșit cu durata efectivă
+  var d=new Date(dateStr); d.setDate(d.getDate()+(dur<=1?0:dur));
+  var endDateStr=dur<=1?dateStr:d.toISOString().slice(0,10);
+
+  var icon='⏳';
+  var durText='';
+  if(dur<=1){
+    durText='<strong>'+icon+' '+(isEN?"Single application — effect is immediate":"Aplicare unică — efect imediat")+'</strong>';
+  } else {
+    var today=new Date(); today.setHours(0,0,0,0);
+    var startD=new Date(dateStr); startD.setHours(0,0,0,0);
+    var endD=new Date(endDateStr); endD.setHours(0,0,0,0);
+    var daysLeft=Math.ceil((endD-today)/86400000);
+    var isActive=startD<=today&&endD>=today;
+    durText='<strong>'+icon+' '+(isEN?"Duration":"Durată")+': '
+      +(isCustom?'<span style="color:var(--gold);">'+dur+(isEN?" days (custom)":" zile (personalizat)")+'</span>':''+dur+(isEN?" days":" zile"))
+      +'</strong>';
+    durText+=' &nbsp;·&nbsp; 🏁 '+(isEN?"Ends: ":"Sfârșit: ")+'<strong>'+endDateStr+'</strong>';
+    if(isActive&&daysLeft>0) durText+=' &nbsp;<span style="color:var(--ok);font-weight:700;">('+(isEN?daysLeft+" days left":daysLeft+" zile rămase")+')</span>';
+    var desc=getTreatmentProtocolDesc(prod,isEN);
+    if(desc) durText+='<div style="color:var(--mut);font-size:.72rem;margin-top:4px;">💡 '+desc+'</div>';
+  }
+  el.innerHTML=durText;
+
+  // Nota de comparatie sub inputul custom
+  if(noteEl){
+    if(isCustom){
+      var diff=dur-recDays;
+      var diffStr=(diff>0?'+':'')+diff;
+      var col=Math.abs(diff)>14?"var(--danger)":"var(--gold)";
+      noteEl.innerHTML='<span style="color:'+col+';">⚠️ '+(isEN?"Recommended: ":"Recomandat: ")+recDays+(isEN?" days":"  zile")+' ('+diffStr+(isEN?" days from recommendation":" zile față de recomandare")+')</span>';
+    } else if(customVal===recDays){
+      noteEl.innerHTML='<span style="color:var(--ok);">✅ '+(isEN?"Matches recommendation":"Egal cu recomandarea")+'</span>';
+    } else {
+      noteEl.innerHTML='<span style="color:var(--mut);">'+(isEN?"Leave empty to use recommendation (":"Lasă gol pentru recomandare (")+recDays+(isEN?" days)":" zile)")+'</span>';
+    }
+  }
+};
+
+window.trResetDuration=function(){
+  var prod=($q("tPr")||{}).value||"";
+  var inp=document.getElementById("tCustomDays");
+  if(inp){inp.value="";trUpdateDuration();}
+};
+
+function getTreatmentProtocolDesc(prod, isEN){
+  if(prod.indexOf("Api-Bioxal")>=0&&prod.indexOf("vaporizare")>=0) return isEN?"3 vaporizations every 5 days (brood-free recommended)":"3 vaporizări la interval de 5 zile (recomandat fără puiet)";
+  if(prod.indexOf("picurare")>=0&&prod.indexOf("oxalic")>=0) return isEN?"Single drip application, brood-free colony required":"Aplicare unică prin picurare, colonie fără puiet";
+  if(prod.indexOf("OxyBee")>=0) return isEN?"Slow-release strip, leave 6–8 weeks":"Bandă cu eliberare lentă, se lasă 6–8 săptămâni";
+  if(prod.indexOf("MAQS")>=0) return isEN?"Two 7-day strips, effective with brood":"Două benzi de 7 zile, eficient cu puiet";
+  if(prod.indexOf("Apivar")>=0||prod.indexOf("Apitraz")>=0) return isEN?"Two strips per colony, 6–8 weeks":"Două benzi per colonie, 6–8 săptămâni";
+  if(prod.indexOf("Bayvarol")>=0) return isEN?"4 strips per colony, 6–8 weeks":"4 benzi per colonie, 6–8 săptămâni";
+  if(prod.indexOf("Apiguard")>=0) return isEN?"Two applications of gel 2 weeks apart":"Două aplicări de gel la interval de 2 săptămâni";
+  if(prod.indexOf("ApiLife")>=0) return isEN?"Replace tablet every 7–10 days (3 applications)":"Schimbă plăcuța la 7–10 zile (3 aplicări)";
+  if(prod.indexOf("Perizin")>=0) return isEN?"Two applications 7 days apart, brood-free":"Două aplicări la 7 zile interval, colonie fără puiet";
+  if(prod.indexOf("Varromed")>=0) return isEN?"Two applications 7 days apart":"Două aplicări la 7 zile interval";
+  if(prod.indexOf("Formidol")>=0||prod.indexOf("FORAPI")>=0) return isEN?"Two plates/strips of 10 days each":"Două plăci/benzi de câte 10 zile";
+  if(prod.indexOf("Nozevit")>=0) return isEN?"Add to syrup, 3–4 weeks spring treatment":"Adăugat în sirop, tratament de primăvară 3–4 săptămâni";
+  if(prod.indexOf("Oxitetraciclină")>=0||prod.indexOf("Terramicin")>=0) return isEN?"Follow veterinary prescription":"Respectă prescripția medicului veterinar";
+  return "";
+}
+
 window.saveTr=function(id){
-  var o={id:id||uid(),product:($q("tPr")||{}).value,hiveId:($q("tHv")||{}).value||null,date:($q("tDt")||{}).value,dosage:($q("tDs")||{}).value,notes:($q("tNt")||{}).value};
+  var prod=($q("tPr")||{}).value||"";
+  var dateStr=($q("tDt")||{}).value||new Date().toISOString().slice(0,10);
+  var customVal=parseInt((document.getElementById("tCustomDays")||{}).value)||0;
+  var recDays=getTreatmentDuration(prod);
+  var actualDays=customVal>0?customVal:recDays;
+  // Calculează endDate cu durata efectivă
+  var d2=new Date(dateStr); d2.setDate(d2.getDate()+(actualDays<=1?0:actualDays));
+  var endDateStr=actualDays<=1?dateStr:d2.toISOString().slice(0,10);
+  var o={id:id||uid(),product:prod,hiveId:($q("tHv")||{}).value||null,date:dateStr,
+    endDate:endDateStr,
+    customDays:customVal>0?customVal:null,
+    dosage:($q("tDs")||{}).value,notes:($q("tNt")||{}).value};
   if(id){var ex=D.treatments.find(function(t2){return t2.id===id;});if(ex)Object.assign(ex,o);}else{D.treatments.push(o);}
   save();closeM();renderTreatments();toast(id?t("tr_upd"):t("tr_saved"),"💊");
 };
 
-// Helper: echipamente pentru care 1 bucata = suficient (fara warning la qty===min===1)
+// Helper: equipment items where 1 unit is sufficient (no warning when qty===min===1)
 var EQUIP_SINGLE=["Mască apicol","Mănuși apicole","Combinezon","Fumigător mic","Fumigător mare",
   "Daltă apicol","Perie albine",
   "Beekeeping Veil","Beekeeping Gloves","Beekeeping Suit","Small Smoker","Large Smoker",
   "Hive Tool","Bee Brush"];
 function isLowStock(i){
-  // Pentru echipamente individuale: warning doar daca qty < min (nu la egal)
+  // For individual equipment: warning only if qty < min (not when equal)
   if(EQUIP_SINGLE.some(function(n){return i.name&&i.name.toLowerCase()===n.toLowerCase();})){
     return i.qty<i.min;
   }
@@ -2784,7 +3116,7 @@ function renderAnalytics(){
   var avgB=D.inspections.length?(D.inspections.reduce(function(s,i){return s+(i.fB||0);},0)/D.inspections.length).toFixed(1):"—";
   var sc={p:D.hives.filter(function(h){return h.str==="puternic";}).length,m:D.hives.filter(function(h){return h.str==="mediu";}).length,s:D.hives.filter(function(h){return h.str==="slab";}).length};
 
-  // ── Helper: productie stup pe an ─────────────────────────────
+  // ── Helper: per-hive production per year ─────────────────────
   function hiveYearProd(hid,year){
     return D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return h.hiveId===hid&&d.startsWith(String(year));})
       .reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
@@ -2794,7 +3126,7 @@ function renderAnalytics(){
       .reduce(function(s,h){return s+(h.estQty||0);},0);
   }
 
-  // ── Productie per stup ────────────────────────────────────────
+  // ── Production per hive ──────────────────────────────────────
   var hiveProd=D.hives.map(function(h){
     var real=hiveYearProd(h.id,curYear);
     var realAll=D.honeyHarvests.filter(function(hr){return hr.hiveId===h.id;}).reduce(function(s,hr){return s+(hr.actualQty||hr.qty||0);},0);
@@ -2833,7 +3165,7 @@ function renderAnalytics(){
     +(hiveProd.every(function(x){return x.real===0;})?'<div class="al ali" style="margin-top:8px;font-size:.78rem;">'+(isEN?"No harvest data yet.":"Nicio recoltă înregistrată.")+'</div>':"")
     +'</div>';
 
-  // ── Eficienta sezon: kg/stup pe an ───────────────────────────
+  // ── Season efficiency: kg/hive per year ─────────────────────
   var nHives=D.hives.length||1;
   var curYearTotal=D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return d.startsWith(String(curYear));}).reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
   var prevYearTotal=D.honeyHarvests.filter(function(h){var d=h.extractionDate||h.date||"";return d.startsWith(String(prevYear));}).reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
@@ -2843,7 +3175,7 @@ function renderAnalytics(){
   var deltaStr=delta!==null?((parseFloat(delta)>0?"+":"")+delta+"%"):"—";
   var deltaPos=delta!==null?parseFloat(delta)>=0:null;
 
-  // Productie per sezon (tip miere)
+  // Production per season (honey type)
   var byFlowCur={},byFlowPrev={};
   D.honeyHarvests.forEach(function(h){
     var d=h.extractionDate||h.date||"",tp=h.honeyType||h.type||"?",qty=h.actualQty||h.qty||0;
@@ -2893,7 +3225,7 @@ function renderAnalytics(){
       +'<tbody>'+seasonRows+'</tbody></table></div>':'')
     +'</div>':"";
 
-  // ── Inspectii per stup (an curent) ───────────────────────────
+  // ── Inspections per hive (current year) ─────────────────────
   var inspYr=D.inspections.filter(function(i){return i.date&&i.date.startsWith(String(curYear));});
   var hiveInspC=D.hives.map(function(h){
     var cnt=inspYr.filter(function(i){return i.hiveId===h.id;}).length;
@@ -2919,7 +3251,7 @@ function renderAnalytics(){
     +'<tbody>'+inspRows+'</tbody></table></div>'
     +'</div>';
 
-  // ── Botci trend per stup ──────────────────────────────────────
+  // ── Queen cell trend per hive ────────────────────────────────
   var hiveBotci=D.hives.map(function(h){
     var insps=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;}).sort(function(a,b){return new Date(a.date)-new Date(b.date);});
     var last4=insps.slice(-4);
@@ -2955,12 +3287,12 @@ function renderAnalytics(){
       +'</div>';
   }
 
-  // ── Grafice miere pe tip si evolutie ─────────────────────────
+  // ── Honey charts by type and trend ──────────────────────────
   var byT={};D.honeyHarvests.forEach(function(h){var tp=h.honeyType||"?";byT[tp]=(byT[tp]||0)+(h.actualQty||h.qty||0);});
   var byTChart=Object.keys(byT).length?'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_by_t")+'</div><canvas id="ch1" height="90"></canvas></div>':"";
   var evolChart='<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("an_evol")+'</div><canvas id="ch2" height="90"></canvas></div>';
 
-  // ── Distributie forta colonii — mic, doar daca ≥5 stupi ──────
+  // ── Colony strength distribution — small chart, only if ≥5 hives ──
   var distHTML="";
   if(D.hives.length>=5){
     var tot2=sc.p+sc.m+sc.s||1;
@@ -3000,8 +3332,7 @@ function renderAnalytics(){
     +(botciHTML||"")
     +(byTChart||"")
     +evolChart
-    +distHTML
-    +'<button class="btn" onclick="exportToPDF()" style="margin-top:4px;">'+t("an_export")+'</button>');
+    +distHTML);
 
   setTimeout(function(){
     var cO={responsive:true,plugins:{legend:{labels:{color:"#b9b5ae",font:{size:10}}}},scales:{x:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}},y:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}}}};
@@ -3059,38 +3390,8 @@ function renderSettings(){
       +'</div><div id="'+arcId2+'" style="display:none;padding:8px 4px;">'+hivesHTML2+'</div></div>';
   }).join("");
 
-  // ── Drive status HTML ─────────────────────────────────────────
-  var gConn=D.settings.gConnected;
-  var gEmail=D.settings.gEmail||"";
-  var gLastSync=D.settings.gLastSync;
-  var lastSyncStr=gLastSync?new Date(gLastSync).toLocaleTimeString():"—";
-  var onlineNow=navigator.onLine;
-  var driveStatusHTML=gConn
-    ?'<div class="drv-ok">'
-      +'<div class="drv-pulse"></div>'
-      +'<div style="flex:1;">'
-      +'<div style="font-weight:700;color:var(--ok);">☁️ Drive conectat</div>'
-      +(gEmail?'<div style="font-size:.72rem;color:var(--mut);">'+gEmail+'</div>':"")
-      +'<div id="driveLastSync" style="font-size:.7rem;color:var(--mut);">Ultimă sincronizare: '+lastSyncStr+'</div>'
-      +'</div>'
-      +'<div style="display:flex;flex-direction:column;gap:5px;">'
-      +'<button class="btn sm" onclick="GDR.sync();toast(\'Sincronizare…\',\'☁️\');" '+(onlineNow?"":"disabled title='Offline'")+'>⟳ Sync</button>'
-      +'<button class="btn sm gh" onclick="GDR.restore()">⬇️ Restaurează</button>'
-      +'<button class="btn sm bd" onclick="GDR.disconnect()">✕ Deconectare</button>'
-      +'</div></div>'
-    :'<div class="drv-no">'
-      +'<p style="margin:0 0 8px;font-size:.78rem;color:var(--mut);">'+(isEN?"Not connected. Enter your Google Client ID below to enable auto-sync.":"Neconectat. Introduceți Google Client ID pentru a activa sincronizarea automată.")+'</p>'
-      +L(isEN?"Google OAuth Client ID":"Google OAuth Client ID (de la console.cloud.google.com)")
-      +'<input id="gCidInput" placeholder="xxxx.apps.googleusercontent.com" value="'+(D.settings.gClientId||"")+'" oninput="D.settings.gClientId=this.value.trim();save(false);" style="font-size:.75rem;">'
-      +'<div style="font-size:.68rem;color:var(--mut);margin:5px 0 10px;line-height:1.4;">'
-      +'💡 '+(isEN?"Create a project at console.cloud.google.com → APIs → Drive API → OAuth 2.0 Client ID (Web app). Add this page URL as authorized origin.":"Creați proiect la console.cloud.google.com → APIs → Drive API → OAuth 2.0 Client ID (Web). Adăugați URL-ul acestei pagini ca origine autorizată.")
-      +'</div>'
-      +'<button class="btn" onclick="GDR.connect()" '+(onlineNow?"":"disabled title='Offline'")+'>☁️ '+(isEN?"Connect Google Drive":"Conectează Google Drive")+'</button>'
-      +'</div>';
-
-  var autoSyncHTML='<div class="ck" style="margin-top:10px;"><input type="checkbox" id="gAutoSyncTg"'+(D.settings.gAutoSync?" checked":"")
-    +' onchange="D.settings.gAutoSync=this.checked;save(false);"><label for="gAutoSyncTg">☁️ '+(isEN?"Auto-sync to Drive on every save":"Sincronizare automată pe Drive la fiecare salvare")+'</label></div>';
-
+  var driveLastExport=D.settings.driveLastExport?new Date(D.settings.driveLastExport).toLocaleString():"—";
+  var autoSyncHTML="";
   // ── Per-hive snapshots status ─────────────────────────────────
   var hiveSnapHTML='';
   if(D.hives.length>0){
@@ -3118,12 +3419,9 @@ function renderSettings(){
     +L(isEN?"Your email (used for identification)":"Email-ul tău (identificare)")
     +'<input type="email" id="userEmailInp" placeholder="exemplu@gmail.com" value="'+(D.settings.userEmail||"")+'" oninput="D.settings.userEmail=this.value.trim();save(false);">'
     +'</div>'
-    +'<div style="margin:14px 0 6px;font-size:.78rem;font-weight:700;color:var(--gold);">☁️ Google Drive</div>'
-    +driveStatusHTML
-    +autoSyncHTML
     +'</div>'
 
-    // ── Arhivă inspecții ──
+    // ── Inspection archive ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">📁 '+(isEN?"Inspection Archive":"Arhivă Inspecții")+'</div>'
     +'<p style="font-size:.8rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"All inspections from previous months, organised by month and hive.":"Toate inspecțiile din lunile anterioare, organizate pe lună și stup.")+'</p>'
     +arcInnerHTML+'</div>'
@@ -3166,26 +3464,112 @@ function renderSettings(){
     +'<button class="btn sm gh" onclick="openManualWeather()">✍️ '+(isEN?"Manual entry":"Introdu manual")+'</button>'
     +'</div></div>'
 
-    // ── Auto-save per stup ──
+    // ── Auto-save per hive ──
     +hiveSnapHTML
 
     // ── Backup & Export ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_backup")+'</div>'
-    +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Manual export: all hives + all inspections in one file.":"Export manual: toți stupii + toate inspecțiile într-un singur fișier.")+'</p>'
-    +'<button class="btn" style="margin-top:4px;display:block;" onclick="exportToExcel()">📊 Export Excel complet</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="exportToPDF()">📄 Export PDF complet</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="expData()">'+t("se_exp")+' (JSON)</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="impData()">'+t("se_imp")+'</button>'
-    +'<button class="btn bd" style="margin-top:8px;display:block;" onclick="rstData()">'+t("se_rst")+'</button></div>'
+    +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Export all data (hives, inspections, harvests) to a JSON backup file. Use Import Backup to restore.":"Exportă toate datele (stupi, inspecții, recolte) într-un fișier backup JSON. Folosește Import Backup pentru restaurare.")+'</p>'
+    +'<button class="btn" style="margin-top:4px;display:block;width:100%;" onclick="expData()">📤 '+t("se_exp")+'</button>'
+    +'<button class="btn gh" style="margin-top:8px;display:block;width:100%;" onclick="impData()">📥 '+t("se_imp")+'</button>'
+    +'<button class="btn" style="margin-top:8px;display:block;width:100%;" onclick="exportToExcel()">📊 Export Excel</button>'
+    +'<div style="font-size:.7rem;color:var(--mut);margin-top:10px;">'+(isEN?"Last backup: ":"Ultimul backup: ")+driveLastExport+'</div>'
+    +'<button class="btn bd" style="margin-top:12px;display:block;" onclick="rstData()">'+t("se_rst")+'</button></div>'
 
     // ── Stats ──
-    +'<div class="c"><div class="ct">'+t("se_stats")+'</div>'
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_stats")+'</div>'
     +'<p style="font-size:.83rem;margin-top:6px;">'+t("se_st_h")+' <strong>'+D.hives.length+'</strong> · '+t("se_st_i")+' <strong>'+D.inspections.length+'</strong> · '+t("se_st_hr")+' <strong>'+totH.toFixed(1)+' kg</strong> · '+t("se_st_inv")+' <strong>'+D.inventory.length+' '+t("se_st_a")+'</strong></p>'
     +'<p style="font-size:.72rem;color:var(--mut);margin-top:8px;">💾 Stocare locală: '+(Math.round(JSON.stringify(D).length/1024))+' KB · Conexiune: '+(navigator.onLine?'<span style="color:var(--ok)">Online</span>':'<span style="color:var(--danger)">Offline</span>')+'</p>'
-    +'</div>');
+    +'</div>'
+
+    // ── About ──
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">ℹ️ '+(isEN?"About":"Despre aplicație")+'</div>'
+    +'<div style="text-align:center;padding:18px 0 8px;">'
+    +'<div style="font-size:2.2rem;margin-bottom:8px;">🐝</div>'
+    +'<div style="font-size:1.1rem;font-weight:700;color:var(--gold);letter-spacing:.04em;">BeeManagerPro</div>'
+    +'<div style="font-size:.78rem;color:var(--mut);margin-top:4px;">'+(isEN?"Apiary Management Application":"Aplicație Management Stupină")+'</div>'
+    +'<div style="margin-top:18px;padding:12px 16px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);">'
+    +'<div style="font-size:.72rem;color:var(--mut);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">'+(isEN?"Developer":"Dezvoltator")+'</div>'
+    +'<div style="font-size:1rem;font-weight:700;color:var(--text);">Sorin Magdici</div>'
+    +'</div>'
+    +'<div style="font-size:.7rem;color:var(--mut);margin-top:14px;">© 2024–2025 Sorin Magdici · All rights reserved</div>'
+    +'</div></div>');
 }
-window.expData=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:"application/json"}));a.download="beemanager_backup_"+new Date().toISOString().slice(0,10)+".json";a.click();};
-window.impData=function(){var inp=document.createElement("input");inp.type="file";inp.accept=".json";inp.onchange=function(e){var r=new FileReader();r.onload=function(ev){Object.assign(D,JSON.parse(ev.target.result));save();setTimeout(function(){location.reload();},1000);};r.readAsText(e.target.files[0]);};inp.click();};
+// ── Export Backup: APK-compatible (Share API → Blob download fallback) ──
+window.expData=async function(){
+  var b=buildBackupBlob();
+  var json=b.json;
+  var filename=b.filename;
+
+  // Strategy 1: Web Share API with file — works in Capacitor APK & Chrome mobile
+  if(navigator.canShare){
+    try{
+      var file=new File([json],filename,{type:"application/json"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"BeeManagerPro Backup",text:"BeeManagerPro Backup"});
+        D.settings.driveLastExport=Date.now();
+        save(false);
+        toast(isEN?"✅ Backup shared! Save it wherever you want.":"✅ Backup partajat! Salvează-l unde dorești.","📤");
+        if(curP==="settings")renderSettings();
+        return;
+      }
+    }catch(e){
+      if(e.name==="AbortError")return; // user cancelled
+    }
+  }
+
+  // Strategy 2: Blob + anchor download — fallback for browser/desktop
+  try{
+    var blob=new Blob([json],{type:"application/json"});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},600);
+    D.settings.driveLastExport=Date.now();
+    save(false);
+    toast(isEN?"⬇️ Backup downloaded!":"⬇️ Backup descărcat!","📤");
+    if(curP==="settings")renderSettings();
+  }catch(e){
+    toast(isEN?"Export failed: "+e.message:"Export eșuat: "+e.message,"❌");
+  }
+};
+
+// ── Import Backup ──
+window.impData=function(){
+  var inp=document.createElement("input");
+  inp.type="file";
+  inp.accept=".json,application/json";
+  inp.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var r=new FileReader();
+    r.onload=function(ev){
+      try{
+        var imported=JSON.parse(ev.target.result);
+        if(!imported.hives){
+          toast(isEN?"Invalid backup file.":"Fișier de backup invalid.","❌");
+          return;
+        }
+        showConfirm(
+          isEN?"This will overwrite your current data. Continue?":"Aceasta va suprascrie datele curente. Continui?",
+          function(){
+            Object.assign(D,imported);
+            save(false);
+            toast(isEN?"✅ Data restored from backup!":"✅ Date restaurate din backup!","📥");
+            setTimeout(function(){location.reload();},800);
+          }
+        );
+      }catch(err){
+        toast(isEN?"Error reading file.":"Eroare la citirea fișierului.","❌");
+      }
+    };
+    r.readAsText(file);
+  };
+  inp.click();
+};
 window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");location.reload();});};
 
 // Export PDF per hive (individual hive report)
@@ -3343,7 +3727,7 @@ window.calcRender=function(){
 };
 
 // ═══════════════════════════════════════════
-// HRĂNIRE — Feeding Journal
+// FEEDING — Feeding Journal
 // ═══════════════════════════════════════════
 
 var _hrHiveFilter="all";
@@ -3630,7 +4014,7 @@ window.saveHr=function(id){
 };
 
 // ═══════════════════════════════════════════
-// SARCINI — Tasks & Reminders
+// TASKS — Tasks & Reminders
 // ═══════════════════════════════════════════
 
 var _tkTab="pending";
@@ -3810,7 +4194,7 @@ window.saveTk=function(id){
 };
 
 // ═══════════════════════════════════════════
-// VARROA — Monitor & Calcul Infestare
+// VARROA — Monitor & Infestation Calculator
 // ═══════════════════════════════════════════
 
 // Shared helper: classify a varroa test entry into ok / watch / treat
@@ -4098,7 +4482,7 @@ window.saveVr=function(id){
 };
 
 // ═══════════════════════════════════════════
-// FINANCIAR — Venituri & Cheltuieli
+// FINANCIAR — Income & Expenses
 // ═══════════════════════════════════════════
 var _finTab="all";
 var _finYear=new Date().getFullYear();
@@ -4232,7 +4616,7 @@ function renderFinanciar(){
 window.delFin=function(id){
   showConfirm(t("fin_del_c"),function(){
     var fin=D.finances.find(function(f){return f.id===id;});
-    // Restaurează inventarul dacă e o vânzare de miere cu saleLines
+    // Restore inventory if this is a honey sale with saleLines
     if(fin&&fin.saleLines&&fin.saleLines.length){
       fin.saleLines.forEach(function(ln){
         var pkg=D.inventory.find(function(p){return p.id===ln.invId;});
@@ -4247,7 +4631,7 @@ window.delFin=function(id){
 // ── Honey Sale Modal ──────────────────────────────────────────
 var _hSaleLines=[];
 
-// Recalculează totalurile din DOM fără a re-randa modalul
+// Recalculate totals from DOM without re-rendering the modal
 function _hsUpdateTotals(){
   var pkgItems=D.inventory.filter(function(i){return i.cat==="Ambalaje"||i.cat==="Packaging";});
   var grandTotal=0,grandHoney=0;
@@ -4333,7 +4717,7 @@ function _renderHoneySaleM(pkgItems){
     +L(isEN?"Notes":"Note")+'<textarea id="hsNotes" rows="2" placeholder="'+(isEN?"Optional notes...":"Note op\u021bionale...")+'"></textarea>'
     +'<div class="br" style="margin-top:10px;"><button class="btn" onclick="saveHoneySale()">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>';
 
-  // Dacă modalul e deja deschis, actualizăm conținutul fără a deschide unul nou
+  // If modal is already open, update its content without opening a new one
   var existingMB=document.getElementById("MB");
   if(existingMB){
     var mbBody=existingMB.querySelector(".mb-b");
@@ -4342,7 +4726,7 @@ function _renderHoneySaleM(pkgItems){
   openM(innerHTML);
 }
 
-// Schimbarea select-ului de ambalaj — necesită re-randare pentru a actualiza stocul afișat
+// Packaging select change — requires re-render to update displayed stock
 window.hsSelectChange=function(idx,val){
   if(!_hSaleLines[idx])return;
   _hSaleLines[idx].invId=val;
@@ -4588,7 +4972,7 @@ function exportToExcel(){
   var isEN=D.settings.lang==="en";
   var wb=XLSX.utils.book_new();
 
-  // Sheet: Stupi / Hives
+  // Sheet: Hives
   var hdr=isEN?["Hive","Location","Material","Model","Total Frames","Brood Frames","Honey Frames","Strength"]:["Stup","Locatie","Material","Model","Rame Total","Rame Puiet","Rame Miere","Forta"];
   var rows=[hdr];
   D.hives.forEach(function(h){rows.push([h.name,h.loc,h.mat,h.mod,h.fT,h.fB,h.fH,h.str]);});
@@ -4709,136 +5093,119 @@ function exportToPDF(){
   toast(isEN?"Generating PDF...":"Generez PDF...","📄");
   html2pdf().set(opt).from(pg).save().then(function(){toast(isEN?"PDF exported!":"PDF exportat!","📄");});
 }
+
 // ═══════════════════════════════════════════
-// GOOGLE DRIVE SYNC MODULE
+// BACKUP — JSON export / import (WebView + Browser compatible)
 // ═══════════════════════════════════════════
-var GDR={
-  _token:null,
-  _expiry:0,
-  _fileId:null,
-  _syncing:false,
-  _tokenClient:null,
 
-  isConnected:function(){return!!(D.settings.gConnected&&this._token&&Date.now()<this._expiry);},
-  clientId:function(){return(D.settings.gClientId||"").trim();},
+// Build the JSON blob for export
+function buildBackupBlob(){
+  var ts=new Date().toISOString().slice(0,10);
+  var json=JSON.stringify(D,null,2);
+  return {json:json, filename:"BeeManagerPro_backup_"+ts+".json"};
+}
 
-  // Initialize GIS token client (called lazily)
-  _initClient:function(){
-    if(this._tokenClient)return true;
-    if(typeof google==="undefined"||!google.accounts||!google.accounts.oauth2){return false;}
-    var self=this;
-    this._tokenClient=google.accounts.oauth2.initTokenClient({
-      client_id:self.clientId(),
-      scope:"https://www.googleapis.com/auth/drive.appdata",
-      callback:function(resp){
-        if(resp.error){toast("Google Drive: "+resp.error,"❌");return;}
-        self._token=resp.access_token;
-        self._expiry=Date.now()+(resp.expires_in||3600)*1000;
-        D.settings.gConnected=true;
-        D.settings.gLastSync=0;
-        save(false);
-        toast("✅ Google Drive conectat!","☁️");
-        if(curP==="settings")renderSettings();
-        self.sync();
-      }
-    });
-    return true;
-  },
+// Export: tries Web Share API first (works in Android WebView + Chrome),
+// then File System Access API (Chrome desktop),
+// then data-URI fallback (any browser, opens as link).
+async function driveExportJSON(){
+  var b=buildBackupBlob();
+  var json=b.json;
+  var filename=b.filename;
 
-  connect:function(){
-    if(!this.clientId()){toast("Introduceți Client ID Google mai întâi","❌");return;}
-    if(!this._initClient()){toast("Google API nu s-a încărcat (verificați conexiunea)","❌");return;}
-    this._tokenClient.requestAccessToken({prompt:"consent"});
-  },
-
-  disconnect:function(){
-    if(this._token&&typeof google!=="undefined"&&google.accounts)google.accounts.oauth2.revoke(this._token,function(){});
-    this._token=null;this._fileId=null;this._tokenClient=null;
-    D.settings.gConnected=false;D.settings.gLastSync=0;
-    save(false);
-    if(curP==="settings")renderSettings();
-    toast("Deconectat de la Google Drive","📴");
-  },
-
-  // Refresh token silently (no prompt)
-  _refresh:function(cb){
-    var self=this;
-    if(!this._initClient()){if(cb)cb(false);return;}
-    this._tokenClient.callback=function(resp){
-      if(resp.error){if(cb)cb(false);return;}
-      self._token=resp.access_token;
-      self._expiry=Date.now()+(resp.expires_in||3600)*1000;
-      if(cb)cb(true);
-    };
-    this._tokenClient.requestAccessToken({prompt:""});
-  },
-
-  // Find or create the app data file on Drive
-  _findFile:async function(){
-    var r=await fetch("https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27beemanager_data.json%27&fields=files(id)",
-      {headers:{Authorization:"Bearer "+this._token}});
-    var d=await r.json();
-    return(d.files&&d.files.length)?d.files[0].id:null;
-  },
-
-  _doSync:async function(){
-    var content=JSON.stringify(D);
-    var fid=this._fileId||await this._findFile();
-    if(fid){
-      await fetch("https://www.googleapis.com/upload/drive/v3/files/"+fid+"?uploadType=media",
-        {method:"PATCH",headers:{Authorization:"Bearer "+this._token,"Content-Type":"application/json"},body:content});
-      this._fileId=fid;
-    }else{
-      var boundary="bmp_bnd_"+Date.now();
-      var body="--"+boundary+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"
-        +JSON.stringify({name:"beemanager_data.json",parents:["appDataFolder"]})
-        +"\r\n--"+boundary+"\r\nContent-Type: application/json\r\n\r\n"
-        +content+"\r\n--"+boundary+"--";
-      var r2=await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart",
-        {method:"POST",headers:{Authorization:"Bearer "+this._token,"Content-Type":"multipart/related; boundary="+boundary},body:body});
-      var d2=await r2.json();this._fileId=d2.id;
-    }
-    D.settings.gLastSync=Date.now();localStorage.setItem("bmp5",JSON.stringify(D));
-    var el=document.getElementById("driveLastSync");
-    if(el)el.textContent="Sincronizat: acum câteva secunde";
-  },
-
-  sync:async function(){
-    if(this._syncing)return;
-    if(!navigator.onLine){return;}
-    // Refresh token if expired
-    if(!this._token||Date.now()>=this._expiry-60000){
-      var self=this;
-      if(D.settings.gConnected){this._refresh(function(ok){if(ok)self.sync();});} 
-      return;
-    }
-    this._syncing=true;
-    try{await this._doSync();}catch(e){console.warn("Drive sync error:",e);}
-    this._syncing=false;
-  },
-
-  loadFromDrive:async function(){
-    if(!this._token)return null;
+  // ── Strategy 1: Web Share API with file (Android WebView / Chrome mobile)
+  if(navigator.canShare){
     try{
-      var fid=this._fileId||await this._findFile();
-      if(!fid)return null;this._fileId=fid;
-      var r=await fetch("https://www.googleapis.com/drive/v3/files/"+fid+"?alt=media",
-        {headers:{Authorization:"Bearer "+this._token}});
-      return await r.json();
-    }catch(e){return null;}
-  },
-
-  // Restore from Drive (merge with local, Drive wins)
-  restore:async function(){
-    if(!this.isConnected()){toast("Conectați mai întâi Drive-ul","❌");return;}
-    toast("Se încarcă din Drive…","☁️");
-    var remote=await this.loadFromDrive();
-    if(!remote){toast("Nu s-au găsit date pe Drive","❌");return;}
-    Object.assign(D,remote);
-    save(false);
-    location.reload();
+      var file=new File([json],filename,{type:"application/json"});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:"BeeManagerPro Backup"});
+        D.settings.driveLastExport=Date.now();
+        save(false);
+        toast(isEN?"✅ Shared! Save to Google Drive from the share menu.":"✅ Partajat! Salvează în Google Drive din meniu.","☁️");
+        if(curP==="settings")renderSettings();
+        return;
+      }
+    }catch(e){
+      if(e.name==="AbortError")return; // User cancelled
+    }
   }
-};
+
+  // ── Strategy 2: File System Access API (Chrome desktop 86+)
+  if(window.showSaveFilePicker){
+    try{
+      var fh=await window.showSaveFilePicker({
+        suggestedName:filename,
+        types:[{description:"JSON backup",accept:{"application/json":[".json"]}}]
+      });
+      var w=await fh.createWritable();
+      await w.write(new Blob([json],{type:"application/json"}));
+      await w.close();
+      D.settings.driveLastExport=Date.now();
+      save(false);
+      toast(isEN?"✅ Saved!":"✅ Salvat!","☁️");
+      if(curP==="settings")renderSettings();
+      return;
+    }catch(e){
+      if(e.name==="AbortError")return;
+    }
+  }
+
+  // ── Strategy 3: data-URI fallback (works in WebView without share support)
+  try{
+    var dataUri="data:application/json;charset=utf-8,"+encodeURIComponent(json);
+    var a=document.createElement("a");
+    a.href=dataUri;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){document.body.removeChild(a);},500);
+    D.settings.driveLastExport=Date.now();
+    save(false);
+    toast(isEN?"⬇️ File downloaded — move it to Google Drive.":"⬇️ Fișier descărcat — mută-l în Google Drive.","☁️");
+    if(curP==="settings")renderSettings();
+  }catch(e){
+    toast(isEN?"Export failed: "+e.message:"Export eșuat: "+e.message,"❌");
+  }
+}
+
+// Import: file picker → parse JSON → restore data
+function driveImportJSON(){
+  var input=document.createElement("input");
+  input.type="file";
+  input.accept=".json,application/json";
+  input.onchange=function(e){
+    var file=e.target.files[0];
+    if(!file)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var imported=JSON.parse(ev.target.result);
+        if(!imported.hives){
+          toast(isEN?"Invalid backup file.":"Fișier de backup invalid.","❌");
+          return;
+        }
+        showConfirm(
+          isEN?"This will overwrite your current data. Continue?":"Aceasta va suprascrie datele curente. Continui?",
+          function(){
+            Object.assign(D,imported);
+            save(false);
+            toast(isEN?"✅ Data loaded from backup!":"✅ Date încărcate din backup!","☁️");
+            setTimeout(function(){location.reload();},800);
+          }
+        );
+      }catch(err){
+        toast(isEN?"Error reading file.":"Eroare la citirea fișierului.","❌");
+      }
+    };
+    reader.readAsText(file);
+  };
+  document.body.appendChild(input);
+  input.click();
+  setTimeout(function(){
+    if(input.parentNode)document.body.removeChild(input);
+  },3000);
+}
+
 
 // ═══════════════════════════════════════════
 // INIT
