@@ -1159,7 +1159,7 @@ function load(){
   if(!D.settings)D.settings={dark:true,lang:"ro",tempUnit:"C"};
   if(!D.settings.lang)D.settings.lang="ro";
   if(!D.settings.tempUnit)D.settings.tempUnit="C";
-  if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=2;
+  if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=7;
   if(D.settings.autoDownloadInsp===undefined)D.settings.autoDownloadInsp=false;
   if(!D.pastorage)D.pastorage=[];
   if(!D.finances)D.finances=[];
@@ -1858,7 +1858,7 @@ function renderDashboard(){
     trCountdownH='<div class="c" style="margin-top:14px;border-color:rgba(74,158,255,.35);">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
       +'<div class="ct" style="margin:0;color:var(--info);">💊 '+(isEN?"Active Treatments":"Tratamente Active")+'</div>'
-      +'<button class="btn sm be" onclick="go(\'tratamente\')" style="font-size:.72rem;padding:4px 10px;">'+(isEN?"Details":"Detalii")+' →</button>'
+      +'<button class="btn sm be" onclick="go(\'treatments\')" style="font-size:.72rem;padding:4px 10px;">'+(isEN?"Details":"Detalii")+' →</button>'
       +'</div>';
 
     trGroups.forEach(function(grp){
@@ -2118,7 +2118,7 @@ window.exportInspXLS=function(id){
 function renderInspections(){
   var now=new Date();
   var curMonth=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
-  var threshold=parseInt(D.settings.inspAlertThreshold)||2;
+  var threshold=parseInt(D.settings.inspAlertThreshold)||7;
 
   // Sort all inspections descending
   var allSorted=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
@@ -2126,14 +2126,14 @@ function renderInspections(){
   // Current month inspections
   var curInsp=allSorted.filter(function(i){return i.date&&i.date.startsWith(curMonth);});
 
-  // Alert: hives not inspected in the last 7 days
+  // Alert: hives not inspected in the last 'threshold' days
   var today7=new Date();today7.setHours(0,0,0,0);
   var warnHives=D.hives.filter(function(h){
     var lastI=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;})
       .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
     if(!lastI)return true;
     var lastD=new Date(lastI.date);lastD.setHours(0,0,0,0);
-    return (today7-lastD)/86400000>=7;
+    return (today7-lastD)/86400000>=threshold;
   });
 
   // Last inspection per hive in current month (already sorted desc so first = last)
@@ -2157,7 +2157,7 @@ function renderInspections(){
   var alertHTML=warnHives.length?
     '<div class="sa" style="margin-bottom:16px;">'
     +'<strong>⚠️ '+t("insp_alert_title")+'</strong><br>'
-    +'<span style="font-size:.82rem;color:var(--mut);">'+(D.settings.lang==="en"?"Not inspected in the last 7 days:":"Nu au fost verificați în ultimele 7 zile:")+'</span><br style="margin-bottom:5px;">'
+    +'<span style="font-size:.82rem;color:var(--mut);">'+(D.settings.lang==="en"?"Not inspected in the last "+threshold+" days:":"Nu au fost verificați în ultimele "+threshold+" zile:")+'</span><br style="margin-bottom:5px;">'
     +warnHives.map(function(h){
       var lastI=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;})
         .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
@@ -3591,6 +3591,7 @@ function renderSettings(){
 }
 // ── Export Backup: APK-compatible (Share API → Blob download fallback) ──
 window.expData=async function(){
+  var isEN=D.settings.lang==="en";
   var b=buildBackupBlob();
   var json=b.json;
   var filename=b.filename;
@@ -3633,6 +3634,7 @@ window.expData=async function(){
 
 // ── Import Backup ──
 window.impData=function(){
+  var isEN=D.settings.lang==="en";
   var inp=document.createElement("input");
   inp.type="file";
   inp.accept=".json,application/json";
@@ -4071,14 +4073,17 @@ window.saveHr=function(id){
   var invId=($q("hrInv")||{}).value||null;
 
   // Inventory deduction
+  // If editing, restore the OLD inventory item's stock first (regardless of whether invId changed)
+  if(id){
+    var oldFeed=(D.feedings||[]).find(function(f){return f.id===id;});
+    if(oldFeed&&oldFeed.invItemId){
+      var oldItem=D.inventory.find(function(i){return i.id===oldFeed.invItemId;});
+      if(oldItem)oldItem.qty=parseFloat((oldItem.qty+(oldFeed.qty||0)).toFixed(2));
+    }
+  }
   if(invId&&qty>0){
     var item=D.inventory.find(function(i){return i.id===invId;});
     if(item){
-      // If editing, restore old qty first
-      if(id){
-        var old=(D.feedings||[]).find(function(f){return f.id===id;});
-        if(old&&old.invItemId===invId)item.qty+=old.qty||0;
-      }
       if(qty>item.qty){
         toast("⚠️ "+t("hr_inv_warn"),"⚠️");
         // allow save but cap deduction at current stock
@@ -4282,7 +4287,7 @@ window.saveTk=function(id){
   if(!D.tasks)D.tasks=[];
   if(id){
     var ex=D.tasks.find(function(tk){return tk.id===id;});
-    if(ex){var wasDone=ex.done;Object.assign(ex,o);ex.done=wasDone;ex.doneDate=ex.doneDate;}
+    if(ex){var wasDone=ex.done;var wasDoneDate=ex.doneDate;Object.assign(ex,o);ex.done=wasDone;ex.doneDate=wasDoneDate;}
   }else{D.tasks.push(o);}
   save();closeM();renderSarcini();toast(t("tk_saved"),"📋");
 };
@@ -4543,9 +4548,11 @@ window.vrLiveCalc=function(){
     txt=(isEN?"Drop rate: ":"Rată cădere: ")+"<strong>"+rate.toFixed(1)+" "+(isEN?"mites/24h":"acarieni/24h")+"</strong>";
   }
   var col=lvl==="ok"?"var(--ok)":lvl==="watch"?"var(--gold)":"var(--danger)";
+  var bgCol=lvl==="ok"?"rgba(111,191,76,.08)":lvl==="watch"?"rgba(230,180,34,.08)":"rgba(224,80,60,.08)";
+  var bdCol=lvl==="ok"?"rgba(111,191,76,.4)":lvl==="watch"?"rgba(230,180,34,.4)":"rgba(224,80,60,.4)";
   var badge=lvl==="ok"?t("vr_result_ok"):lvl==="watch"?t("vr_result_watch"):t("vr_result_treat");
-  res.style.background=col.replace(')',',0.08)').replace('var(','rgba(')+'08)';
-  res.style.borderColor=col.replace(')',',0.4)').replace('var(','rgba(')+'4)';
+  res.style.background=bgCol;
+  res.style.borderColor=bdCol;
   res.innerHTML='<span style="color:'+col+';">'+txt+'</span><br><span style="color:'+col+';font-weight:700;font-size:.85rem;">'+badge+'</span>';
 };
 
@@ -4924,7 +4931,7 @@ function finM(id,preset){
     +typeRow
     +'<div class="r2">'
     +'<div>'+L(t("fin_date"))+'<input type="date" id="finDt" value="'+(xv(ex,"date",new Date().toISOString().slice(0,10)))+'"></div>'
-    +'<div>'+L(t("fin_amount"))+'<input type="number" inputmode="decimal" step="0.01" id="finAmt" value="'+(xv(ex,"amount",""))+'" placeholder="0.00" oninput="finCalcAmt()"></div>'
+    +'<div>'+L(t("fin_amount"))+'<input type="number" inputmode="decimal" step="0.01" id="finAmt" value="'+(xv(ex,"amount",""))+'" placeholder="0.00" oninput="var el=this;el._userEdited=true;"></div>'
     +'</div>'
     +catHTML
     +'<div id="finHoneyExtra">'+(isInc?'<div class="r2" style="margin-top:6px;"><div>'+L(t("fin_qty"))+'<input type="number" inputmode="decimal" step="0.1" id="finQty" value="'+(xv(ex,"qty",""))+'" placeholder="0.0" oninput="finCalcAmt()"></div><div>'+L(t("fin_price_kg"))+'<input type="number" inputmode="decimal" step="0.01" id="finPpk" value="'+(xv(ex,"pricePerUnit",""))+'" placeholder="0.00" oninput="finCalcAmt()"></div></div>':"")+'</div>'
@@ -5012,18 +5019,34 @@ window.saveFin=function(id){
   save();closeM();renderFinanciar();toast(t("fin_saved"),"💰");
 };
 
-// Auto-import honey harvest as income entries
+// Auto-import honey harvest as income entries — uses modal (WebView-compatible, no prompt())
 window.finAutoHoney=function(){
   var isEN=D.settings.lang==="en";
-  var ppkStr=prompt(isEN?"Enter honey price per kg (RON):":"Introduceți prețul pe kg de miere (RON):");
-  if(!ppkStr)return;
-  var ppk=parseFloat(ppkStr.replace(",","."));
+  var bg=document.createElement("div");bg.className="mb";bg.id="MB_AH";
+  bg.innerHTML='<div class="mb-b" style="max-width:380px;">'
+    +'<div class="mt">🍯 '+(isEN?"Auto-import harvest as income":"Import automat recoltă ca venit")+'</div>'
+    +'<p style="font-size:.82rem;color:var(--mut);margin:6px 0 12px;">'+(isEN?"Enter honey price per kg — all harvests with actual quantity will be imported as income entries (already-imported ones are skipped)":"Introduceți prețul pe kg de miere — toate recoltele cu cantitate reală vor fi importate ca venituri (cele deja importate sunt ignorate)")+"</p>"
+    +"<label class='L'>" + (isEN?"Price / kg (RON)":"Preț / kg (RON)") + "</label>"
+    +"<input type='number' inputmode='decimal' step='0.01' id='ahPpk' value='' placeholder='ex: 32.00' style='margin-bottom:12px;'>"
+    +'<div class="br" style="margin-top:8px;">'
+    +'<button class="btn" onclick="finAutoHoneyConfirm()">✓ '+(isEN?"Import":"Importă")+'</button>'
+    +'<button class="btn gh" onclick="document.getElementById(\'MB_AH\').remove()">✕</button>'
+    +'</div></div>';
+  document.body.appendChild(bg);
+  bg.addEventListener("click",function(e){if(e.target===bg)bg.remove();});
+  setTimeout(function(){var el=document.getElementById("ahPpk");if(el)el.focus();},120);
+};
+window.finAutoHoneyConfirm=function(){
+  var isEN=D.settings.lang==="en";
+  var el=document.getElementById("ahPpk");
+  if(!el)return;
+  var ppk=parseFloat((el.value||"0").replace(",","."));
   if(!ppk||ppk<=0){toast("⚠️ "+(isEN?"Invalid price!":"Preț invalid!"));return;}
+  var bg=document.getElementById("MB_AH");if(bg)bg.remove();
   var added=0;
   D.honeyHarvests.forEach(function(h){
     var qty=h.actualQty||h.qty||0;
     if(!qty)return;
-    // Check not already imported (by source ref)
     if(D.finances.some(function(f){return f._srcHarvestId===h.id;}))return;
     var cat=isEN?"Honey sales":"Vânzare miere";
     D.finances.push({id:uid(),type:"income",date:h.extractionDate||h.date||new Date().toISOString().slice(0,10),amount:parseFloat((qty*ppk).toFixed(2)),category:cat,hiveId:h.hiveId||null,qty:qty,pricePerUnit:ppk,notes:(h.honeyType||h.type||""),_srcHarvestId:h.id});
@@ -5203,6 +5226,7 @@ function buildBackupBlob(){
 // then File System Access API (Chrome desktop),
 // then data-URI fallback (any browser, opens as link).
 async function driveExportJSON(){
+  var isEN=D.settings.lang==="en";
   var b=buildBackupBlob();
   var json=b.json;
   var filename=b.filename;
@@ -5264,6 +5288,7 @@ async function driveExportJSON(){
 
 // Import: file picker → parse JSON → restore data
 function driveImportJSON(){
+  var isEN=D.settings.lang==="en";
   var input=document.createElement("input");
   input.type="file";
   input.accept=".json,application/json";
@@ -5306,6 +5331,7 @@ function driveImportJSON(){
 // ═══════════════════════════════════════════
 function init(){
   load();
+  applyTheme();
   updateOfflineBar();
   // Sidebar only on desktop
   if(window.innerWidth>650){
