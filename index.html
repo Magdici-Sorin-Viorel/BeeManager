@@ -602,6 +602,11 @@ ro:{
   insp_weight:"⚖️ Greutate stup (kg)",insp_weight_ph:"ex: 32.5",
   insp_notes:"📝 Note libere",insp_save:"✅ Salvează",
   insp_del_c:"Ștergi inspecția?",insp_saved:"Inspecție salvată!",insp_upd:"Inspecție actualizată!",insp_sel_h:"Selectează stupul!",
+  insp_inv_deduct_title:"📦 Scade rame din inventar",insp_inv_deduct_chk:"Scade automat ramele noi din inventar",
+  insp_inv_item:"Articol inventar (rame)",insp_inv_stock_cur:"Stoc curent:",insp_inv_after:"După deducere:",
+  insp_inv_no_items:"Nu există rame în inventar. Adaugă mai întâi din secțiunea Inventar.",
+  insp_inv_insuf:"⚠️ Stoc insuficient! Stoc disponibil:",insp_inv_deducted:"📦 Inventar actualizat: -",insp_inv_units:" rame din",
+  insp_inv_no_frames:"Nicio ramă nouă de dedus (nFrames + magNew = 0).",insp_inv_mag_title:"📦 Scade rame magazie din inventar",insp_inv_mag_chk:"Scade ramele noi de magazie din inventar",
   dash_insp_warn_title:"⚠️ Stupi neinspectați recent",dash_insp_warn_msg:"Ultima inspecție > 7 zile",
   insp_w_auto:"✅ Temperatura și vremea completate automat din datele meteo în timp real",
   insp_has_mag:"📦 Magazie pusă la acest stup (în această inspecție)",
@@ -954,6 +959,11 @@ en:{
   insp_weight:"⚖️ Hive weight (kg)",insp_weight_ph:"e.g. 32.5",
   insp_notes:"📝 Free notes",insp_save:"✅ Save",
   insp_del_c:"Delete inspection?",insp_saved:"Inspection saved!",insp_upd:"Inspection updated!",insp_sel_h:"Select a hive!",
+  insp_inv_deduct_title:"📦 Deduct frames from inventory",insp_inv_deduct_chk:"Auto-deduct new frames from inventory",
+  insp_inv_item:"Inventory item (frames)",insp_inv_stock_cur:"Current stock:",insp_inv_after:"After deduction:",
+  insp_inv_no_items:"No frames in inventory. Add them first from the Inventory section.",
+  insp_inv_insuf:"⚠️ Insufficient stock! Available:",insp_inv_deducted:"📦 Inventory updated: -",insp_inv_units:" frames from",
+  insp_inv_no_frames:"No new frames to deduct (nFrames + magNew = 0).",insp_inv_mag_title:"📦 Deduct super frames from inventory",insp_inv_mag_chk:"Deduct new super frames from inventory",
   dash_insp_warn_title:"⚠️ Hives not recently inspected",dash_insp_warn_msg:"Last inspection > 7 days ago",
   insp_w_auto:"✅ Temperature and weather auto-populated from real-time weather data",
   insp_has_mag:"📦 Super added to this hive (during this inspection)",
@@ -2290,8 +2300,9 @@ function inspM(hiveId,editId){
     +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(xv(ex,"magT",hive?hive.magF:10))+'"></div>'
     +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="'+(xv(ex,"magFull",0))+'"></div>'
     +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="'+(xv(ex,"magCap",0))+'"></div></div>'
-    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="'+(xv(ex,"magNew",0))+'"></div>'
-    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="'+(xv(ex,"magNewB",0))+'"></div></div>'):"";
+    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="'+(xv(ex,"magNew",0))+'" oninput="refreshMagInvDeductPreview()"></div>'
+    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="'+(xv(ex,"magNewB",0))+'"></div></div>'
+    +buildMagInvDeductBlock(xv(ex,"magNew",0))):"";
 
   var wNotice=(!ex&&D.weather)?'<div style="font-size:.72rem;color:var(--ok);margin-top:3px;">'+t("insp_w_auto")+' ('+showTemp(D.weather.temp)+')</div>':"";
 
@@ -2329,8 +2340,9 @@ function inspM(hiveId,editId){
     +[30,50,70,90,100].map(function(v){return'<option value="'+v+'"'+(xv(ex,"popPct",90)===v?" selected":"")+'>'+v+'%</option>';}).join("")
     +'</select></div>'
     +'<div>'+L(t("insp_bp"))+'<select id="iBP">'+bp.map(function(a){return'<option value="'+a[0]+'"'+(xv(ex,"bp","compact")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select></div></div>'
-    +'<div class="r2"><div>'+L(t("insp_nf"))+'<input type="number" inputmode="numeric" id="iNF" value="'+(xv(ex,"nFrames",0))+'"></div>'
+    +'<div class="r2"><div>'+L(t("insp_nf"))+'<input type="number" inputmode="numeric" id="iNF" value="'+(xv(ex,"nFrames",0))+'" oninput="refreshInvDeductPreview()"></div>'
     +'<div>'+L(t("insp_nfb"))+'<input type="number" inputmode="numeric" id="iNFB" value="'+(xv(ex,"nFramesB",0))+'"></div></div>'
+    +buildInvDeductBlock(xv(ex,"nFrames",0),xv(ex,"magNew",0))
     +L(t("insp_space"))+'<select id="iSp">'+sp.map(function(a){return'<option value="'+a[0]+'"'+(xv(ex,"space","suficient")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select>'
     +'<div class="dv"></div>'
     +'<div id="magRadioBlock">'+buildMagRadios(mag, ex, hive)+'</div>'
@@ -2411,8 +2423,9 @@ window.onMagRadio=function(val){
       +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive&&hive.magF?hive.magF:10)+'"></div>'
       +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="0"></div>'
       +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="0"></div></div>'
-      +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0"></div>'
-      +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>';
+      +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0" oninput="refreshMagInvDeductPreview()"></div>'
+      +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>'
+      +buildMagInvDeductBlock(0);
   }
 };
 
@@ -2445,8 +2458,137 @@ window.updMag=function(hid){
     +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive&&hive.magF?hive.magF:10)+'"></div>'
     +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="0"></div>'
     +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="0"></div></div>'
-    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0"></div>'
-    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>'):"";
+    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0" oninput="refreshMagInvDeductPreview()"></div>'
+    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>'
+    +buildMagInvDeductBlock(0)):"";
+};
+
+// ── Inventory deduction block for inspection modal ──────────
+function buildInvDeductBlock(nFrames, magNew){
+  var frameItems=D.inventory.filter(function(i){
+    var cat=(i.cat||"").toLowerCase();
+    return cat==="rame"||cat==="frames";
+  });
+  if(!frameItems.length){
+    return '<div class="dv"><div class="stt">'+t("insp_inv_deduct_title")+'</div></div>'
+      +'<div class="al ali" style="font-size:.8rem;">'+t("insp_inv_no_items")+'</div>';
+  }
+  var opts=frameItems.map(function(i){
+    return '<option value="'+i.id+'" data-qty="'+i.qty+'">'+i.name+' ('+i.qty+' '+t("inv_units")+')</option>';
+  }).join("");
+  var firstItem=frameItems[0];
+  var totalNew=(nFrames||0)+(magNew||0);
+  var afterQty=Math.max(0,firstItem.qty-totalNew);
+  var warn=totalNew>firstItem.qty;
+  var warnHtml=warn?'<div style="color:var(--danger);font-size:.76rem;margin-top:3px;">'+t("insp_inv_insuf")+' '+firstItem.qty+'</div>':"";
+  return '<div class="dv"><div class="stt">'+t("insp_inv_deduct_title")+'</div></div>'
+    +'<div style="background:rgba(230,180,34,.06);border:1px solid rgba(230,180,34,.18);border-radius:var(--rs);padding:10px 12px;margin-bottom:4px;">'
+    +'<div class="ck" style="margin-bottom:8px;"><input type="checkbox" id="iInvDeduct" onchange="onInvDeductToggle()"> <label for="iInvDeduct" style="font-size:.85rem;font-weight:600;">'+t("insp_inv_deduct_chk")+'</label></div>'
+    +'<div id="invDeductSec" style="display:none;">'
+    +L(t("insp_inv_item"))+'<select id="iInvItem" onchange="onInvItemChange(this)">'+opts+'</select>'
+    +'<div id="invDeductPreview" style="margin-top:6px;font-size:.8rem;">'
+    +'<span>'+t("insp_inv_stock_cur")+' <strong id="invStockCur">'+firstItem.qty+'</strong> '+t("inv_units")+'</span>'
+    +'&nbsp;&nbsp;→&nbsp;&nbsp;'
+    +'<span style="color:'+(warn?"var(--danger)":"var(--ok)")+';">'+t("insp_inv_after")+' <strong id="invStockAfter">'+afterQty+'</strong> '+t("inv_units")+'</span>'
+    +warnHtml
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
+window.onInvDeductToggle=function(){
+  var chk=document.getElementById("iInvDeduct");
+  var sec=document.getElementById("invDeductSec");
+  if(sec)sec.style.display=(chk&&chk.checked)?"block":"none";
+};
+
+// Inventory deduction block specific for magazie (super) frames
+function buildMagInvDeductBlock(magNew){
+  var frameItems=D.inventory.filter(function(i){
+    var cat=(i.cat||"").toLowerCase();
+    return cat==="rame"||cat==="frames";
+  });
+  if(!frameItems.length){
+    return '<div style="font-size:.78rem;color:var(--mut);margin:4px 0 6px;">'+t("insp_inv_no_items")+'</div>';
+  }
+  var opts=frameItems.map(function(i){
+    return '<option value="'+i.id+'" data-qty="'+i.qty+'">'+i.name+' ('+i.qty+' '+t("inv_units")+')</option>';
+  }).join("");
+  var firstItem=frameItems[0];
+  var totalNew=magNew||0;
+  var afterQty=Math.max(0,firstItem.qty-totalNew);
+  var warn=totalNew>firstItem.qty;
+  var warnHtml=warn?'<div style="color:var(--danger);font-size:.76rem;margin-top:3px;">'+t("insp_inv_insuf")+' '+firstItem.qty+'</div>':"";
+  return '<div style="background:rgba(230,180,34,.06);border:1px solid rgba(230,180,34,.18);border-radius:var(--rs);padding:10px 12px;margin-top:6px;margin-bottom:4px;">'
+    +'<div class="ck" style="margin-bottom:8px;"><input type="checkbox" id="iInvDeductMag" onchange="onInvDeductMagToggle()"> <label for="iInvDeductMag" style="font-size:.85rem;font-weight:600;">'+t("insp_inv_mag_chk")+'</label></div>'
+    +'<div id="invDeductMagSec" style="display:none;">'
+    +L(t("insp_inv_item"))+'<select id="iInvItemMag" onchange="onInvItemMagChange(this)">'+opts+'</select>'
+    +'<div id="invDeductMagPreview" style="margin-top:6px;font-size:.8rem;">'
+    +'<span>'+t("insp_inv_stock_cur")+' <strong id="invMagStockCur">'+firstItem.qty+'</strong> '+t("inv_units")+'</span>'
+    +'&nbsp;&nbsp;→&nbsp;&nbsp;'
+    +'<span style="color:'+(warn?"var(--danger)":"var(--ok)")+';">'+t("insp_inv_after")+' <strong id="invMagStockAfter">'+afterQty+'</strong> '+t("inv_units")+'</span>'
+    +warnHtml
+    +'</div>'
+    +'</div>'
+    +'</div>';
+}
+
+window.onInvDeductMagToggle=function(){
+  var chk=document.getElementById("iInvDeductMag");
+  var sec=document.getElementById("invDeductMagSec");
+  if(sec)sec.style.display=(chk&&chk.checked)?"block":"none";
+};
+
+window.onInvItemMagChange=function(sel){
+  var qty=parseInt(sel.options[sel.selectedIndex].getAttribute("data-qty"))||0;
+  var totalNew=parseInt((document.getElementById("iMgNw")||{}).value)||0;
+  var after=Math.max(0,qty-totalNew);
+  var warn=totalNew>qty;
+  var curEl=document.getElementById("invMagStockCur");
+  var afEl=document.getElementById("invMagStockAfter");
+  var prev=document.getElementById("invDeductMagPreview");
+  if(curEl)curEl.textContent=qty;
+  if(afEl){afEl.textContent=after;afEl.parentElement.style.color=warn?"var(--danger)":"var(--ok)";}
+  if(prev){
+    var warnEl=prev.querySelector(".invMagDeductWarn");
+    if(warnEl)warnEl.remove();
+    if(warn){var wd=document.createElement("div");wd.className="invMagDeductWarn";wd.style="color:var(--danger);font-size:.76rem;margin-top:3px;";wd.textContent=t("insp_inv_insuf")+" "+qty;prev.appendChild(wd);}
+  }
+};
+
+window.refreshMagInvDeductPreview=function(){
+  var sel=document.getElementById("iInvItemMag");
+  if(sel)onInvItemMagChange(sel);
+};
+
+window.onInvItemChange=function(sel){
+  var qty=parseInt(sel.options[sel.selectedIndex].getAttribute("data-qty"))||0;
+  var totalNew=getInspNewFramesTotal();
+  var after=Math.max(0,qty-totalNew);
+  var warn=totalNew>qty;
+  var curEl=document.getElementById("invStockCur");
+  var afEl=document.getElementById("invStockAfter");
+  var prev=document.getElementById("invDeductPreview");
+  if(curEl)curEl.textContent=qty;
+  if(afEl){afEl.textContent=after;afEl.parentElement.style.color=warn?"var(--danger)":"var(--ok)";}
+  // Remove old warning line if any
+  if(prev){
+    var warnEl=prev.querySelector(".invDeductWarn");
+    if(warnEl)warnEl.remove();
+    if(warn){var wd=document.createElement("div");wd.className="invDeductWarn";wd.style="color:var(--danger);font-size:.76rem;margin-top:3px;";wd.textContent=t("insp_inv_insuf")+" "+qty;prev.appendChild(wd);}
+  }
+};
+
+function getInspNewFramesTotal(){
+  var nf=parseInt((document.getElementById("iNF")||{}).value)||0;
+  var mn=parseInt((document.getElementById("iMgNw")||{}).value)||0;
+  return nf+mn;
+}
+
+// Called when iNF or iMgNw inputs change to refresh the preview
+window.refreshInvDeductPreview=function(){
+  var sel=document.getElementById("iInvItem");
+  if(sel)onInvItemChange(sel);
 };
 
 window.saveInsp=function(editId,hiveId){
@@ -2495,6 +2637,51 @@ window.saveInsp=function(editId,hiveId){
     if(magPresEl&&magPresEl.checked) hive.hasMag=true;
     if(magAddEl&&magAddEl.checked) hive.hasMag=true;
   }
+  // ── Inventory auto-deduction: CUIB (rame noi stup) ───────
+  var invDeductChk=document.getElementById("iInvDeduct");
+  if(invDeductChk&&invDeductChk.checked){
+    var invItemSel=document.getElementById("iInvItem");
+    var invItemId=invItemSel?invItemSel.value:null;
+    var totalNewFrames=(o.nFrames||0);
+    if(invItemId&&totalNewFrames>0){
+      var invItem=D.inventory.find(function(i){return i.id===invItemId;});
+      if(invItem){
+        var prevQty=invItem.qty||0;
+        if(totalNewFrames>prevQty){
+          invItem.qty=0;
+          toast(t("insp_inv_insuf")+" "+prevQty+"! Stoc setat la 0.","⚠️");
+        } else {
+          invItem.qty=prevQty-totalNewFrames;
+          if(!D.invHistory)D.invHistory=[];
+          D.invHistory.push({id:uid(),itemId:invItemId,itemName:invItem.name,delta:-totalNewFrames,prevQty:prevQty,newQty:invItem.qty,date:o.date||new Date().toISOString().slice(0,10),source:"inspection_cuib",inspId:o.id,hiveId:hid});
+          setTimeout(function(){toast(t("insp_inv_deducted")+totalNewFrames+t("insp_inv_units")+" "+invItem.name+" (cuib)","📦");},500);
+        }
+      }
+    }
+  }
+  // ── Inventory auto-deduction: MAGAZIE (rame noi magazie) ──
+  var invDeductMagChk=document.getElementById("iInvDeductMag");
+  if(invDeductMagChk&&invDeductMagChk.checked){
+    var invItemMagSel=document.getElementById("iInvItemMag");
+    var invItemMagId=invItemMagSel?invItemMagSel.value:null;
+    var totalNewMag=(o.magNew||0);
+    if(invItemMagId&&totalNewMag>0){
+      var invItemMag=D.inventory.find(function(i){return i.id===invItemMagId;});
+      if(invItemMag){
+        var prevQtyMag=invItemMag.qty||0;
+        if(totalNewMag>prevQtyMag){
+          invItemMag.qty=0;
+          setTimeout(function(){toast(t("insp_inv_insuf")+" "+prevQtyMag+"! Stoc magazie setat la 0.","⚠️");},300);
+        } else {
+          invItemMag.qty=prevQtyMag-totalNewMag;
+          if(!D.invHistory)D.invHistory=[];
+          D.invHistory.push({id:uid(),itemId:invItemMagId,itemName:invItemMag.name,delta:-totalNewMag,prevQty:prevQtyMag,newQty:invItemMag.qty,date:o.date||new Date().toISOString().slice(0,10),source:"inspection_magazie",inspId:o.id,hiveId:hid});
+          setTimeout(function(){toast(t("insp_inv_deducted")+totalNewMag+t("insp_inv_units")+" "+invItemMag.name+" (magazie)","📦");},800);
+        }
+      }
+    }
+  }
+  // ──────────────────────────────────────────────────────────
   save();closeM();
   // Per-hive auto-snapshot (saved to separate localStorage key)
   saveHiveSnapshot(hid);
