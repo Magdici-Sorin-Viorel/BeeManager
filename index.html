@@ -3032,6 +3032,49 @@ window.saveI=function(id){
 // ═══════════════════════════════════════════
 // PASTORARE
 // ═══════════════════════════════════════════
+
+// Cache for pastorare weather
+if(!window._pastWeatherCache) window._pastWeatherCache={};
+
+async function fetchPastorareWeather(pid, locationStr){
+  if(!navigator.onLine) return;
+  var cache=window._pastWeatherCache[pid];
+  if(cache && (Date.now()-cache.ts)<15*60*1000) return;
+  try{
+    var geoR=await fetch("https://geocoding-api.open-meteo.com/v1/search?name="+encodeURIComponent(locationStr)+"&count=1&language=ro&format=json");
+    if(!geoR.ok) throw 0;
+    var geoD=await geoR.json();
+    if(!geoD.results||!geoD.results.length) throw "no geo";
+    var lat=geoD.results[0].latitude, lon=geoD.results[0].longitude;
+    var wR=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,precipitation,weathercode,windspeed_10m,relativehumidity_2m&timezone=auto&forecast_days=1");
+    if(!wR.ok) throw 0;
+    var wD=await wR.json(), c=wD.current, wi=wmoI(c.weathercode);
+    window._pastWeatherCache[pid]={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,loc:geoD.results[0].name,ts:Date.now()};
+    var el=document.getElementById("pw-"+pid);
+    if(el) el.outerHTML=pastorWeatherWidget(pid);
+  }catch(e){ window._pastWeatherCache[pid]=null; var el=document.getElementById("pw-"+pid); if(el) el.outerHTML=pastorWeatherWidget(pid); }
+}
+
+function pastorWeatherWidget(pid){
+  var w=window._pastWeatherCache[pid];
+  var isEN=D.settings.lang==="en";
+  if(w===undefined){
+    return '<div id="pw-'+pid+'" style="margin-top:8px;padding:7px 9px;background:var(--bg2);border-radius:8px;font-size:.75rem;color:var(--mut);display:flex;align-items:center;gap:6px;"><span style="display:inline-block;animation:spin 1s linear infinite;">⏳</span> '+(isEN?"Loading weather...":"Se incarca vremea...")+'</div>';
+  }
+  if(!w){
+    return '<div id="pw-'+pid+'" style="margin-top:8px;padding:7px 9px;background:var(--bg2);border-radius:8px;font-size:.75rem;color:var(--mut);">🌡️ '+(isEN?"Weather unavailable for this location":"Vreme indisponibila pentru aceasta locatie")+'</div>';
+  }
+  var rainBadge=w.rain?'<span style="color:#60a5fa;font-size:.75rem;">🌧️ '+(isEN?"Rain":"Ploaie")+'</span>':'';
+  return '<div id="pw-'+pid+'" style="margin-top:8px;padding:7px 9px;background:var(--bg2);border-radius:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">'
+    +'<span style="font-size:1.1rem;">'+w.ic+'</span>'
+    +'<span style="font-size:.82rem;font-weight:700;color:var(--tx);">'+w.temp+'°C</span>'
+    +'<span style="font-size:.75rem;color:var(--mut);">💨 '+w.wind+' km/h</span>'
+    +'<span style="font-size:.75rem;color:var(--mut);">💧 '+w.hum+'%</span>'
+    +rainBadge
+    +(w.loc?'<span style="font-size:.7rem;color:var(--mut);margin-left:auto;font-style:italic;">'+w.loc+'</span>':'')
+    +'</div>';
+}
+
 function renderPastorage(){
   var active=D.pastorage.filter(function(p){return !p.endDate||new Date(p.endDate)>=new Date();});
   var done=D.pastorage.filter(function(p){return p.endDate&&new Date(p.endDate)<new Date();});
@@ -3045,7 +3088,8 @@ function renderPastorage(){
       +'<div style="font-size:.78rem;color:var(--mut);">'+t("past_target_d")+' <strong>'+p.target+'</strong></div>'
       +'<div style="font-size:.76rem;color:var(--mut);margin-top:5px;">'+t("past_from")+' '+p.startDate+(p.endDate?' · '+t("past_to")+' '+p.endDate:' · <em>'+t("past_ongoing")+'</em>')+'</div>'
       +(isActive?'<div style="font-size:.78rem;color:var(--gold);margin-top:3px;font-weight:700;">📅 '+days+' '+t("past_days")+'</div>':"")
-      +(p.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+p.notes+'</div>':"")
+      +(isActive?pastorWeatherWidget(p.id):"")
+      +(p.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:5px;font-style:italic">'+p.notes+'</div>':"")
       +'<div class="br"><button class="btn sm be" onclick="pastorM(\''+p.id+'\')">✏️</button><button class="btn sm bd" onclick="delPast(\''+p.id+'\')">🗑️</button></div>'
       +'</div>';
   }
@@ -3055,7 +3099,9 @@ function renderPastorage(){
     +'<button class="btn" style="margin-bottom:14px;" onclick="pastorM()">'+t("past_new")+'</button>'
     +(D.pastorage.length===0?'<div class="al ali">'+t("past_no")+'</div>':'')
     +(active.length?'<div style="margin-bottom:6px;"><span style="font-size:.78rem;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">🚚 '+t("past_active_b")+'</span></div><div class="g gc">'+activeHTML+'</div>':"")
-    +(done.length?'<div style="margin-top:10px;margin-bottom:6px;"><span style="font-size:.78rem;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">✅ '+t("past_done_b")+'</span></div><div class="g gc">'+doneHTML+'</div>':""));
+    +(done.length?'<div style="margin-top:10px;margin-bottom:6px;"><span style="font-size:.78rem;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">✅ '+t("past_done_b")+'</span></div><div class="g gc">'+doneHTML+'</div>':"")
+  );
+  active.forEach(function(p){ fetchPastorareWeather(p.id, p.location); });
 }
 window.delPast=function(id){showConfirm(t("past_del_c"),function(){D.pastorage=D.pastorage.filter(function(p){return p.id!==id;});save();renderPastorage();});};
 
