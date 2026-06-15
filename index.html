@@ -592,7 +592,7 @@ ro:{
   insp_botci_n:"🔢 Număr botci",insp_botci_s:"📏 Stadiu",
   insp_botci_f:"📋 Pe ce rame (ex: 2, 5, 7)",insp_botci_f_ph:"Ex: ramele 2, 4 și 7",
   insp_botci_w:"⚠️ Botci capacite = risc roire iminent!",
-  insp_frames_t:"📊 Rame cuib",insp_brood:"🥚 Rame puiet",insp_honey:"🍯 Rame miere/frână",insp_pollen:"🌸 Rame pastura/pollen",
+  insp_frames_t:"📊 Rame cuib",insp_brood:"🥚 Rame puiet",insp_honey:"🍯 Rame miere/frână",insp_frames_hint_free:"Libere",
   insp_pop:"📈 Populație medie (%)",insp_bp:"📋 Tipar puiet",
   insp_nf:"🆕 Rame noi introduse azi",insp_nfb:"🏗️ Rame noi clădite (din anterioare)",
   insp_space:"📦 Spațiu cuib",
@@ -949,7 +949,7 @@ en:{
   insp_botci_n:"🔢 Number of queen cells",insp_botci_s:"📏 Stage",
   insp_botci_f:"📋 On which frames (e.g. 2, 5, 7)",insp_botci_f_ph:"Ex: frames 2, 4 and 7",
   insp_botci_w:"⚠️ Capped queen cells = imminent swarm risk!",
-  insp_frames_t:"📊 Brood box frames",insp_brood:"🥚 Brood frames",insp_honey:"🍯 Honey/barrier frames",insp_pollen:"🌸 Pollen/beebread frames",
+  insp_frames_t:"📊 Brood box frames",insp_brood:"🥚 Brood frames",insp_honey:"🍯 Honey/barrier frames",insp_frames_hint_free:"Free",
   insp_pop:"📈 Average population (%)",insp_bp:"📋 Brood pattern",
   insp_nf:"🆕 New frames added today",insp_nfb:"🏗️ New frames drawn (from previous)",
   insp_space:"📦 Brood box space",
@@ -2105,7 +2105,7 @@ window.exportInspPDF=function(id){
     +'<tr style="background:#fff7e8;"><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Queen seen":"Matcă văzută")+'</td><td style="padding:7px 10px;">'+(insp.qSeen?"✅ Da":"❌ Nu")+'</td>'
     +'<td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Eggs/Larvae":"Ouă/Larve")+'</td><td style="padding:7px 10px;">'+(insp.eggs?"🥚 ✅":"🥚 ❌")+' '+(insp.larvae?"🐛 ✅":"🐛 ❌")+'</td></tr>'
     +'<tr><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Brood / Honey / Pollen frames":"Rame puiet / miere / polen")+'</td>'
-    +'<td colspan="3" style="padding:7px 10px;">'+(insp.fB||0)+' / '+(insp.fH||0)+' / '+(insp.fP||0)+'</td></tr>'
+    +'<td colspan="3" style="padding:7px 10px;">'+(insp.fB||0)+' / '+(insp.fH||0)+'</td></tr>'
     +'<tr style="background:#fff7e8;"><td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Population":"Populație")+'</td><td style="padding:7px 10px;">'+(insp.popPct||"—")+'%</td>'
     +'<td style="padding:7px 10px;font-weight:bold;">'+(isEN?"Brood pattern":"Tipar puiet")+'</td><td style="padding:7px 10px;">'+(insp.bp||"—")+'</td></tr>'
     +(insp.botci?'<tr style="background:#fff3cd;"><td style="padding:7px 10px;font-weight:bold;">🐛 '+(isEN?"Queen cells":"Botci")+'</td><td colspan="3" style="padding:7px 10px;">'+insp.botciN+' · '+insp.botciS+(insp.botciF?" — rame: "+insp.botciF:"")+'</td></tr>':"")
@@ -2136,7 +2136,7 @@ window.exportInspXLS=function(id){
   row[isEN?"Queen laying quality":"Calitate pontă"]=insp.qQual||"";
   row[isEN?"Brood frames":"Rame puiet"]=insp.fB||0;
   row[isEN?"Honey frames":"Rame miere"]=insp.fH||0;
-  row[isEN?"Pollen frames":"Rame polen"]=insp.fP||0;
+  
   row[isEN?"Population %":"Populație %"]=insp.popPct||"";
   row[isEN?"Brood pattern":"Tipar puiet"]=insp.bp||"";
   row[isEN?"Space":"Spațiu"]=insp.space||"";
@@ -2333,9 +2333,14 @@ function inspM(hiveId,editId){
     +L(t("insp_botci_f"))+'<input id="iBtcF" value="'+(xv(ex,"botciF",""))+'" placeholder="'+t("insp_botci_f_ph")+'">'
     +'<div class="al alw" style="font-size:.76rem;padding:4px 8px;margin-top:5px;">'+t("insp_botci_w")+'</div></div>'
     +'<div class="dv"><div class="stt">'+t("insp_frames_t")+'</div></div>'
-    +'<div class="r3"><div>'+L(t("insp_brood"))+'<input type="number" inputmode="numeric" id="iFB" value="'+(xv(ex,"fB",hive?hive.fB||0:0))+'"></div>'
-    +'<div>'+L(t("insp_honey"))+'<input type="number" inputmode="numeric" id="iFH" value="'+(xv(ex,"fH",0))+'"></div>'
-    +'<div>'+L(t("insp_pollen"))+'<input type="number" inputmode="numeric" id="iFP" value="'+(xv(ex,"fP",0))+'"></div></div>'
+    +(function(){
+    var hFT=(hive&&hive.fT)?hive.fT:0;
+    var hFTlabel=hFT?'<div style="font-size:.74rem;color:var(--gold);margin-bottom:5px;background:rgba(230,180,34,.08);border-radius:6px;padding:4px 8px;">🏠 '+t("h_total")+': <strong>'+hFT+'</strong> '+(lang==="ro"?"rame":"frames")+' &nbsp;·&nbsp; '+t("insp_frames_hint_free")+': <span id="hintFree"><strong>?\</strong></span></div>':"";
+    var maxA=hFT?'max="'+hFT+'" ':"";
+    return hFTlabel
+      +'<div class="r2"><div>'+L(t("insp_brood"))+'<input type="number" inputmode="numeric" id="iFB" '+maxA+'value="'+(xv(ex,"fB",hive?hive.fB||0:0))+'" oninput="updFrameHint(this.id)"></div>'
+      +'<div>'+L(t("insp_honey"))+'<input type="number" inputmode="numeric" id="iFH" '+maxA+'value="'+(xv(ex,"fH",0))+'" oninput="updFrameHint(this.id)"></div></div>';
+  })()
     +'<div class="r2"><div>'+L(t("insp_pop"))+'<select id="iPop">'
     +[30,50,70,90,100].map(function(v){return'<option value="'+v+'"'+(xv(ex,"popPct",90)===v?" selected":"")+'>'+v+'%</option>';}).join("")
     +'</select></div>'
@@ -2586,6 +2591,49 @@ function getInspNewFramesTotal(){
 }
 
 // Called when iNF or iMgNw inputs change to refresh the preview
+// lastFocusedFrame tracks which field the user typed in last (for smart clamping)
+var lastFocusedFrame="iFB";
+window.updFrameHint=function(changedId){
+  if(changedId)lastFocusedFrame=changedId;
+  var hid=($q("iHive")||{}).value;
+  var hive=D.hives.find(function(h){return h.id===hid;});
+  var fT=hive&&hive.fT?hive.fT:0;
+  var fbEl=document.getElementById("iFB");
+  var fhEl=document.getElementById("iFH");
+  var hintEl=document.getElementById("hintFree");
+  if(!fT||!fbEl||!fhEl)return;
+
+  var fB=Math.max(0,parseInt(fbEl.value)||0);
+  var fH=Math.max(0,parseInt(fhEl.value)||0);
+
+  // Hard clamp each field individually (can't exceed total alone)
+  if(fB>fT){fB=fT;fbEl.value=fT;}
+  if(fH>fT){fH=fT;fhEl.value=fT;}
+
+  // If combined exceeds total, trim the field that was just changed
+  if(fB+fH>fT){
+    var trimmed=fT-(lastFocusedFrame==="iFB"?fH:fB);
+    if(trimmed<0)trimmed=0;
+    if(lastFocusedFrame==="iFB"){fB=trimmed;fbEl.value=trimmed;}
+    else{fH=trimmed;fhEl.value=trimmed;}
+  }
+
+  // Set dynamic max on each field based on what the other has
+  fbEl.max=fT-fH;
+  fhEl.max=fT-fB;
+
+  var free=fT-fB-fH;
+  var fullBox=(free===0);
+  fbEl.style.borderColor=fullBox?"var(--warn)":"";
+  fhEl.style.borderColor=fullBox?"var(--warn)":"";
+
+  if(hintEl){
+    var color=free===0?"var(--warn)":free>0?"var(--ok)":"var(--danger)";
+    var label=free===0?(lang==="ro"?"🟡 Cuib complet":"🟡 Box full"):(lang==="ro"?"Libere":"Free");
+    hintEl.innerHTML='<strong style="color:'+color+'">'+free+' '+label+'</strong>';
+  }
+};
+
 window.refreshInvDeductPreview=function(){
   var sel=document.getElementById("iInvItem");
   if(sel)onInvItemChange(sel);
@@ -2598,6 +2646,22 @@ window.saveInsp=function(editId,hiveId){
   disArr.forEach(function(d){var el=$q(d[0]);if(el&&el.checked)dis.push(disName(d[1]));});
   var dn=($q("iDN")||{}).value;if(dn)dis.push(dn);
   var brood=parseInt(($q("iFB")||{}).value)||0;
+  var fHraw=parseInt(($q("iFH")||{}).value)||0;
+  // Enforce total frame limit at save time
+  (function(){
+    var hid2=($q("iHive")||{}).value;
+    var hv2=D.hives.find(function(h){return h.id===hid2;});
+    var fT2=hv2&&hv2.fT?hv2.fT:0;
+    if(fT2>0){
+      if(brood>fT2)brood=fT2;
+      if(fHraw>fT2)fHraw=fT2;
+      if(brood+fHraw>fT2){
+        // trim honey first, then brood if still over
+        fHraw=fT2-brood;
+        if(fHraw<0){fHraw=0;brood=fT2;}
+      }
+    }
+  })();
   var o={
     id:editId||uid(),hiveId:hid,
     date:($q("iDt")||{}).value||"",weather:($q("iWt")||{}).value||"",
@@ -2608,7 +2672,7 @@ window.saveInsp=function(editId,hiveId){
     qQual:($q("iQQ")||{}).value||"buna",
     botci:($q("iBtc")||{}).checked||false,botciN:parseInt(($q("iBtcN")||{}).value)||0,
     botciS:($q("iBtcS")||{}).value||"",botciF:($q("iBtcF")||{}).value||"",
-    fB:brood,fH:parseInt(($q("iFH")||{}).value)||0,fP:parseInt(($q("iFP")||{}).value)||0,
+    fB:brood,fH:fHraw,
     popPct:parseInt(($q("iPop")||{}).value)||90,bp:($q("iBP")||{}).value||"compact",
     nFrames:parseInt(($q("iNF")||{}).value)||0,nFramesB:parseInt(($q("iNFB")||{}).value)||0,
     space:($q("iSp")||{}).value||"suficient",
@@ -2627,7 +2691,7 @@ window.saveInsp=function(editId,hiveId){
   else{D.inspections.push(o);}
   var hive=D.hives.find(function(h){return h.id===hid;});
   if(hive){
-    hive.fB=brood;hive.str=strCalc(brood);if(o.space==="urgent")hive.sc="red";
+    hive.fB=brood;hive.fH=o.fH||0;hive.str=strCalc(brood);if(o.space==="urgent")hive.sc="red";
     if(o.weightKg!==null&&o.weightKg!==undefined)hive.lastWeightKg=o.weightKg;
     // Update hasMag based on radio selection
     var magNoneEl=document.querySelector('input[name="magRadio"][value="none"]');
@@ -3961,7 +4025,7 @@ window.exportHivePDF=function(hiveId){
       '<h2>📋 '+(isEN?"Inspections ("+insps.length+")":"Inspecții ("+insps.length+")")+'</h2>'
       +'<table><tr><th>Data</th><th>'+(isEN?"Brood":"Puiet")+'</th><th>'+(isEN?"Honey":"Miere")+'</th><th>Regina</th><th>Botci</th><th>Note</th></tr>'
       +insps.slice(0,15).map(function(i){
-        return'<tr><td>'+i.date+'</td><td>'+i.fB+'</td><td>'+i.fH+'</td>'
+        return'<tr><td>'+i.date+'</td><td>'+(i.fB||0)+'</td><td>'+(i.fH||0)+'</td>'
           +'<td>'+(i.qSeen?"✅":"❓")+'</td>'
           +'<td>'+(i.botci?"🐛 "+(i.botciN||0):"—")+'</td>'
           +'<td style="font-size:10px;">'+(i.notes||"")+'</td></tr>';
