@@ -1997,6 +1997,11 @@ window.delH=function(id){
     D.hives=D.hives.filter(function(h){return h.id!==id;});
     D.inspections=D.inspections.filter(function(i){return i.hiveId!==id;});
     D.queens=D.queens.filter(function(q){return q.hive!==id;});
+    if(D.honeyHarvests)D.honeyHarvests=D.honeyHarvests.filter(function(h){return h.hiveId!==id;});
+    if(D.treatments)D.treatments=D.treatments.filter(function(t){return t.hiveId!==id;});
+    if(D.varroa)D.varroa=D.varroa.filter(function(v){return v.hiveId!==id;});
+    if(D.feeding)D.feeding=D.feeding.filter(function(f){return f.hiveId!==id;});
+    if(D.pastorage)D.pastorage=D.pastorage.filter(function(p){return p.hiveId!==id;});
     save();renderHives();
   });
 };
@@ -2335,7 +2340,7 @@ function inspM(hiveId,editId){
     +'<div class="dv"><div class="stt">'+t("insp_frames_t")+'</div></div>'
     +(function(){
     var hFT=(hive&&hive.fT)?hive.fT:0;
-    var hFTlabel=hFT?'<div style="font-size:.74rem;color:var(--gold);margin-bottom:5px;background:rgba(230,180,34,.08);border-radius:6px;padding:4px 8px;">🏠 '+t("h_total")+': <strong>'+hFT+'</strong> '+(lang==="ro"?"rame":"frames")+' &nbsp;·&nbsp; '+t("insp_frames_hint_free")+': <span id="hintFree"><strong>?\</strong></span></div>':"";
+    var hFTlabel=hFT?'<div style="font-size:.74rem;color:var(--gold);margin-bottom:5px;background:rgba(230,180,34,.08);border-radius:6px;padding:4px 8px;">🏠 '+t("h_total")+': <strong>'+hFT+'</strong> '+(D.settings.lang==="ro"?"rame":"frames")+' &nbsp;·&nbsp; '+t("insp_frames_hint_free")+': <span id="hintFree"><strong>?\</strong></span></div>':"";
     var maxA=hFT?'max="'+hFT+'" ':"";
     return hFTlabel
       +'<div class="r2"><div>'+L(t("insp_brood"))+'<input type="number" inputmode="numeric" id="iFB" '+maxA+'value="'+(xv(ex,"fB",hive?hive.fB||0:0))+'" oninput="updFrameHint(this.id)"></div>'
@@ -2629,7 +2634,7 @@ window.updFrameHint=function(changedId){
 
   if(hintEl){
     var color=free===0?"var(--warn)":free>0?"var(--ok)":"var(--danger)";
-    var label=free===0?(lang==="ro"?"🟡 Cuib complet":"🟡 Box full"):(lang==="ro"?"Libere":"Free");
+    var label=free===0?(D.settings.lang==="ro"?"🟡 Cuib complet":"🟡 Box full"):(D.settings.lang==="ro"?"Libere":"Free");
     hintEl.innerHTML='<strong style="color:'+color+'">'+free+' '+label+'</strong>';
   }
 };
