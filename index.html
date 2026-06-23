@@ -588,6 +588,12 @@ ro:{
   insp_struct_ph:"fisură pe capac…",insp_behav_t:"😤 Comportament",insp_behav:"Agresivitate 1–5",
   insp_queen_t:"👑 Starea mătcii",insp_q_seen:"Matcă văzută",insp_eggs:"Ouă depuse",insp_larvae:"Larve prezente",
   insp_q_qual:"⭐ Calitatea pontei",
+  insp_q_status:"👑 Starea reginei în stup",
+  insp_q_present:"✅ Prezentă — văzută direct",
+  insp_q_signs:"🥚 Indici de prezență (ouă/larve tinere)",
+  insp_q_absent:"❌ Absentă — moartă / fugită / roire",
+  insp_q_absent_warn:"⚠️ Ai selectat 'Absentă'. La salvare, regina curentă a stupului va fi marcată automat ca 'dispărută' și stupul va fi actualizat fără regină activă.",
+  insp_q_absent_done:"👑 Regina marcată 'dispărută'. Stupul actualizat: fără regină activă.",
   insp_botci_t:"🐛 Botci",insp_botci_chk:"Botci prezente pe rame",
   insp_botci_n:"🔢 Număr botci",insp_botci_s:"📏 Stadiu",
   insp_botci_f:"📋 Pe ce rame (ex: 2, 5, 7)",insp_botci_f_ph:"Ex: ramele 2, 4 și 7",
@@ -945,6 +951,12 @@ en:{
   insp_struct_ph:"crack on cover…",insp_behav_t:"😤 Behavior",insp_behav:"Aggressiveness 1–5",
   insp_queen_t:"👑 Queen status",insp_q_seen:"Queen seen",insp_eggs:"Eggs present",insp_larvae:"Larvae present",
   insp_q_qual:"⭐ Laying quality",
+  insp_q_status:"👑 Queen presence in hive",
+  insp_q_present:"✅ Present — seen directly",
+  insp_q_signs:"🥚 Signs of presence (eggs/young larvae)",
+  insp_q_absent:"❌ Absent — dead / fled / swarmed",
+  insp_q_absent_warn:"⚠️ You selected 'Absent'. On save, the current queen of this hive will be automatically marked as 'missing' and the hive will be updated with no active queen.",
+  insp_q_absent_done:"👑 Queen marked 'missing'. Hive updated: no active queen.",
   insp_botci_t:"🐛 Queen Cells",insp_botci_chk:"Queen cells present on frames",
   insp_botci_n:"🔢 Number of queen cells",insp_botci_s:"📏 Stage",
   insp_botci_f:"📋 On which frames (e.g. 2, 5, 7)",insp_botci_f_ph:"Ex: frames 2, 4 and 7",
@@ -1138,15 +1150,16 @@ const PLANTS=[
   {id:"pol",sm:5,sd:20,em:9,ed:30,nt:[14,30]}
 ];
 
-const WMO={0:{i:"☀️",r:0},1:{i:"🌤️",r:0},2:{i:"⛅",r:0},3:{i:"☁️",r:0},
-  45:{i:"🌫️",r:0},48:{i:"🌫️",r:0},
-  51:{i:"🌧️",r:1},53:{i:"🌧️",r:1},55:{i:"🌧️",r:1},
-  61:{i:"🌧️",r:1},63:{i:"🌧️",r:1},65:{i:"🌧️",r:1},
-  71:{i:"❄️",r:0},73:{i:"❄️",r:0},75:{i:"❄️",r:0},
-  80:{i:"🌦️",r:1},81:{i:"🌦️",r:1},82:{i:"⛈️",r:1},
-  95:{i:"⛈️",r:1},96:{i:"⛈️",r:1},99:{i:"⛈️",r:1}
+const WMO={0:{i:"☀️",n:"🌙",r:0},1:{i:"🌤️",n:"🌙",r:0},2:{i:"⛅",n:"🌙⛅",r:0},3:{i:"☁️",n:"☁️",r:0},
+  45:{i:"🌫️",n:"🌫️",r:0},48:{i:"🌫️",n:"🌫️",r:0},
+  51:{i:"🌧️",n:"🌧️",r:1},53:{i:"🌧️",n:"🌧️",r:1},55:{i:"🌧️",n:"🌧️",r:1},
+  61:{i:"🌧️",n:"🌧️",r:1},63:{i:"🌧️",n:"🌧️",r:1},65:{i:"🌧️",n:"🌧️",r:1},
+  71:{i:"❄️",n:"❄️",r:0},73:{i:"❄️",n:"❄️",r:0},75:{i:"❄️",n:"❄️",r:0},
+  80:{i:"🌦️",n:"🌦️",r:1},81:{i:"🌦️",n:"🌦️",r:1},82:{i:"⛈️",n:"⛈️",r:1},
+  95:{i:"⛈️",n:"⛈️",r:1},96:{i:"⛈️",n:"⛈️",r:1},99:{i:"⛈️",n:"⛈️",r:1}
 };
-function wmoI(c){var info=WMO[c]||WMO[Math.floor(c/10)*10]||{i:"🌡️",r:0};return info;}
+// night=true → iconița de noapte (lună) pentru coduri senin/parțial noros
+function wmoI(c,night){var info=WMO[c]||WMO[Math.floor(c/10)*10]||{i:"🌡️",n:"🌡️",r:0};return{i:night?info.n:info.i,r:info.r};}
 
 const FW={"Dadant 1/1 (cuib)":2.8,"Dadant 1/2 (magazie)":1.4,"Langstroth 1/1":2.5,"Langstroth 1/2":1.2,"Alt tip":2.0};
 
@@ -1283,7 +1296,7 @@ function initLoc(){
   if(D.userLoc){var age=D.weather?(Date.now()-(D.weather.ts||0)):Infinity;if(age>15*60*1000)fetchW(D.userLoc.lat,D.userLoc.lon);}
   if(navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
-      function(p){D.userLoc={lat:p.coords.latitude,lon:p.coords.longitude};save(false);fetchW(p.coords.latitude,p.coords.longitude);},
+      function(p){D.userLoc={lat:p.coords.latitude,lon:p.coords.longitude,city:D.userLoc&&D.userLoc.city||'',county:D.userLoc&&D.userLoc.county||''};save(false);fetchW(p.coords.latitude,p.coords.longitude);},
       function(){if(!D.weather)toast("📍 "+(D.settings.lang==="en"?"Enable location for real weather":"Activați locația pentru vreme reală"));},
       {timeout:8000}
     );
@@ -1295,10 +1308,26 @@ async function fetchW(lat,lon){
   try{
     var r=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,precipitation,weathercode,windspeed_10m,relativehumidity_2m&timezone=auto&forecast_days=1");
     if(!r.ok)throw 0;
-    var d=await r.json(),c=d.current,wi=wmoI(c.weathercode);
+    var d=await r.json(),c=d.current;
+    var nowH=new Date().getHours()+new Date().getMinutes()/60;
+    var sun=getSunTimes(lat,lon);
+    var isNight=nowH<sun.sunrise||nowH>sun.sunset;
+    var wi=wmoI(c.weathercode,isNight);
     D.weather={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,ts:Date.now(),manual:false};
     save(false);
     if(curP==="dashboard")renderDashboard();
+    // Reverse geocoding pentru numele localității (asincron, non-blocant)
+    try{
+      var gr=await fetch("https://nominatim.openstreetmap.org/reverse?lat="+lat+"&lon="+lon+"&format=json&accept-language=ro",{headers:{"Accept-Language":"ro"}});
+      if(gr.ok){
+        var gd=await gr.json();
+        var city=gd.address.city||gd.address.town||gd.address.village||gd.address.county||"";
+        var county=gd.address.county||"";
+        D.userLoc.city=city;D.userLoc.county=county;
+        save(false);
+        if(curP==="calendar")renderCalendar();
+      }
+    }catch(ge){console.warn("Reverse geocoding failed",ge);}
   }catch(e){console.warn("Weather failed",e);if(!D.weather)toast("⚠️ Vreme indisponibilă — introduceți manual","🌡️");}
 }
 
@@ -1643,6 +1672,14 @@ function renderDashboard(){
   var wCard="";
   if(w){
     var wLbl=w.wc!==undefined?wmoLabel(w.wc):(w.lbl||"");
+    // Recompute icon based on current time (zi/noapte poate fi diferit față de momentul fetch-ului)
+    if(w.wc!==undefined&&!w.manual){
+      var _nowH=new Date().getHours()+new Date().getMinutes()/60;
+      var _sun=D.userLoc?getSunTimes(D.userLoc.lat,D.userLoc.lon):getSunTimes(45,25);
+      var _isNight=_nowH<_sun.sunrise||_nowH>_sun.sunset;
+      var _wi=wmoI(w.wc,_isNight);
+      w=Object.assign({},w,{ic:_wi.i}); // copie locală, nu modificăm D.weather
+    }
     var sunStrDash=getSunTimesStr();
     var isEN3=D.settings.lang==="en";
     var sunInfo='<span style="font-size:.68rem;color:var(--mut);margin-left:8px;">🌅 '+sunStrDash.sunrise+' · 🌇 '+sunStrDash.sunset+'</span>';
@@ -1965,12 +2002,20 @@ function renderHives(q){
   q=q||"";
   var list=q?D.hives.filter(function(h){return(h.name+h.loc+String(h.num||"")).toLowerCase().includes(q.toLowerCase());}):D.hives;
   var cards=list.map(function(h){
-    var qn=D.queens.find(function(queen){return queen.hive===h.id;});
+    // Find the active queen (not dispărută/înlocuită) first, then any queen
+    var allQueensForHive=D.queens.filter(function(queen){return queen.hive===h.id;});
+    var qn=allQueensForHive.find(function(queen){return queen.status==="activă"||queen.status==="în imperechere"||queen.status==="slabă";});
+    var qnAny=allQueensForHive.length?allQueensForHive[allQueensForHive.length-1]:null;
     var li=[].concat(D.inspections).filter(function(i){return i.hiveId===h.id;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
     var dot=h.sc==="green"?"🟢":h.sc==="yellow"?"🟡":"🔴";
+    // Check if last inspection reported queen absent
+    var lastInspQAbsent=li&&li.qStatus==="absent";
     var qStatCls=qn?(t("qs_cls")||{})[qn.status]||"gy":"gr";
     var qStatLbl=qn?(t("q_statuses")||[]).find(function(s){return s[0]===qn.status;})?.[1]||qn.status:"";
-    var qBadge=qn?qn.race+' — <span class="bg '+qStatCls+'">'+qStatLbl+'</span>':'<span style="color:var(--danger)">'+t("h_no_q")+'</span>';
+    var noActiveQueen=!qn||lastInspQAbsent;
+    var qBadge=noActiveQueen
+      ?'<span style="color:var(--danger);font-weight:700;">❌ '+t("h_no_q")+(lastInspQAbsent?' <span class="bg gr" style="font-size:.6rem;">insp. '+li.date+'</span>':'')+'</span>'
+      :qn.race+' — <span class="bg '+qStatCls+'">'+qStatLbl+'</span>';
     return'<div class="c">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;margin-bottom:7px;"><h3 style="font-size:.92rem;">'+dot+' '+h.name+'</h3>'+sBadge(h.str)+'</div>'
       +'<div style="font-size:.76rem;color:var(--mut);margin-bottom:9px;">'+matIc(h.mat)+' '+(h.mat||"Lemn")+' · '+(h.mod||"Dadant")+' · 📍 '+h.loc+'</div>'
@@ -2071,8 +2116,9 @@ function inspCardHTML(i,showHiveName){
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:5px;margin-bottom:6px;"><h3 style="font-size:.88rem;">'+nm+'</h3><span class="bg '+bpCls+'">'+bpLbl+'</span></div>'
     +'<div style="font-size:.75rem;color:var(--mut);margin-bottom:6px;">📅 '+i.date+' · '+(i.weather||"")+'  · 🌡️ '+showTemp(i.temp)+'</div>'
     +(i.structC&&i.structC!=="ok"?'<div class="al alw" style="padding:4px 8px;margin:3px 0;font-size:.75rem;">🔩 '+i.structC+(i.structN?" — "+i.structN:"")+'</div>':"")
+    +(i.qStatus==="absent"?'<div class="al ald" style="padding:5px 10px;margin:5px 0;font-size:.8rem;font-weight:700;">❌ '+t("insp_q_absent")+'</div>':"")
     +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin:5px 0;">'
-    +'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑 "+t("insp_q_seen"):"👑 ?")+'</span>'
+    +(i.qStatus==="absent"?'<span class="bg gr">❌ '+t("insp_q_absent")+'</span>':(i.qStatus==="present"?'<span class="bg gg">✅ '+t("insp_q_seen")+'</span>':'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑 "+t("insp_q_seen"):"👑 ?")+'</span>'))
     +'<span class="bg '+(i.eggs?"gg":"gy")+'">'+(i.eggs?"🥚 "+t("insp_eggs"):"❌")+'</span>'
     +'<span class="bg gb">🐝 '+(i.popPct||"?")+'%</span></div>'
     +'<div style="font-size:.78rem;">'+t("insp_brood")+': <b>'+(i.fB||0)+'</b> · '+t("insp_honey")+': <b>'+(i.fH||0)+'</b>'+(i.weightKg!==null&&i.weightKg!==undefined?' · ⚖️ <b>'+i.weightKg.toFixed(1)+' kg</b>':"")+'</div>'
@@ -2235,7 +2281,7 @@ function renderInspections(){
         var rowsHTML=insps.map(function(insp){
           return'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;">'
             +'<span style="font-size:.82rem;font-weight:700;min-width:95px;">📅 '+insp.date+'</span>'
-            +'<span class="bg '+(insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qSeen?"👑✅":"👑❓")+'</span>'
+            +'<span class="bg '+(insp.qStatus==="absent"?"gr":insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qStatus==="absent"?"❌👑":insp.qSeen?"👑✅":"👑❓")+'</span>'
             +'<span class="bg gb" style="font-size:.63rem;">🥚 '+(insp.fB||0)+'</span>'
             +'<span class="bg gg" style="font-size:.63rem;">🍯 '+(insp.fH||0)+'</span>'
             +(insp.botci?'<span class="bg gr" style="font-size:.63rem;">🐛</span>':"")
@@ -2324,7 +2370,14 @@ function inspM(hiveId,editId){
     +'<div class="dv"><div class="stt">'+t("insp_behav_t")+'</div></div>'
     +L(t("insp_behav"))+'<select id="iBhv">'+bh.map(function(a){return'<option value="'+a[0]+'"'+(String(xv(ex,"behav","3"))===String(a[0])?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select>'
     +'<div class="dv"><div class="stt">'+t("insp_queen_t")+'</div></div>'
-    +'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:7px;">'
+    +L(t("insp_q_status"))+'<select id="iQStatus" onchange="onQStatusChange(this.value)">'
+    +'<option value="present"'+(xv(ex,"qStatus","signs")==="present"?" selected":"")+'>'+t("insp_q_present")+'</option>'
+    +'<option value="signs"'+(xv(ex,"qStatus","signs")==="signs"?" selected":"")+'>'+t("insp_q_signs")+'</option>'
+    +'<option value="absent"'+(xv(ex,"qStatus","signs")==="absent"?" selected":"")+'>'+t("insp_q_absent")+'</option>'
+    +'</select>'
+    +'<div id="qAbsentWarn" style="display:'+(xv(ex,"qStatus","signs")==="absent"?"block":"none")+';background:rgba(224,124,76,.15);border:1px solid rgba(224,124,76,.5);border-radius:var(--rs);padding:10px 12px;margin:7px 0;font-size:.82rem;">'
+    +'⚠️ '+t("insp_q_absent_warn")+'</div>'
+    +'<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:7px;margin-top:6px;">'
     +'<div class="ck"><input type="checkbox" id="iQS"'+(xv(ex,"qSeen",false)?" checked":"")+'>  <label for="iQS">'+t("insp_q_seen")+'</label></div>'
     +'<div class="ck"><input type="checkbox" id="iEg"'+(xv(ex,"eggs",false)?" checked":"")+'>  <label for="iEg">'+t("insp_eggs")+'</label></div>'
     +'<div class="ck"><input type="checkbox" id="iLv"'+(xv(ex,"larvae",false)?" checked":"")+'>  <label for="iLv">'+t("insp_larvae")+'</label></div>'
@@ -2417,6 +2470,19 @@ function buildMagRadios(mag, ex, hive){
     +' onchange="onMagRadio(\'add\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lAdd+'</label>'
     +'</div></div>';
 }
+
+window.onQStatusChange=function(val){
+  var warn=document.getElementById("qAbsentWarn");
+  if(warn)warn.style.display=(val==="absent")?"block":"none";
+  // Auto-set checkboxes based on selection
+  var qSeen=document.getElementById("iQS");
+  var qEgg=document.getElementById("iEg");
+  if(val==="present"&&qSeen&&!qSeen.checked){qSeen.checked=true;}
+  if(val==="absent"){
+    if(qSeen)qSeen.checked=false;
+    if(qEgg)qEgg.checked=false;
+  }
+};
 
 window.togglePostTrSec=function(show){
   var el=document.getElementById("postTrSec");
@@ -2673,6 +2739,7 @@ window.saveInsp=function(editId,hiveId){
     temp:parseTempInput(($q("iTemp")||{}).value),smoke:($q("iSmk")||{}).value||"",
     structC:($q("iStC")||{}).value||"ok",structN:($q("iStN")||{}).value||"",
     behav:parseInt(($q("iBhv")||{}).value)||3,
+    qStatus:($q("iQStatus")||{}).value||"signs",
     qSeen:($q("iQS")||{}).checked||false,eggs:($q("iEg")||{}).checked||false,larvae:($q("iLv")||{}).checked||false,
     qQual:($q("iQQ")||{}).value||"buna",
     botci:($q("iBtc")||{}).checked||false,botciN:parseInt(($q("iBtcN")||{}).value)||0,
@@ -2751,11 +2818,30 @@ window.saveInsp=function(editId,hiveId){
     }
   }
   // ──────────────────────────────────────────────────────────
+  // ── Auto-update queen & hive if queen marked ABSENT ────────
+  var queenAbsent=(o.qStatus==="absent");
+  if(queenAbsent){
+    // Find current active queen for this hive
+    var activeQueens=D.queens.filter(function(q){
+      return q.hive===hid&&(q.status==="activă"||q.status==="în imperechere"||q.status==="slabă");
+    });
+    activeQueens.forEach(function(q){
+      q.status="dispărută";
+    });
+    // Mark hive status as attention (yellow) if not already red
+    var hiveRef=D.hives.find(function(h){return h.id===hid;});
+    if(hiveRef&&hiveRef.sc!=="red")hiveRef.sc="yellow";
+  }
+  // ──────────────────────────────────────────────────────────
   save();closeM();
   // Per-hive auto-snapshot (saved to separate localStorage key)
   saveHiveSnapshot(hid);
-  if(curP==="inspections")renderInspections();else renderHives();
-  toast(editId?t("insp_upd"):t("insp_saved"),"🐝");
+  if(curP==="inspections")renderInspections();else if(curP==="queens")renderQueens();else renderHives();
+  if(queenAbsent){
+    toast(t("insp_q_absent_done"),"⚠️");
+  } else {
+    toast(editId?t("insp_upd"):t("insp_saved"),"🐝");
+  }
   if(D.settings.autoDownloadInsp){
     setTimeout(function(){exportInspPDF(o.id);},400);
     setTimeout(function(){exportInspXLS(o.id);},1800);
@@ -2766,6 +2852,15 @@ window.saveInsp=function(editId,hiveId){
 // QUEENS
 // ═══════════════════════════════════════════
 function renderQueens(){
+  var isEN=D.settings.lang==="en";
+  // Alert banner for hives without active queen
+  var hivesNoQueen=D.hives.filter(function(h){
+    return !D.queens.some(function(q){return q.hive===h.id&&(q.status==="activă"||q.status==="în imperechere"||q.status==="slabă");});
+  });
+  var noQueenAlert=hivesNoQueen.length?'<div class="sa" style="margin-bottom:14px;">'
+    +'<strong>❌ '+(isEN?"Hives without active queen: ":"Stupi fără regină activă: ")+hivesNoQueen.length+'</strong>'
+    +'<div style="margin-top:5px;font-size:.8rem;">'+hivesNoQueen.map(function(h){return'🏠 <strong>'+h.name+'</strong>';}).join(' &nbsp;·&nbsp; ')+'</div>'
+    +'</div>':"";
   var cards=D.queens.map(function(q){
     var hv=D.hives.find(function(h){return h.id===q.hive;});
     var oh=D.hives.find(function(h){return h.id===q.origHive;});
@@ -2773,8 +2868,10 @@ function renderQueens(){
     var qSts=t("q_statuses")||[];var stEntry=qSts.find(function(s){return s[0]===q.status;});
     var stLbl=stEntry?stEntry[1]:q.status;
     var stCls=(t("qs_cls")||{})[q.status]||"gy";
-    return'<div class="c">'
+    var isAbsent=q.status==="dispărută";
+    return'<div class="c" style="'+(isAbsent?"border-color:var(--danger);opacity:.82;":"")+'">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><h3 style="font-size:.92rem;">👑 '+q.race+'</h3><span class="bg '+stCls+'">'+stLbl+'</span></div>'
+      +(isAbsent?'<div class="al ald" style="padding:4px 9px;margin-bottom:6px;font-size:.78rem;">❌ '+(isEN?"Queen no longer in hive. Replace or document new queen.": "Regina nu mai este în stup. Înlocuiți sau adăugați regină nouă.")+'</div>':"")
       +'<div style="font-size:.8rem;">🏠 <strong>'+(hv?hv.name:"—")+'</strong></div>'
       +'<div style="font-size:.8rem;">📅 '+q.yr+' · '+q.orig+(oh?" (→ "+oh.name+")":'')+'</div>'
       +'<div style="font-size:.8rem;">⭐ '+t("q_lay").split("(")[0].trim()+': '+q.lay+'/5 · 😠 '+t("q_aggr").split("(")[0].trim()+': '+q.aggr+'/5 · '+t("q_score")+' <strong>'+sc.toFixed(1)+'/5.5</strong></div>'
@@ -2783,6 +2880,7 @@ function renderQueens(){
       +'</div>';
   }).join("");
   setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-crown" style="color:var(--gold)"></i> '+t("q_title")+'</h2>'
+    +noQueenAlert
     +'<button class="btn" style="margin-bottom:14px;" onclick="queenM()">'+t("q_new")+'</button>'
     +(D.queens.length===0?'<div class="al ali">'+t("q_no")+'</div>':'<div class="g gc">'+cards+'</div>'));
 }
@@ -3304,7 +3402,11 @@ async function fetchPastorareWeather(pid, locationStr){
     var lat=geoD.results[0].latitude, lon=geoD.results[0].longitude;
     var wR=await fetch("https://api.open-meteo.com/v1/forecast?latitude="+lat+"&longitude="+lon+"&current=temperature_2m,precipitation,weathercode,windspeed_10m,relativehumidity_2m&timezone=auto&forecast_days=1");
     if(!wR.ok) throw 0;
-    var wD=await wR.json(), c=wD.current, wi=wmoI(c.weathercode);
+    var wD=await wR.json(), c=wD.current;
+    var nowH2=new Date().getHours()+new Date().getMinutes()/60;
+    var sun2=getSunTimes(lat,lon);
+    var isNight2=nowH2<sun2.sunrise||nowH2>sun2.sunset;
+    var wi=wmoI(c.weathercode,isNight2);
     window._pastWeatherCache[pid]={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,loc:geoD.results[0].name,ts:Date.now()};
     var el=document.getElementById("pw-"+pid);
     if(el) el.outerHTML=pastorWeatherWidget(pid);
@@ -3522,7 +3624,22 @@ function renderCalendar(){
         +'<button class="btn sm be" onclick="treatM(\''+tr.id+'\')">✏️</button></div>';
     }).join("");
 
+  // Caseta locație detectată pentru calendar
+  var locBox=(function(){
+    if(!D.userLoc) return '<div class="al alw" style="font-size:.8rem;">📍 '+(isEN?'Location not detected — enable GPS for zone-adjusted calendar':'Locație nedetectată — activați GPS pentru calendar adaptat zonei')+'</div>';
+    var cityStr=(D.userLoc.city||'');
+    var countyStr=(D.userLoc.county||'');
+    var locLabel=cityStr?(cityStr+(countyStr&&countyStr!==cityStr?', '+countyStr:'')):countyStr||(D.userLoc.lat.toFixed(2)+'°N, '+D.userLoc.lon.toFixed(2)+'°E');
+    var offStr=off!==0?(' '+(off>0?'+':'')+off+(isEN?' d offset':' zile offset')):'';
+    return '<div class="al ali" style="font-size:.79rem;display:flex;align-items:center;gap:8px;">'
+      +'<span style="font-size:1rem;">📍</span>'
+      +'<div><span style="font-weight:700;color:var(--txt);">'+locLabel+'</span>'
+      +(offStr?'<span style="color:var(--info);margin-left:6px;font-size:.73rem;">'+offStr+'</span>':'')
+      +'<br><span style="color:var(--mut);font-size:.72rem;">'+D.userLoc.lat.toFixed(4)+'°N · '+D.userLoc.lon.toFixed(4)+'°E</span></div></div>';
+  })();
+
   setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-calendar-days" style="color:var(--gold)"></i> '+t("cal_title")+'</h2>'
+    +locBox
     +flCard
     +'<div class="c" style="margin-top:13px;"><div class="ct">'+t("cal_upcoming")+'</div>'
     +(nextHTML||'<p style="color:var(--mut);margin-top:7px;">'+t("cal_no_up")+'</p>')+'</div>'
@@ -3799,7 +3916,7 @@ function renderSettings(){
       var rows2=insps2.map(function(insp){
         return'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;">'
           +'<span style="font-size:.82rem;font-weight:700;min-width:95px;">📅 '+insp.date+'</span>'
-          +'<span class="bg '+(insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qSeen?"👑✅":"👑❓")+'</span>'
+          +'<span class="bg '+(insp.qStatus==="absent"?"gr":insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qStatus==="absent"?"❌👑":insp.qSeen?"👑✅":"👑❓")+'</span>'
           +'<span class="bg gb" style="font-size:.63rem;">🥚 '+(insp.fB||0)+'</span>'
           +'<span class="bg gg" style="font-size:.63rem;">🍯 '+(insp.fH||0)+'</span>'
           +'<div style="margin-left:auto;display:flex;gap:4px;">'
