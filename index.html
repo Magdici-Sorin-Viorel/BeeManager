@@ -604,6 +604,11 @@ ro:{
   insp_space:"📦 Spațiu cuib",
   insp_mag_t:"📦 Magazie",insp_mag_tot:"Total rame",insp_mag_fl:"🍯 Rame pline",
   insp_mag_cp:"✅ Din care capacite",insp_mag_nw:"🆕 Rame noi magazie",insp_mag_nb:"🏗️ Din care clădite",
+  mag_foite:"🆕 Rame cu foițe",mag_cladite:"🏗️ Rame clădite",mag_miere:"🍯 Rame cu miere",mag_miere_cap:"✅ Rame cu miere capacită",mag_oua:"👑 Rame cu ouă (regină în magazie)",
+  mag_capacity:"Capacitate magazie (rame)",mag_add_new:"➕ Adaugă magazie",mag_add_another:"➕ Adaugă altă magazie",
+  mag_remove:"🗑️ Scoate magazie",mag_nr:"Magazia",mag_new_badge:"Nouă",mag_sum_err:"Total rame depășit! Max:",
+  mag_frame_type:"Tip rame magazie",mag_ft_goale:"Foițe (goale)",mag_ft_cladite:"Clădite",mag_ft_miere:"Cu miere",mag_ft_mix:"Mix",
+  mag_confirm_remove:"Scoți magazia din stup?",mag_hive_supers:"📦 Magazine active:",
   insp_health_t:"🦠 Sănătate",insp_dis_ph:"Alte observații boli…",
   insp_weight:"⚖️ Greutate stup (kg)",insp_weight_ph:"ex: 32.5",
   insp_notes:"📝 Note libere",insp_save:"✅ Salvează",
@@ -967,6 +972,11 @@ en:{
   insp_space:"📦 Brood box space",
   insp_mag_t:"📦 Honey Super",insp_mag_tot:"Total frames",insp_mag_fl:"🍯 Full frames",
   insp_mag_cp:"✅ Of which capped",insp_mag_nw:"🆕 New super frames",insp_mag_nb:"🏗️ Of which drawn",
+  mag_foite:"🆕 Foundation frames",mag_cladite:"🏗️ Drawn frames",mag_miere:"🍯 Honey frames",mag_miere_cap:"✅ Capped honey frames",mag_oua:"👑 Frames with eggs (queen in super)",
+  mag_capacity:"Super capacity (frames)",mag_add_new:"➕ Add super",mag_add_another:"➕ Add another super",
+  mag_remove:"🗑️ Remove super",mag_nr:"Super",mag_new_badge:"New",mag_sum_err:"Total frames exceeded! Max:",
+  mag_frame_type:"Initial frame type",mag_ft_goale:"Foundation (empty)",mag_ft_cladite:"Drawn comb",mag_ft_miere:"With honey",mag_ft_mix:"Mix",
+  mag_confirm_remove:"Remove this super from hive?",mag_hive_supers:"📦 Active supers:",
   insp_health_t:"🦠 Health",insp_dis_ph:"Other disease observations…",
   insp_weight:"⚖️ Hive weight (kg)",insp_weight_ph:"e.g. 32.5",
   insp_notes:"📝 Free notes",insp_save:"✅ Save",
@@ -2024,7 +2034,14 @@ function renderHives(q){
       +'<div style="text-align:center;background:rgba(230,180,34,.1);border-radius:8px;padding:6px;"><div style="font-size:1.15rem;font-weight:800;color:var(--gold)">'+h.fB+'</div><div style="font-size:.62rem;color:var(--mut)">'+t("h_br2")+'</div></div>'
       +'<div style="text-align:center;background:rgba(111,191,76,.1);border-radius:8px;padding:6px;"><div style="font-size:1.15rem;font-weight:800;color:var(--ok)">'+h.fH+'</div><div style="font-size:.62rem;color:var(--mut)">'+t("h_hn2")+'</div></div>'
       +'</div>'
-      +(h.hasMag?'<div style="font-size:.78rem;margin-bottom:4px;">📦 '+t("h_mag_l")+' '+h.magF+' '+t("inv_units")+'</div>':"")
+      +(function(){
+        migrateHiveSupers(h);
+        var activeS=h.supers?h.supers.filter(function(s){return !s.removed;}):[];
+        if(!activeS.length)return"";
+        var totalCap=activeS.reduce(function(a,s){return a+(s.capacity||0);},0);
+        var badge=activeS.length>1?'<span style="background:rgba(230,180,34,.25);color:var(--gold);font-size:.6rem;padding:1px 5px;border-radius:8px;margin-left:4px;">×'+activeS.length+'</span>':"";
+        return'<div style="font-size:.78rem;margin-bottom:4px;">📦 '+activeS.length+(D.settings.lang==="en"?" super":" magaz"+(activeS.length===1?"ie":"ii"))+badge+' · '+totalCap+' '+(D.settings.lang==="en"?"fr.":"rame")+'</div>';
+      })()
       +'<div style="font-size:.78rem;margin-bottom:4px;">👑 '+qBadge+'</div>'
       +'<div style="font-size:.73rem;color:var(--mut)">📅 '+t("h_last_i")+' '+(li?li.date:"—")+'</div>'
       +(h.lastWeightKg!==null&&h.lastWeightKg!==undefined?'<div style="font-size:.73rem;color:var(--mut)">⚖️ '+(D.settings.lang==="en"?"Weight: ":"Greutate: ")+'<strong style="color:var(--gold)">'+h.lastWeightKg.toFixed(1)+' kg</strong>'+(li?' <span style="font-size:.65rem;">('+li.date+')</span>':'')+'</div>':"")
@@ -2068,8 +2085,17 @@ function hiveM(id){
     +'<div style="font-size:.76rem;color:var(--mut);margin-bottom:6px;">'+t("str_hint")+'</div>'
     +'<div style="display:flex;gap:7px;"><select id="hSt" style="flex:1;margin:0;"><option'+(xv(h,"str","mediu")==="puternic"?" selected":"")+' value="puternic">'+t("str_strong")+'</option><option'+(xv(h,"str","mediu")==="mediu"?" selected":"")+' value="mediu">'+t("str_medium")+'</option><option'+(xv(h,"str","mediu")==="slab"?" selected":"")+' value="slab">'+t("str_weak")+'</option></select>'
     +'<button class="btn sm" onclick="aStr(true)">'+t("str_auto")+'</button></div></div>'
-    +'<div class="r2"><div>'+L(t("h_has_mag"))+'<select id="hMg" onchange="document.getElementById(\'mRow\').style.display=this.value===\'da\'?\'block\':\'none\'"><option value="nu"'+(!h||!h.hasMag?" selected":"")+'>'+t("h_no")+'</option><option value="da"'+(h&&h.hasMag?" selected":"")+'>'+t("h_yes")+'</option></select></div>'
-    +'<div id="mRow" style="display:'+(h&&h.hasMag?"block":"none")+'">'+L(t("h_mag_cap"))+'<input id="hMgF" type="number" inputmode="numeric" value="'+(xv(h,"magF",10))+'"></div></div>'
+    +(function(){
+      if(!h)return'<div style="font-size:.78rem;color:var(--mut);margin:7px 0;">📦 '+(D.settings.lang==="en"?"Supers managed via inspections":"Magazine gestionate prin inspecții")+'</div>';
+      migrateHiveSupers(h);
+      var activeS=(h.supers||[]).filter(function(s){return !s.removed;});
+      if(!activeS.length)return'<div style="font-size:.78rem;color:var(--mut);margin:7px 0;">📦 '+(D.settings.lang==="en"?"No supers — add via inspection":"Nicio magazie — adaugă la inspecție")+'</div>';
+      return'<div style="background:rgba(230,180,34,.06);border:1px solid rgba(230,180,34,.18);border-radius:var(--rs);padding:8px 12px;margin:7px 0;">'
+        +'<div style="font-size:.76rem;font-weight:700;color:var(--gold);margin-bottom:5px;">📦 '+(D.settings.lang==="en"?"Active supers":"Magazine active")+': '+activeS.length+'</div>'
+        +activeS.map(function(s,i){return'<div style="font-size:.75rem;color:var(--mut);margin:2px 0;">📦'+(i+1)+': '+(s.capacity||10)+' '+(D.settings.lang==="en"?"frames":"rame")+'</div>';}).join("")
+        +'<div style="font-size:.7rem;color:var(--mut);margin-top:4px;">'+(D.settings.lang==="en"?"Manage via inspections":"Gestionează din inspecții")+'</div>'
+        +'</div>';
+    })()
     +L(t("h_status"))+'<select id="hSc"><option value="green"'+(xv(h,"sc","green")==="green"?" selected":"")+'>'+t("sc_g")+'</option><option value="yellow"'+(xv(h,"sc","")==="yellow"?" selected":"")+'>'+t("sc_y")+'</option><option value="red"'+(xv(h,"sc","")==="red"?" selected":"")+'>'+t("sc_r")+'</option></select>'
     +L(t("h_notes"))+'<textarea id="hNt" rows="2">'+(xv(h,"notes",""))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveH(\''+(id||"")+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
@@ -2088,7 +2114,8 @@ window.saveH=function(id){
     if(el){el.classList.add("err");el.focus();setTimeout(function(){el.classList.remove("err");},2500);}
     toast("⚠️ "+(t("h_name_l")));return;
   }
-  var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fT:parseInt(($q("hFT")||{}).value)||0,fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,str:($q("hSt")||{}).value||"mediu",hasMag:($q("hMg")||{}).value==="da",magF:parseInt(($q("hMgF")||{}).value)||0,sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
+  var _exH=id?D.hives.find(function(h){return h.id===id;}):null;
+  var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fT:parseInt(($q("hFT")||{}).value)||0,fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,str:($q("hSt")||{}).value||"mediu",hasMag:_exH?!!_exH.hasMag:false,magF:_exH?(_exH.magF||0):0,supers:_exH?(_exH.supers||[]):[],sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
   if(id){var ex=D.hives.find(function(h){return h.id===id;});if(ex)Object.assign(ex,o);}else{D.hives.push(o);}
   save();closeM();renderHives();
 };
@@ -2125,6 +2152,7 @@ function inspCardHTML(i,showHiveName){
     +(i.botci?'<div class="al alw" style="padding:4px 8px;margin:4px 0;font-size:.75rem;">🐛 '+i.botciN+' · '+(i.botciS||"")+(i.botciF?" — "+i.botciF:"")+'</div>':"")
     +'<div style="font-size:.78rem;">🦠 '+((i.diseases||[]).join(", ")||"—")+'</div>'
     +(i.postTr&&i.postTrEff?'<div style="font-size:.73rem;margin-top:3px;"><span class="bg gb" style="font-size:.65rem;">🔬 '+t("insp_post_tr_t")+'</span> <span class="bg '+(i.postTrEff&&i.postTrEff.indexOf("90")>=0?"gg":i.postTrEff&&i.postTrEff.indexOf("60")>=0?"gy":"gr")+'" style="font-size:.65rem;">📈 '+i.postTrEff+'</span>'+(i.postTrVarroa!==null&&i.postTrVarroa!==undefined?' <span class="bg" style="font-size:.63rem;background:rgba(255,255,255,.08);">🕷️ '+i.postTrVarroa+'/24h</span>':"")+'</div>':"")
+    +(i.supers&&i.supers.length?'<div style="font-size:.76rem;margin-top:3px;">'+i.supers.map(function(s,idx){var sum=(s.foite||0)+(s.cladite||0)+(s.miere||0)+(s.miereCap||0);return'📦'+(idx+1)+': <b>'+sum+'</b>/'+(s.capacity||10)+(s.ouaRegina?" 👑":"");}).join(" · ")+'</div>':(i.hasMag?'<div style="font-size:.76rem;margin-top:3px;">📦 '+(D.settings.lang==="en"?"Super":"Magazie")+': '+(i.magT||"?")+(D.settings.lang==="en"?" fr.":" rame")+'</div>':""))
     +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+i.notes+'</div>':"")
     +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️</button>'
     +'<button class="btn sm gh" onclick="exportInspPDF(\''+i.id+'\')">📄 PDF</button>'
@@ -2337,7 +2365,7 @@ function inspM(hiveId,editId){
       .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
     return !!(lastI&&lastI.hasMag);
   }
-  var mag=ex?ex.hasMag:hiveEffHasMag(effHid);
+  var mag=ex?(ex.supers&&ex.supers.length>0?true:ex.hasMag):hiveEffHasMag(effHid);
   var autoW=!ex&&D.weather?mapWeatherLabel():"";
   var autoT=(!ex&&D.weather)?fmtTempInput(D.weather.temp):"";
   var wtDefault=xv(ex,"weather",autoW);
@@ -2347,13 +2375,25 @@ function inspM(hiveId,editId){
   var hiveSelHTML=!hive?L(t("insp_hive"))+'<select id="iHive" onchange="updMag(this.value)">'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(effHid===h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
     :'<input type="hidden" id="iHive" value="'+effHid+'">';
 
-  var magHTML=mag?('<div class="dv"><div class="stt">'+t("insp_mag_t")+'</div></div>'
-    +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(xv(ex,"magT",hive?hive.magF:10))+'"></div>'
-    +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="'+(xv(ex,"magFull",0))+'"></div>'
-    +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="'+(xv(ex,"magCap",0))+'"></div></div>'
-    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="'+(xv(ex,"magNew",0))+'" oninput="refreshMagInvDeductPreview()"></div>'
-    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="'+(xv(ex,"magNewB",0))+'"></div></div>'
-    +buildMagInvDeductBlock(xv(ex,"magNew",0))):"";
+  // Init _inspSupers from existing inspection or hive state
+  (function(){
+    if(ex&&ex.supers&&ex.supers.length){
+      _inspSupers=ex.supers.filter(function(s){return !s.removed;}).map(function(s){
+        return{id:s.id||uid(),sourceSuperId:s.sourceSuperId||s.id,capacity:s.capacity||10,foite:s.foite||0,cladite:s.cladite||0,miere:s.miere||0,miereCap:s.miereCap||0,ouaRegina:!!s.ouaRegina,isNew:false};
+      });
+    } else if(ex&&ex.hasMag){
+      // Legacy single-super inspection
+      _inspSupers=[{id:uid(),sourceSuperId:null,capacity:ex.magT||10,foite:0,cladite:ex.magFull||0,miere:ex.magFull||0,miereCap:ex.magCap||0,ouaRegina:false,isNew:false}];
+    } else if(!ex){
+      var prevSupers=hiveActiveSupers(effHid);
+      _inspSupers=prevSupers.map(function(s){
+        return{id:s.id||uid(),sourceSuperId:s.id,capacity:s.capacity||10,foite:s.foite||0,cladite:s.cladite||0,miere:s.miere||0,miereCap:s.miereCap||0,ouaRegina:!!s.ouaRegina,isNew:false};
+      });
+    } else {
+      _inspSupers=[];
+    }
+  })();
+  var magHTML=buildMultiSuperSection();
 
   var wNotice=(!ex&&D.weather)?'<div style="font-size:.72rem;color:var(--ok);margin-top:3px;">'+t("insp_w_auto")+' ('+showTemp(D.weather.temp)+')</div>':"";
 
@@ -2405,11 +2445,10 @@ function inspM(hiveId,editId){
     +'<div>'+L(t("insp_bp"))+'<select id="iBP">'+bp.map(function(a){return'<option value="'+a[0]+'"'+(xv(ex,"bp","compact")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select></div></div>'
     +'<div class="r2"><div>'+L(t("insp_nf"))+'<input type="number" inputmode="numeric" id="iNF" value="'+(xv(ex,"nFrames",0))+'" oninput="refreshInvDeductPreview()"></div>'
     +'<div>'+L(t("insp_nfb"))+'<input type="number" inputmode="numeric" id="iNFB" value="'+(xv(ex,"nFramesB",0))+'"></div></div>'
-    +buildInvDeductBlock(xv(ex,"nFrames",0),xv(ex,"magNew",0))
+    +buildInvDeductBlock(xv(ex,"nFrames",0),0)
     +L(t("insp_space"))+'<select id="iSp">'+sp.map(function(a){return'<option value="'+a[0]+'"'+(xv(ex,"space","suficient")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select>'
     +'<div class="dv"></div>'
-    +'<div id="magRadioBlock">'+buildMagRadios(mag, ex, hive)+'</div>'
-    +'<div id="magSec">'+(mag?magHTML:"")+'</div>'
+    +'<div id="magSec">'+magHTML+'</div>'
     +'<div class="dv"><div class="stt">'+t("insp_health_t")+'</div></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:7px;">'
     +dis.map(function(d){return'<div class="ck"><input type="checkbox" id="'+d[0]+'"'+(disArr.some(function(x){return disName(x)===disName(d[1]);})?" checked":"")+'>  <label for="'+d[0]+'">'+d[1]+'</label></div>';}).join("")
@@ -2440,48 +2479,167 @@ function inspM(hiveId,editId){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveInsp(\''+(editId||"")+'\',\''+(effHid||"")+'\')">'+t("insp_save")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
 
-// ── Super box: build radio group ────────────────────────────
-function buildMagRadios(mag, ex, hive){
-  var isEN=D.settings.lang==="en";
-  // Determine initial selection:
-  // If editing an existing inspection with hasMag=true → "present"
-  // If new inspection and hive has mag → "present"
-  // Default → "none"
-  var sel="none";
-  if(ex){
-    sel=ex.hasMag?"present":"none";
-  } else if(mag){
-    sel="present";
+// ── MULTI-SUPER SYSTEM ──────────────────────────────────────
+// _inspSupers: working array during inspection modal [{id,sourceSuperId,capacity,foite,cladite,miere,miereCap,ouaRegina,isNew,removed}]
+var _inspSupers=[];
+
+// Migrate hive: if hive.hasMag but no hive.supers[], create one entry
+function migrateHiveSupers(hive){
+  if(!hive)return;
+  if(!hive.supers){
+    hive.supers=hive.hasMag?[{id:uid(),capacity:hive.magF||10,frameType:"mix"}]:[];
   }
-  var lNone=isEN?"No super":"Fără magazie";
-  var lPres=isEN?"Super present":"Magazie prezentă";
-  var lAdd=isEN?"Adding super now":"Adaug magazie acum";
-  return '<div style="background:rgba(230,180,34,.06);border:1px solid rgba(230,180,34,.18);border-radius:var(--rs);padding:10px 12px;margin-bottom:4px;">'
-    +'<div style="font-size:.78rem;font-weight:700;color:var(--gold);margin-bottom:8px;">📦 '+(isEN?"Honey Super":"Magazie")+'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:6px;">'
-    +'<label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer;">'
-    +'<input type="radio" name="magRadio" id="iMagNone" value="none"'+(sel==="none"?" checked":"")
-    +' onchange="onMagRadio(\'none\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lNone+'</label>'
-    +'<label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer;">'
-    +'<input type="radio" name="magRadio" id="iMagPres" value="present"'+(sel==="present"?" checked":"")
-    +' onchange="onMagRadio(\'present\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lPres+'</label>'
-    +'<label style="display:flex;align-items:center;gap:8px;font-size:.84rem;cursor:pointer;">'
-    +'<input type="radio" name="magRadio" id="iMagAdd" value="add"'+(sel==="add"?" checked":"")
-    +' onchange="onMagRadio(\'add\')" style="width:18px;height:18px;accent-color:var(--gold);flex-shrink:0;"> '+lAdd+'</label>'
-    +'</div></div>';
 }
+
+// Get active (non-removed) supers count for a hive from last inspection
+function hiveActiveSupers(hid){
+  if(!hid)return[];
+  var hive=D.hives.find(function(h){return h.id===hid;});
+  if(hive){migrateHiveSupers(hive);}
+  // Check last inspection for supers state
+  var lastI=D.inspections.filter(function(i){return i.hiveId===hid&&i.date;})
+    .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+  if(lastI&&lastI.supers&&lastI.supers.length){
+    return lastI.supers.filter(function(s){return !s.removed;});
+  }
+  // Fallback to hive.supers
+  if(hive&&hive.supers)return hive.supers.filter(function(s){return !s.removed;});
+  return[];
+}
+
+function buildSuperBlock(s, idx, total){
+  var isEN=D.settings.lang==="en";
+  var cap=s.capacity||10;
+  var isNew=!!s.isNew;
+  var nrLabel=t("mag_nr")+" "+(idx+1);
+  if(isNew)nrLabel+=' <span style="background:rgba(111,191,76,.2);color:var(--ok);font-size:.65rem;padding:1px 6px;border-radius:10px;">'+t("mag_new_badge")+'</span>';
+  var sumF=(s.foite||0)+(s.cladite||0)+(s.miere||0)+(s.miereCap||0);
+  var sumWarn=sumF>cap?'<div style="color:var(--danger);font-size:.74rem;margin-top:3px;">⚠️ '+t("mag_sum_err")+' '+cap+'</div>':"";
+  var html='<div id="superBlock_'+idx+'" style="background:rgba(230,180,34,.05);border:1px solid rgba(230,180,34,.22);border-radius:var(--rm);padding:12px;margin-bottom:10px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+    +'<div style="font-size:.84rem;font-weight:700;color:var(--gold2);">📦 '+nrLabel+'</div>'
+    +'<div style="display:flex;gap:6px;">'
+    +(total>1?'<button class="btn sm bd" onclick="removeInspSuper('+idx+')" style="padding:4px 10px;font-size:.72rem;">🗑️</button>':'')
+    +'</div></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
+    +'<div>'+L(t("mag_capacity"))+'<input type="number" inputmode="numeric" id="sMagCap_'+idx+'" value="'+cap+'" min="1" max="40" onchange="onSuperCapChange('+idx+')" oninput="onSuperCapChange('+idx+')"></div>'
+    +'<div style="display:flex;align-items:flex-end;padding-bottom:2px;"><span style="font-size:.72rem;color:var(--mut);">'+(isEN?"Max frames per super":"Total max rame magazie")+'</span></div>'
+    +'</div>'
+    +'<div id="sMagSumWarn_'+idx+'">'+sumWarn+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">'
+    +'<div>'+L(t("mag_foite"))+'<input type="number" inputmode="numeric" id="sMagFoite_'+idx+'" value="'+(s.foite||0)+'" min="0" oninput="onSuperFrameInput('+idx+')"></div>'
+    +'<div>'+L(t("mag_cladite"))+'<input type="number" inputmode="numeric" id="sMagCladite_'+idx+'" value="'+(s.cladite||0)+'" min="0" oninput="onSuperFrameInput('+idx+')"></div>'
+    +'<div>'+L(t("mag_miere"))+'<input type="number" inputmode="numeric" id="sMagMiere_'+idx+'" value="'+(s.miere||0)+'" min="0" oninput="onSuperFrameInput('+idx+')"></div>'
+    +'<div>'+L(t("mag_miere_cap"))+'<input type="number" inputmode="numeric" id="sMagMiereCap_'+idx+'" value="'+(s.miereCap||0)+'" min="0" oninput="onSuperFrameInput('+idx+')"></div>'
+    +'</div>'
+    +'<div style="margin-top:6px;" class="ck"><input type="checkbox" id="sMagOua_'+idx+'"'+(s.ouaRegina?" checked":"")+'>  <label for="sMagOua_'+idx+'" style="font-size:.82rem;">'+t("mag_oua")+'</label></div>'
+    +'</div>';
+  return html;
+}
+
+function buildMultiSuperSection(){
+  var html='<div class="dv"><div class="stt">📦 '+(D.settings.lang==="en"?"Honey Supers":"Magazine")+'</div></div>';
+  if(!_inspSupers.length){
+    html+='<div style="display:flex;justify-content:center;margin:8px 0;">'
+      +'<button class="btn" onclick="addInspSuper()" style="background:rgba(230,180,34,.12);color:var(--gold);border:1px dashed var(--gold);">'+t("mag_add_new")+'</button>'
+      +'</div>';
+  } else {
+    var active=_inspSupers.filter(function(s){return !s.removed;});
+    html+='<div id="superBlocksContainer">';
+    active.forEach(function(s,i){html+=buildSuperBlock(s,i,active.length);});
+    html+='</div>';
+    html+='<div style="display:flex;justify-content:flex-start;margin-top:4px;">'
+      +'<button class="btn sm" onclick="addInspSuper()" style="background:rgba(230,180,34,.1);color:var(--gold);border:1px solid rgba(230,180,34,.3);">'+t("mag_add_another")+'</button>'
+      +'</div>';
+  }
+  return html;
+}
+
+window.addInspSuper=function(){
+  _inspSupers.push({id:uid(),sourceSuperId:null,capacity:10,foite:0,cladite:0,miere:0,miereCap:0,ouaRegina:false,isNew:true});
+  refreshSuperUI();
+};
+
+window.removeInspSuper=function(idx){
+  var active=_inspSupers.filter(function(s){return !s.removed;});
+  if(!active[idx])return;
+  showConfirm(t("mag_confirm_remove"),function(){
+    active[idx].removed=true;
+    refreshSuperUI();
+  });
+};
+
+window.onSuperCapChange=function(idx){
+  collectSuperData();
+  refreshSuperWarnings();
+};
+
+window.onSuperFrameInput=function(idx){
+  collectSuperData();
+  refreshSuperWarnings();
+};
+
+function refreshSuperWarnings(){
+  var active=_inspSupers.filter(function(s){return !s.removed;});
+  active.forEach(function(s,i){
+    var cap=s.capacity||10;
+    var sum=(s.foite||0)+(s.cladite||0)+(s.miere||0)+(s.miereCap||0);
+    var warnEl=document.getElementById("sMagSumWarn_"+i);
+    if(warnEl)warnEl.innerHTML=sum>cap?'<div style="color:var(--danger);font-size:.74rem;margin-top:3px;">⚠️ '+t("mag_sum_err")+' '+cap+'</div>':"";
+    // Enforce max on each field if total exceeds cap
+    ["sMagFoite_","sMagCladite_","sMagMiere_","sMagMiereCap_"].forEach(function(pfx){
+      var el=document.getElementById(pfx+i);
+      if(el)el.max=cap;
+    });
+  });
+}
+
+function collectSuperData(){
+  var active=_inspSupers.filter(function(s){return !s.removed;});
+  active.forEach(function(s,i){
+    var cap=parseInt((document.getElementById("sMagCap_"+i)||{}).value)||10;
+    var foite=parseInt((document.getElementById("sMagFoite_"+i)||{}).value)||0;
+    var cladite=parseInt((document.getElementById("sMagCladite_"+i)||{}).value)||0;
+    var miere=parseInt((document.getElementById("sMagMiere_"+i)||{}).value)||0;
+    var miereCap=parseInt((document.getElementById("sMagMiereCap_"+i)||{}).value)||0;
+    // Clamp to capacity
+    var total=foite+cladite+miere+miereCap;
+    if(total>cap){
+      // proportional clamp — just let warn show, don't auto-adjust
+    }
+    s.capacity=cap;
+    s.foite=foite;
+    s.cladite=cladite;
+    s.miere=miere;
+    s.miereCap=miereCap;
+    s.ouaRegina=!!(document.getElementById("sMagOua_"+i)||{}).checked;
+  });
+}
+
+function refreshSuperUI(){
+  collectSuperData();
+  var el=document.getElementById("magSec");
+  if(el)el.innerHTML=buildMultiSuperSection();
+}
+
+window.updMag=function(hid){
+  var hive=D.hives.find(function(h){return h.id===hid;});
+  migrateHiveSupers(hive);
+  var prevSupers=hiveActiveSupers(hid);
+  _inspSupers=prevSupers.map(function(s){
+    return{id:s.id||uid(),sourceSuperId:s.id,capacity:s.capacity||10,foite:s.foite||0,cladite:s.cladite||0,miere:s.miere||0,miereCap:s.miereCap||0,ouaRegina:!!s.ouaRegina,isNew:false};
+  });
+  var el=document.getElementById("magSec");
+  if(el)el.innerHTML=buildMultiSuperSection();
+};
 
 window.onQStatusChange=function(val){
   var warn=document.getElementById("qAbsentWarn");
   if(warn)warn.style.display=(val==="absent")?"block":"none";
-  // Auto-set checkboxes based on selection
   var qSeen=document.getElementById("iQS");
   var qEgg=document.getElementById("iEg");
   if(val==="present"&&qSeen&&!qSeen.checked){qSeen.checked=true;}
-  if(val==="absent"){
-    if(qSeen)qSeen.checked=false;
-    if(qEgg)qEgg.checked=false;
-  }
+  if(val==="absent"){if(qSeen)qSeen.checked=false;if(qEgg)qEgg.checked=false;}
 };
 
 window.togglePostTrSec=function(show){
@@ -2489,55 +2647,7 @@ window.togglePostTrSec=function(show){
   if(el)el.style.display=show?"block":"none";
 };
 
-window.onMagRadio=function(val){
-  var el=document.getElementById("magSec");if(!el)return;
-  if(val==="none"){el.innerHTML="";}
-  else{
-    var hid=($q("iHive")||{}).value;
-    var hive=D.hives.find(function(h){return h.id===hid;});
-    el.innerHTML='<div class="dv"><div class="stt">'+t("insp_mag_t")+'</div></div>'
-      +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive&&hive.magF?hive.magF:10)+'"></div>'
-      +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="0"></div>'
-      +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="0"></div></div>'
-      +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0" oninput="refreshMagInvDeductPreview()"></div>'
-      +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>'
-      +buildMagInvDeductBlock(0);
-  }
-};
-
-window.toggleMagSec=function(checked){
-  // Legacy: redirect to radio logic
-  if(checked){onMagRadio("present");}else{onMagRadio("none");}
-};
-
-window.updMag=function(hid){
-  var hive=D.hives.find(function(h){return h.id===hid;});
-  var hasMag=!!(hive&&hive.hasMag);
-  if(!hasMag){
-    var lastI=D.inspections.filter(function(i){return i.hiveId===hid&&i.date;})
-      .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
-    hasMag=!!(lastI&&lastI.hasMag);
-  }
-  // Rebuild radio group when hive changes
-  var ms=document.getElementById("magSec");if(!ms)return;
-  var container=ms.parentNode;
-  // Remove old radio block (everything between iSp select's container and magSec)
-  var radBlock=document.getElementById("magRadioBlock");
-  if(radBlock)radBlock.remove();
-  // Insert new radio block before magSec
-  var tmp=document.createElement("div");
-  tmp.id="magRadioBlock";
-  tmp.innerHTML=buildMagRadios(hasMag,null,hive);
-  container.insertBefore(tmp,ms);
-  // Update magSec content
-  ms.innerHTML=hasMag?('<div class="dv"><div class="stt">'+t("insp_mag_t")+'</div></div>'
-    +'<div class="r3"><div>'+L(t("insp_mag_tot"))+'<input type="number" inputmode="numeric" id="iMgT" value="'+(hive&&hive.magF?hive.magF:10)+'"></div>'
-    +'<div>'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" id="iMgFl" value="0"></div>'
-    +'<div>'+L(t("insp_mag_cp"))+'<input type="number" inputmode="numeric" id="iMgCp" value="0"></div></div>'
-    +'<div class="r2"><div>'+L(t("insp_mag_nw"))+'<input type="number" inputmode="numeric" id="iMgNw" value="0" oninput="refreshMagInvDeductPreview()"></div>'
-    +'<div>'+L(t("insp_mag_nb"))+'<input type="number" inputmode="numeric" id="iMgNwB" value="0"></div></div>'
-    +buildMagInvDeductBlock(0)):"";
-};
+window.toggleMagSec=function(){};// legacy stub
 
 // ── Inventory deduction block for inspection modal ──────────
 function buildInvDeductBlock(nFrames, magNew){
@@ -2657,8 +2767,7 @@ window.onInvItemChange=function(sel){
 
 function getInspNewFramesTotal(){
   var nf=parseInt((document.getElementById("iNF")||{}).value)||0;
-  var mn=parseInt((document.getElementById("iMgNw")||{}).value)||0;
-  return nf+mn;
+  return nf;
 }
 
 // Called when iNF or iMgNw inputs change to refresh the preview
@@ -2748,9 +2857,7 @@ window.saveInsp=function(editId,hiveId){
     popPct:parseInt(($q("iPop")||{}).value)||90,bp:($q("iBP")||{}).value||"compact",
     nFrames:parseInt(($q("iNF")||{}).value)||0,nFramesB:parseInt(($q("iNFB")||{}).value)||0,
     space:($q("iSp")||{}).value||"suficient",
-    hasMag:!!document.getElementById("iMgT"),
-    magT:parseInt(($q("iMgT")||{}).value)||0,magFull:parseInt(($q("iMgFl")||{}).value)||0,
-    magCap:parseInt(($q("iMgCp")||{}).value)||0,magNew:parseInt(($q("iMgNw")||{}).value)||0,magNewB:parseInt(($q("iMgNwB")||{}).value)||0,
+    hasMag:false,magT:0,magFull:0,magCap:0,magNew:0,magNewB:0, // legacy compat kept as 0
     diseases:dis,diseaseN:($q("iDN")||{}).value||"",notes:($q("iNt")||{}).value||"",
     weightKg:($q("iWkg")||{}).value?parseFloat(($q("iWkg")||{}).value):null,
     postTr:!!($q("iPostTr")||{}).checked,
@@ -2765,13 +2872,16 @@ window.saveInsp=function(editId,hiveId){
   if(hive){
     hive.fB=brood;hive.fH=o.fH||0;hive.str=strCalc(brood);if(o.space==="urgent")hive.sc="red";
     if(o.weightKg!==null&&o.weightKg!==undefined)hive.lastWeightKg=o.weightKg;
-    // Update hasMag based on radio selection
-    var magNoneEl=document.querySelector('input[name="magRadio"][value="none"]');
-    var magPresEl=document.querySelector('input[name="magRadio"][value="present"]');
-    var magAddEl=document.querySelector('input[name="magRadio"][value="add"]');
-    if(magNoneEl&&magNoneEl.checked) hive.hasMag=false;
-    if(magPresEl&&magPresEl.checked) hive.hasMag=true;
-    if(magAddEl&&magAddEl.checked) hive.hasMag=true;
+    // Collect and save multi-super data
+    collectSuperData();
+    var activeSupers=_inspSupers.filter(function(s){return !s.removed;});
+    o.supers=activeSupers.map(function(s){return{id:s.id,sourceSuperId:s.sourceSuperId,capacity:s.capacity,foite:s.foite,cladite:s.cladite,miere:s.miere,miereCap:s.miereCap,ouaRegina:s.ouaRegina,isNew:s.isNew};});
+    o.hasMag=activeSupers.length>0;
+    // Sync supers back to hive record
+    if(!hive.supers)hive.supers=[];
+    hive.supers=activeSupers.map(function(s){return{id:s.id,capacity:s.capacity,foite:s.foite,cladite:s.cladite,miere:s.miere,miereCap:s.miereCap,ouaRegina:s.ouaRegina};});
+    hive.hasMag=activeSupers.length>0;
+    hive.magF=activeSupers.reduce(function(acc,s){return acc+(s.capacity||0);},0);
   }
   // ── Inventory auto-deduction: CUIB (rame noi stup) ───────
   var invDeductChk=document.getElementById("iInvDeduct");
@@ -2791,28 +2901,6 @@ window.saveInsp=function(editId,hiveId){
           if(!D.invHistory)D.invHistory=[];
           D.invHistory.push({id:uid(),itemId:invItemId,itemName:invItem.name,delta:-totalNewFrames,prevQty:prevQty,newQty:invItem.qty,date:o.date||new Date().toISOString().slice(0,10),source:"inspection_cuib",inspId:o.id,hiveId:hid});
           setTimeout(function(){toast(t("insp_inv_deducted")+totalNewFrames+t("insp_inv_units")+" "+invItem.name+" (cuib)","📦");},500);
-        }
-      }
-    }
-  }
-  // ── Inventory auto-deduction: MAGAZIE (rame noi magazie) ──
-  var invDeductMagChk=document.getElementById("iInvDeductMag");
-  if(invDeductMagChk&&invDeductMagChk.checked){
-    var invItemMagSel=document.getElementById("iInvItemMag");
-    var invItemMagId=invItemMagSel?invItemMagSel.value:null;
-    var totalNewMag=(o.magNew||0);
-    if(invItemMagId&&totalNewMag>0){
-      var invItemMag=D.inventory.find(function(i){return i.id===invItemMagId;});
-      if(invItemMag){
-        var prevQtyMag=invItemMag.qty||0;
-        if(totalNewMag>prevQtyMag){
-          invItemMag.qty=0;
-          setTimeout(function(){toast(t("insp_inv_insuf")+" "+prevQtyMag+"! Stoc magazie setat la 0.","⚠️");},300);
-        } else {
-          invItemMag.qty=prevQtyMag-totalNewMag;
-          if(!D.invHistory)D.invHistory=[];
-          D.invHistory.push({id:uid(),itemId:invItemMagId,itemName:invItemMag.name,delta:-totalNewMag,prevQty:prevQtyMag,newQty:invItemMag.qty,date:o.date||new Date().toISOString().slice(0,10),source:"inspection_magazie",inspId:o.id,hiveId:hid});
-          setTimeout(function(){toast(t("insp_inv_deducted")+totalNewMag+t("insp_inv_units")+" "+invItemMag.name+" (magazie)","📦");},800);
         }
       }
     }
