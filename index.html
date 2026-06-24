@@ -19,7 +19,7 @@ window.addEventListener('error', function(e) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-tap-highlight-color:transparent;}
-:root{--bg:#0f0e0e;--sur:#1a1919;--card:#222121;--bdr:#2c2b2b;--txt:#f5f3ef;--mut:#b9b5ae;--gold:#e6b422;--gold2:#f5c542;--danger:#e07c4c;--ok:#6fbf4c;--info:#4a9eff;--sh:0 8px 24px rgba(0,0,0,.45);--rl:20px;--rm:14px;--rs:10px;--sw:256px;}
+:root{--bg:#0f0e0e;--sur:#1a1919;--card:#222121;--bdr:#2c2b2b;--txt:#f5f3ef;--mut:#b9b5ae;--gold:#e6b422;--gold2:#f5c542;--danger:#e07c4c;--ok:#6fbf4c;--info:#4a9eff;--warn:#e6b422;--bg2:#2a2929;--tx:#f5f3ef;--text:#f5f3ef;--sh:0 8px 24px rgba(0,0,0,.45);--rl:20px;--rm:14px;--rs:10px;--sw:256px;}
 body{background:var(--bg);color:var(--txt);overflow-x:hidden;}
 body.light{--bg:#fefaf0;--sur:#fff7e8;--card:#ffffff;--bdr:#f0e3c9;--txt:#1f1b13;--mut:#5c564b;}
 .app{display:flex;min-height:100vh;}
@@ -1198,6 +1198,7 @@ function load(){
   if(!D.settings.tempUnit)D.settings.tempUnit="C";
   if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=7;
   if(D.settings.autoDownloadInsp===undefined)D.settings.autoDownloadInsp=false;
+  if(!D.honeyHarvests)D.honeyHarvests=[];
   if(!D.pastorage)D.pastorage=[];
   if(!D.finances)D.finances=[];
   if(!D.varroa)D.varroa=[];
@@ -1216,7 +1217,7 @@ function save(showToast){
 function saveHiveSnapshot(hiveId){
   var hive=D.hives.find(function(h){return h.id===hiveId;});
   if(!hive)return;
-  var snap={hive:hive,inspections:D.inspections.filter(function(i){return i.hiveId===hiveId;}),queens:D.queens?D.queens.filter(function(q){return q.hiveId===hiveId;}):[], honeyHarvests:D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;}),savedAt:new Date().toISOString()};
+  var snap={hive:hive,inspections:D.inspections.filter(function(i){return i.hiveId===hiveId;}),queens:D.queens?D.queens.filter(function(q){return q.hive===hiveId;}):[], honeyHarvests:D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;}),savedAt:new Date().toISOString()};
   localStorage.setItem("bmp5_hive_"+hiveId,JSON.stringify(snap));
 }
 
@@ -2062,8 +2063,10 @@ window.delH=function(id){
     if(D.honeyHarvests)D.honeyHarvests=D.honeyHarvests.filter(function(h){return h.hiveId!==id;});
     if(D.treatments)D.treatments=D.treatments.filter(function(t){return t.hiveId!==id;});
     if(D.varroa)D.varroa=D.varroa.filter(function(v){return v.hiveId!==id;});
-    if(D.feeding)D.feeding=D.feeding.filter(function(f){return f.hiveId!==id;});
+    if(D.feedings)D.feedings=D.feedings.filter(function(f){return f.hiveId!==id;});
     if(D.pastorage)D.pastorage=D.pastorage.filter(function(p){return p.hiveId!==id;});
+    if(D.tasks)D.tasks=D.tasks.filter(function(tk){return tk.hiveId!==id;});
+    if(D.finances)D.finances=D.finances.filter(function(f){return f.hiveId!==id;});
     save();renderHives();
   });
 };
@@ -4216,7 +4219,7 @@ window.exportHivePDF=function(hiveId){
   var insps=D.inspections.filter(function(i){return i.hiveId===hiveId;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var harvests=D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;});
   var totalReal=harvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
-  var queens=D.queens?D.queens.filter(function(q){return q.hiveId===hiveId;}):"";
+  var queens=D.queens?D.queens.filter(function(q){return q.hive===hiveId;}):"";
   var lastInsp=insps[0];
   var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+hive.name+'</title>'
     +'<style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:30px;}h1{color:#c8860a;font-size:18px;}h2{color:#555;font-size:13px;margin-top:18px;border-bottom:1px solid #eee;padding-bottom:4px;}table{width:100%;border-collapse:collapse;margin-top:8px;}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;}th{background:#f5f5f5;font-size:11px;}tr:nth-child(even){background:#fafafa;}.label{font-weight:bold;color:#666;font-size:11px;}.val{font-weight:bold;font-size:13px;}.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;margin-right:3px;}</style>'
