@@ -1374,9 +1374,9 @@ function getSunTimes(lat, lon) {
 
 // Returnează true dacă acum este ziuă (albinele pot să culeagă)
 // Adaugă 30 min după răsărit și cu 30 min înainte de apus ca marjă
-function isBeeDaytime() {
-  var lat = D.userLoc ? D.userLoc.lat : 45.0;
-  var lon = D.userLoc ? D.userLoc.lon : 25.0;
+function isBeeDaytime(lat, lon) {
+  if (lat === undefined || lat === null) lat = D.userLoc ? D.userLoc.lat : 45.0;
+  if (lon === undefined || lon === null) lon = D.userLoc ? D.userLoc.lon : 25.0;
   var sun = getSunTimes(lat, lon);
   var now = new Date();
   var h = now.getHours() + now.getMinutes() / 60;
@@ -1385,9 +1385,9 @@ function isBeeDaytime() {
 }
 
 // Returnează ora răsăritului și apusului ca string "HH:MM"
-function getSunTimesStr() {
-  var lat = D.userLoc ? D.userLoc.lat : 45.0;
-  var lon = D.userLoc ? D.userLoc.lon : 25.0;
+function getSunTimesStr(lat, lon) {
+  if (lat === undefined || lat === null) lat = D.userLoc ? D.userLoc.lat : 45.0;
+  if (lon === undefined || lon === null) lon = D.userLoc ? D.userLoc.lon : 25.0;
   var sun = getSunTimes(lat, lon);
   function toHHMM(h) {
     var hh = Math.floor(h), mm = Math.round((h - hh) * 60);
@@ -1397,11 +1397,11 @@ function getSunTimesStr() {
   return { sunrise: toHHMM(sun.sunrise), sunset: toHHMM(sun.sunset) };
 }
 
-function beeAct(w){
+function beeAct(w,lat,lon){
   var isEN=D.settings.lang==="en";
   // Verifică dacă e noapte — albinele nu culeg noaptea
-  if(!isBeeDaytime()){
-    var sunStr=getSunTimesStr();
+  if(!isBeeDaytime(lat,lon)){
+    var sunStr=getSunTimesStr(lat,lon);
     return{ic:"🌙",ttl:isEN?"Bees are resting":"Albinele se odihnesc",det:isEN?"Night — foraging resumes after sunrise ("+sunStr.sunrise+")":"Noapte — culesul reia după răsărit ("+sunStr.sunrise+")",bg:"rgba(74,100,200,.1)",isNight:true};
   }
   if(!w)return{ic:"❓",ttl:t("bee_unknown_t"),det:t("bee_unknown_d"),bg:"rgba(255,255,255,.04)"};
@@ -3498,7 +3498,7 @@ async function fetchPastorareWeather(pid, locationStr){
     var sun2=getSunTimes(lat,lon);
     var isNight2=nowH2<sun2.sunrise||nowH2>sun2.sunset;
     var wi=wmoI(c.weathercode,isNight2);
-    window._pastWeatherCache[pid]={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,loc:geoD.results[0].name,ts:Date.now()};
+    window._pastWeatherCache[pid]={temp:Math.round(c.temperature_2m*10)/10,prec:c.precipitation,wc:c.weathercode,wind:Math.round(c.windspeed_10m),hum:c.relativehumidity_2m,ic:wi.i,rain:wi.r||c.precipitation>0,loc:geoD.results[0].name,lat:lat,lon:lon,ts:Date.now()};
     var el=document.getElementById("pw-"+pid);
     if(el) el.outerHTML=pastorWeatherWidget(pid);
   }catch(e){ window._pastWeatherCache[pid]=null; var el=document.getElementById("pw-"+pid); if(el) el.outerHTML=pastorWeatherWidget(pid); }
@@ -3514,6 +3514,11 @@ function pastorWeatherWidget(pid){
     return '<div id="pw-'+pid+'" style="margin-top:8px;padding:7px 9px;background:var(--bg2);border-radius:8px;font-size:.75rem;color:var(--mut);">🌡️ '+(isEN?"Weather unavailable for this location":"Vreme indisponibila pentru aceasta locatie")+'</div>';
   }
   var rainBadge=w.rain?'<span style="color:#60a5fa;font-size:.75rem;">🌧️ '+(isEN?"Rain":"Ploaie")+'</span>':'';
+  var act=beeAct({temp:w.temp,rain:w.rain,prec:w.prec,wind:w.wind},w.lat,w.lon);
+  var actBadge='<div style="margin-top:6px;padding:6px 9px;background:'+act.bg+';border-radius:7px;display:flex;align-items:center;gap:7px;font-size:.78rem;">'
+    +'<span style="font-size:1rem;">'+act.ic+'</span>'
+    +'<div><strong style="font-size:.78rem;">'+act.ttl+'</strong><br><span style="font-size:.68rem;color:var(--mut);">'+act.det+'</span></div>'
+    +'</div>';
   return '<div id="pw-'+pid+'" style="margin-top:8px;padding:7px 9px;background:var(--bg2);border-radius:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">'
     +'<span style="font-size:1.1rem;">'+w.ic+'</span>'
     +'<span style="font-size:.82rem;font-weight:700;color:var(--tx);">'+w.temp+'°C</span>'
@@ -3521,7 +3526,7 @@ function pastorWeatherWidget(pid){
     +'<span style="font-size:.75rem;color:var(--mut);">💧 '+w.hum+'%</span>'
     +rainBadge
     +(w.loc?'<span style="font-size:.7rem;color:var(--mut);margin-left:auto;font-style:italic;">'+w.loc+'</span>':'')
-    +'</div>';
+    +'</div>'+actBadge;
 }
 
 function renderPastorage(){
