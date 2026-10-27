@@ -66,28 +66,20 @@ function renderSettings(){
         +'<span style="color:var(--mut);font-size:.7rem;">'+inspCnt+' insp. · '+savedAt+'</span>'
         +'</div>';
     }).join("");
-    hiveSnapHTML='<div class="c" style="margin-bottom:14px;"><div class="ct">🏠 '+(isEN?"Auto-save per hive":"Auto-salvare per stup")+'</div>'
-      +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Each hive has its own local snapshot updated on every save.":"Fiecare stup are propriul snapshot local, actualizat la fiecare salvare.")+'</p>'
-      +snapRows
-      +'</div>';
+    hiveSnapHTML=seFoldHTML("snap","🏠 Auto-salvare per stup",D.hives.length+" stupi",
+      '<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">Fiecare stup are propriul snapshot local, actualizat la fiecare salvare.</p>'+snapRows);
   }
 
   setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders" style="color:var(--gold)"></i> '+t("se_title")+'</h2>'
 
-    // ── Account & Drive ──
-    +'<div class="c" style="margin-bottom:14px;"><div class="ct">👤 '+(isEN?"Account & Cloud Sync":"Cont & Sincronizare Cloud")+'</div>'
-    +'<div style="margin-top:8px;">'
-    +L(isEN?"Your email (used for identification)":"Email-ul tău (identificare)")
-    +'<input type="email" id="userEmailInp" placeholder="exemplu@gmail.com" value="'+esc(D.settings.userEmail||"")+'" oninput="D.settings.userEmail=this.value.trim();save(false);">'
-    +'</div>'
-    +'<div style="margin:14px 0 6px;font-size:.78rem;font-weight:700;color:var(--gold);">☁️ '+(isEN?"Google Drive Backup":"Backup Google Drive")+'</div>'
+    // ── Backup (Google Drive) ──
+    +'<div class="c" style="margin-bottom:14px;"><div class="ct">☁️ Backup Google Drive</div>'
     +driveStatusHTML
     +'</div>'
 
     // ── Inspection archive ──
-    +'<div class="c" style="margin-bottom:14px;"><div class="ct">📁 '+(isEN?"Inspection Archive":"Arhivă Inspecții")+'</div>'
-    +'<p style="font-size:.8rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"All inspections from previous months, organised by month and hive.":"Toate inspecțiile din lunile anterioare, organizate pe lună și stup.")+'</p>'
-    +arcInnerHTML+'</div>'
+    +seFoldHTML("arc","📁 Arhivă Inspecții",pastInsp2.length+" insp.",
+      '<p style="font-size:.8rem;color:var(--mut);margin:4px 0 10px;">Toate inspecțiile din lunile anterioare, organizate pe lună și stup.</p>'+arcInnerHTML)
 
     // ── Display ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_display")+'</div>'
@@ -208,3 +200,17 @@ window.impData=function(){driveImportJSON();};
 window.impFrom=function(src){toast(src==="drive"?"Apasă ☰ (sus, stânga) → Drive → alege fișierul":"Alege fișierul din Descărcări (Downloads)",src==="drive"?"☁️":"📱");driveImportJSON();};
 window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");location.reload();});};
 
+// ── Collapsible Settings cards (archive, auto-save list): closed by default, tap the title to open ──
+var _seOpen={};
+function seFoldHTML(key,title,badge,inner){
+  var on=!!_seOpen[key];
+  return'<div class="c se-fold" style="margin-bottom:14px;">'
+    +'<div class="se-fold-h" role="button" onclick="seFold(\''+key+'\')"><span class="ct" style="margin:0;">'+title+'</span>'
+    +'<span class="se-fold-r"><span class="bg gy">'+badge+'</span><span class="hv-arr" id="seFA_'+key+'">'+(on?"▲":"▼")+'</span></span></div>'
+    +'<div id="seF_'+key+'" style="display:'+(on?"block":"none")+';margin-top:8px;">'+inner+'</div></div>';
+}
+window.seFold=function(key){
+  _seOpen[key]=!_seOpen[key];
+  var b=document.getElementById("seF_"+key),a=document.getElementById("seFA_"+key);
+  if(b)b.style.display=_seOpen[key]?"block":"none";if(a)a.textContent=_seOpen[key]?"▲":"▼";
+};

@@ -247,7 +247,7 @@ window.delInsp=function(id){showConfirm(t("insp_del_c"),function(){
       if(f.all&&tr.done===f.date)delete tr.done;
       else if(tr.doneHives&&tr.doneHives[ex.hiveId]===f.date)delete tr.doneHives[ex.hiveId];});
     mvRevert(ex);   // frames given to / taken from other hives
-    mvPlAdd(ex.hiveId,-mvPlNet(ex.mv));   // 🧩 plastic frames count
+    mvPlAdd(ex.hiveId,-mvPlNet(ex.mv));   // ⬢ plastic frames count
     if(ex.trPlannedId)D.treatments=(D.treatments||[]).filter(function(tr){return !(tr.id===ex.trPlannedId&&tr.fromInspection===ex.id&&tr.date>todayISO());});
   }
   D.inspections=D.inspections.filter(function(i){return i.id!==id;});
@@ -454,7 +454,8 @@ function magBlockHTML(hive,ex){
   magInit(hive,ex);
   var full=ex?ex.magFull||0:0;
   return'<div class="mag-box mg2"><div id="mgBody">'+magBodyHTML()+'</div>'
-    +'<div id="mgFullW" style="display:'+(_magSt.cur.length?"block":"none")+'">'+L(t("insp_mag_fl"))+'<input type="number" inputmode="numeric" min="0" id="iMgFl" value="'+esc(full)+'"></div>'
+    // „Rame pline” removed: the % capped of each super already says how full it is
+
     +'</div>';
 }
 function magBodyHTML(){
@@ -636,7 +637,7 @@ window.saveInsp=function(editId,hiveId){
     mv:mvRead(),
     nFramesB:(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.nFramesB||0:0;})(),   // old field (no longer in the form) — kept on edit
     space:($q("iSp")||{}).value||"suficient",
-    magFull:parseInt(($q("iMgFl")||{}).value)||0,
+    magFull:(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.magFull||0:0;})(),   // old field, kept on edit
     winter:($q("iWn")&&$q("iWn").checked)?{frames:parseInt(($q("iWnF")||{}).value)||0,food:parseInt(($q("iWnH")||{}).value)||0}:null,
     diseases:dis,diseaseN:dn,notes:($q("iNt")||{}).value||"",
     postTr:!!($q("iPostTr")||{}).checked,
@@ -690,7 +691,7 @@ window.saveInsp=function(editId,hiveId){
   if(editId){var ei=D.inspections.find(function(i){return i.id===editId;});if(ei)Object.assign(ei,o);}
   else{D.inspections.push(o);}
   mvApply(o);          // frames given to / taken from other hives → recorded there too
-  mvPlAdd(hid,mvPlNet(o.mv)-mvPlNet(prevI&&prevI.mv));   // 🧩 plastic frames count of this hive
+  mvPlAdd(hid,mvPlNet(o.mv)-mvPlNet(prevI&&prevI.mv));   // ⬢ plastic frames count of this hive
   inspVarroaSave(o);   // varroa count from the inspection (if a treatment is ongoing)
   devQueenInspSave(o); // new mated queen → becomes the hive's queen (if checked)
   var hive=D.hives.find(function(h){return h.id===hid;});

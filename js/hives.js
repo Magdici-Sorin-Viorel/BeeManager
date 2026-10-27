@@ -25,16 +25,21 @@ function hqFieldsHTML(q,hiveId){
   // keeps old values even if they are no longer in the list (e.g. saved in another language)
   if(race&&races.indexOf(race)<0)races=[race].concat(races);
   if(orig&&qOrigs.indexOf(orig)<0)qOrigs=[orig].concat(qOrigs);
-  return'<div class="r2"><div>'+L(t("q_year"))+'<input id="qY" type="number" inputmode="numeric" value="'+esc(xv(q,"yr",new Date().getFullYear()))+'"></div>'
-    +'<div>'+L(t("q_race"))+'<select id="qR">'+races.map(function(r){return'<option value="'+esc(r)+'"'+(race===r?" selected":"")+'>'+esc(r)+'</option>';}).join("")+'</select></div></div>'
-    +'<div class="r2"><div>'+L(t("q_lay"))+'<input id="qLy" type="number" inputmode="numeric" min="1" max="5" value="'+esc(xv(q,"lay",4))+'"><span class="hint">'+t("q_lay_h")+'</span></div>'
-    +'<div>'+L(t("q_aggr"))+'<input id="qAg" type="number" inputmode="numeric" min="1" max="5" value="'+esc(xv(q,"aggr",2))+'"><span class="hint">'+t("q_aggr_h")+'</span></div></div>'
-    +'<div class="r2"><div>'+L(t("q_origin"))+'<select id="qOr">'+qOrigs.map(function(o){return'<option value="'+esc(o)+'"'+(orig===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
-    +'<div>'+L(t("q_status"))+'<select id="qSt">'+qSts.filter(function(s){return s[0]!=="înlocuită";}).map(function(s){return'<option value="'+s[0]+'"'+(xv(q,"status","activă")===s[0]?" selected":"")+'>'+s[1]+'</option>';}).join("")+'</select></div></div>'
-    +L(L2("📅 Introdusă în stup pe","📅 In the hive since"))+'<input type="date" id="qFr" value="'+esc(q?(typeof qFrom==="function"?qFrom(q):(q.from||"")):todayISO())+'">'
-    +L(t("q_orig_h"))+'<select id="qOH"><option value="">'+t("q_orig_none")+'</option>'+D.hives.filter(function(h){return h.id!==hiveId;}).map(function(h){return'<option value="'+h.id+'"'+(xv(q,"origHive","")===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select>'
-    +L(t("q_line"))+'<input id="qLn" value="'+esc(xv(q,"line",""))+'" placeholder="'+t("q_line_ph")+'">';
+  var oi=typeof qOrigIdx==="function"?qOrigIdx(orig||qOrigs[0]):1,needH=oi===1||oi===2;
+  var lv=function(id,v,lo,hi){var o="";for(var k=1;k<=5;k++)o+='<option value="'+k+'"'+(parseInt(v)===k?" selected":"")+'>'+k+(k===1?" — "+lo:k===5?" — "+hi:"")+'</option>';return'<select id="'+id+'">'+o+'</select>';};
+  // order: race · year → origin · since → (mother hive, only for own / raised queens) → status · line → laying · temper
+  return'<div class="r2"><div>'+L("🧬 Rasă")+'<select id="qR">'+races.map(function(r){return'<option value="'+esc(r)+'"'+(race===r?" selected":"")+'>'+esc(r)+'</option>';}).join("")+'</select></div>'
+    +'<div>'+L("📅 Anul nașterii")+'<input id="qY" type="number" inputmode="numeric" value="'+esc(xv(q,"yr",new Date().getFullYear()))+'"></div></div>'
+    +'<div class="r2"><div>'+L("🌱 Origine")+'<select id="qOr" onchange="hqOrigChg(this)">'+qOrigs.map(function(o){return'<option value="'+esc(o)+'"'+(orig===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
+    +'<div>'+L("📅 În stup din")+'<input type="date" id="qFr" value="'+esc(q?(typeof qFrom==="function"?qFrom(q):(q.from||"")):todayISO())+'"></div></div>'
+    +'<div id="qOHw" style="display:'+(needH?"block":"none")+'">'+L("🏠 Din ce stup vine")+'<select id="qOH"><option value="">'+t("q_orig_none")+'</option>'+D.hives.filter(function(h){return h.id!==hiveId;}).map(function(h){return'<option value="'+h.id+'"'+(xv(q,"origHive","")===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
+    +'<div class="r2"><div>'+L("🔘 Status")+'<select id="qSt">'+qSts.filter(function(s){return s[0]!=="înlocuită";}).map(function(s){return'<option value="'+s[0]+'"'+(xv(q,"status","activă")===s[0]?" selected":"")+'>'+s[1]+'</option>';}).join("")+'</select></div>'
+    +'<div>'+L("📜 Linie genetică")+'<input id="qLn" value="'+esc(xv(q,"line",""))+'" placeholder="'+t("q_line_ph")+'"></div></div>'
+    +'<div class="r2"><div>'+L("⭐ Pontă")+lv("qLy",xv(q,"lay",4),"slabă","excelentă")+'</div>'
+    +'<div>'+L("😠 Agresivitate")+lv("qAg",xv(q,"aggr",2),"blândă","foarte agresivă")+'</div></div>';
 }
+// mother hive field only for queens from own nucs / raised locally
+window.hqOrigChg=function(sel){var k=typeof qOrigIdx==="function"?qOrigIdx(sel.value):1,w=document.getElementById("qOHw");if(w)w.style.display=(k===1||k===2)?"block":"none";};
 
 // Full „Regina” section of the form (redrawn on Replace / Delete)
 var _hqReplace=false;
@@ -82,7 +87,7 @@ window.hqDelete=function(hiveId,qid){
   });
 };
 function hqRead(){
-  return{yr:parseInt(($q("qY")||{}).value)||null,race:($q("qR")||{}).value||"",lay:parseInt(($q("qLy")||{}).value)||null,aggr:parseInt(($q("qAg")||{}).value)||null,orig:($q("qOr")||{}).value||"",origHive:($q("qOH")||{}).value||null,line:(($q("qLn")||{}).value||"").trim(),status:($q("qSt")||{}).value||"activă",from:($q("qFr")||{}).value||null};
+  return{yr:parseInt(($q("qY")||{}).value)||null,race:($q("qR")||{}).value||"",lay:parseInt(($q("qLy")||{}).value)||null,aggr:parseInt(($q("qAg")||{}).value)||null,orig:($q("qOr")||{}).value||"",origHive:(function(){var w=document.getElementById("qOHw");return w&&w.style.display==="none"?null:(($q("qOH")||{}).value||null);})(),line:(($q("qLn")||{}).value||"").trim(),status:($q("qSt")||{}).value||"activă",from:($q("qFr")||{}).value||null};
 }
 
 // ── Hive inspections (merged from the Inspections module) ─────────
@@ -97,8 +102,8 @@ function hvWinterState(h){
   var w=l[0].wch||{};
   return{since:since,food:w.food||"",frames:l[0].winter&&l[0].winter.frames!=null?l[0].winter.frames:null,last:l[0].date};
 }
-// 🧩 plastic-foundation frames in the hive (badge on the card)
-function hvPlBadge(h){var n=parseInt(h&&h.plastic)||0;return n?'<span class="bg hv-pl" title="Rame cu fundație de plastic">🧩 '+n+' plastic</span>':'';}
+// ⬢ plastic-foundation frames in the hive (badge on the card)
+function hvPlBadge(h){var n=parseInt(h&&h.plastic)||0;return n?'<span class="bg hv-pl" title="Rame cu fundație de plastic">⬢ '+n+' plastic</span>':'';}
 function hvWinterBanner(h){
   var w=hvWinterState(h);if(!w)return"";
   var fd={ok:["ok","provizii suficiente"],limit:["lim","provizii la limită"],low:["low","provizii insuficiente — de hrănit"]}[w.food]||null;
@@ -162,7 +167,7 @@ function hvQueenLine(h){
   if(!q)return'<div class="hv-q bad">👑 '+t("h_no_q")+'</div>';
   var stCls=(t("qs_cls")||{})[q.status]||"gy";
   var sc=typeof qScoreOf==="function"?qScoreOf(q):null;
-  return'<div class="hv-q">👑 '+esc(q.race||"—")+(q.yr?' · '+q.yr:'')+(typeof qCodeTag==="function"?' '+qCodeTag(q):'')+(sc!=null?' '+genScoreBadge(sc):'')
+  return'<div class="hv-q">👑 <b>'+esc(q.race||"Rasă nenotată")+'</b>'+(q.yr?' <span class="hv-dim">\''+String(q.yr).slice(2)+'</span>':'')+(typeof qCodeTag==="function"?' '+qCodeTag(q):'')+(sc!=null?' '+genScoreBadge(sc):'')
     +(q.status&&q.status!=="activă"?' <span class="bg '+stCls+'">'+cap(hqStatusLbl(q.status))+'</span>':'')+'</div>';
 }
 
@@ -274,23 +279,31 @@ function hvInspSecHTML(h,insps){
     +'</div></div>';
 }
 
-// Full card
+// Full card — layout (mobile first):
+//   header: number · name · place / model · hive drawing
+//   chips:  strength · health · ❄️ wintering · ⬢ plastic
+//   queen line · banners (wintering, migration) · ongoing (feeding, treatment) · frames · inspections · actions
+function hvChipsHTML(h){
+  var sc=h.sc==="red"?["gr","🔴 Problemă"]:h.sc==="yellow"?["gy","🟡 Atenție"]:["gg","🟢 Sănătos"];
+  return'<div class="hv-chips">'+sBadge(h.str)+'<span class="bg '+sc[0]+'">'+sc[1]+'</span>'
+    +hvPlBadge(h)+'</div>';   // ❄️ wintering has its own band below
+}
 function hvCardHTML(h,opt){
   opt=opt||{};
   var insps=hvInsps(h.id);
   var sc=h.sc==="red"?"red":h.sc==="yellow"?"yellow":"green";
-  var scLbl=t(sc==="red"?"sc_r":sc==="yellow"?"sc_y":"sc_g");
+  var meta=[h.loc?"📍 "+esc(h.loc):"",esc((h.mod||"").replace(/\s*rame$/i,"")),h.mat?matIc(h.mat)+" "+esc(h.mat):""].filter(Boolean).join(" · ");
   return'<div class="c hv-card s-'+sc+'">'
     // 1. header
     +'<div class="hv-sec hv-hd">'
     +'<span class="hv-num">'+(h.num||"·")+'</span>'
     +'<div class="hv-hd-t"><div class="hv-name">'+esc(h.name)+'</div>'
-    +'<div class="hv-meta">📍 '+esc(h.loc||"—")+' · '+esc(h.mod||"")+' · '+matIc(h.mat)+' '+esc(h.mat||"")+'</div>'
-    +hvQueenLine(h)+'</div>'
-    +'<div class="hv-hd-r">'+sBadge(h.str)+(hvWinterState(h)?'<span class="bg gb">❄️ Iarnă</span>':'')+hvPlBadge(h)+'<span class="hv-sc">'+scLbl+'</span>'+hvHiveIcon(h)+'</div>'
+    +'<div class="hv-meta">'+meta+'</div></div>'
+    +'<div class="hv-hd-r">'+hvHiveIcon(h)+'</div>'
     +'</div>'
+    +'<div class="hv-sub">'+hvChipsHTML(h)+hvQueenLine(h)
+    +(h.notes?'<div class="hv-notes">📝 '+esc(h.notes)+'</div>':'')+'</div>'
     +hvWinterBanner(h)
-    +(h.notes?'<div class="hv-notes">📝 '+esc(h.notes)+'</div>':'')
     // 2. migration
     +(opt.past?'':hvPastBanner(h))
     // 3. what's ongoing (only if anything): feeding, treatment (+ varroa count), planned treatment
@@ -299,12 +312,12 @@ function hvCardHTML(h,opt){
     +hvFramesHTML(h,opt.past)
     // 5. inspections
     +hvInspSecHTML(h,insps)
-    // 6. actions
+    // 6. actions: one main button + small round ones
     +'<div class="hv-sec hv-act">'
-    +'<button class="btn sm be hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
-    +'<button class="btn sm gh" onclick="hiveM(\''+h.id+'\')">✏️ '+t("hv_edit")+'</button>'
-    +'<button class="btn sm gh" onclick="nucM(\'\',\''+h.id+'\')" title="'+L2("Fă roi din acest stup","Make a nuc from this hive")+'" aria-label="🐝">🐝</button>'
-    +'<button class="btn sm gh hv-del" onclick="delH(\''+h.id+'\')" title="'+t("h_del_c")+'" aria-label="🗑️">🗑️</button>'
+    +'<button class="btn hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
+    +'<button class="hv-ib" onclick="hiveM(\''+h.id+'\')" title="'+t("hv_edit")+'" aria-label="'+t("hv_edit")+'">✏️</button>'
+    +'<button class="hv-ib" onclick="nucM(\'\',\''+h.id+'\')" title="Fă roi din acest stup" aria-label="Fă roi din acest stup">🐝</button>'
+    +'<button class="hv-ib hv-del" onclick="delH(\''+h.id+'\')" title="'+t("h_del_c")+'" aria-label="Șterge stupul">🗑️</button>'
     +'</div>'
     +'</div>';
 }
@@ -346,7 +359,8 @@ function hvSummaryHTML(){
 // Alert: hives not inspected beyond the threshold in Settings
 function hvAlertHTML(){
   var th=hvThreshold();
-  var late=D.hives.filter(function(h){return !hvIsNuc(h)&&!hvWinterState(h);})   // wintering hives: no weekly alert.map(function(h){var li=hvInsps(h.id)[0];return{h:h,d:li?hvDaysSince(li.date):null};})
+  // wintering hives: no weekly alert
+  var late=D.hives.filter(function(h){return !hvIsNuc(h)&&!hvWinterState(h);}).map(function(h){var li=hvInsps(h.id)[0];return{h:h,d:li?hvDaysSince(li.date):null};})
     .filter(function(x){return x.d===null||x.d>=th;});
   if(!late.length)return"";
   return'<div class="sa hv-alert">'
@@ -391,7 +405,7 @@ function hvMagsHTML(h){
 
 // Brood-box frames: total = brood frames + food frames (fH = food frames: honey + bee bread)
 function hvTotal(h){return(parseInt(h.fB)||0)+(parseInt(h.fH)||0);}
-window.hvUpdTotal=function(){var b=parseInt(($q("hFB")||{}).value)||0,f=parseInt(($q("hFH")||{}).value)||0;var el=$q("hFT");if(el)el.value=b+f;};
+window.hvUpdTotal=function(){var b=parseInt(($q("hFB")||{}).value)||0,f=parseInt(($q("hFH")||{}).value)||0;var el=$q("hFT");if(el)el.value=b+f;var tx=$q("hFTt");if(tx)tx.textContent=b+f;};
 
 // ── Hive list ───────────────────────────────────────────────
 var _hvQ="";   // search text (kept across redraws)
@@ -463,42 +477,60 @@ window.delH=function(id){
 };
 
 // ── Hive form (with the Queen section) ───────────────────
+// Segmented choice (buttons) backed by a hidden input with the same id → $q(id).value keeps working
+function segHTML(id,opts,cur,onchg){
+  return'<input type="hidden" id="'+id+'" value="'+esc(cur)+'"><div class="seg" data-for="'+id+'">'
+    +opts.map(function(o){return'<button type="button" class="seg-b'+(o[0]===cur?" on":"")+'" data-v="'+esc(o[0])+'" onclick="segSet(\''+id+'\',\''+o[0]+'\');'+(onchg||'')+'">'+o[1]+'</button>';}).join("")+'</div>';
+}
+window.segSet=function(id,v){
+  var inp=$q(id);if(inp)inp.value=v;
+  var box=document.querySelector('#MB .seg[data-for="'+id+'"]')||document.querySelector('.seg[data-for="'+id+'"]');
+  if(box)[].forEach.call(box.querySelectorAll(".seg-b"),function(b){b.classList.toggle("on",b.dataset.v===v);});
+};
+// form group (card-like section with a title)
+function fgHTML(title,inner,sub){return'<div class="fg"><div class="fg-t">'+title+(sub?'<span class="fg-s">'+sub+'</span>':'')+'</div>'+inner+'</div>';}
+
+// ── Hive form (with the Queen section) ───────────────────
+// Order: identification → the box → the colony now → the queen → notes; Save / Cancel stay at the bottom.
 function hiveM(id){
   var h=id?D.hives.find(function(x){return x.id===id;}):null;
   var mats=t("mat_opts"),mods=t("mod_opts");
   _hqReplace=false;
-  openM('<div class="mt">'+(h?t("h_edit_t"):t("h_new_t"))+'</div>'
-    +'<div class="r2"><div>'+L(t("h_num"))+'<input id="hNum" type="number" inputmode="numeric" value="'+(esc(xv(h,"num","")))+'" placeholder="1"></div>'
-    +'<div>'+L(t("h_name_l"))+'<input id="hNm" value="'+(esc(xv(h,"name","")))+'" placeholder="'+t("h_name_ph")+'"></div></div>'
-    +L(t("h_loc"))+'<input id="hLc" value="'+(esc(xv(h,"loc","")))+'" placeholder="'+t("h_loc_ph")+'">'
-    +'<div class="r2"><div>'+L(t("h_mat"))+'<select id="hMt">'+mats.map(function(o){return'<option'+(xv(h,"mat","")=== o?" selected":"")+'>'+o+'</option>';}).join("")+'</select></div>'
-    +'<div>'+L(t("h_mod"))+'<select id="hMd">'+mods.map(function(o){return'<option'+(xv(h,"mod","")=== o?" selected":"")+'>'+o+'</option>';}).join("")+'</select></div></div>'
-    +'<div class="dv"><div class="stt">'+t("h_frames_t")+'</div></div>'
-    +(h&&hvInsps(h.id).length?'<div class="hint" style="margin:-4px 0 6px;">🔍 '+t("h_from_insp")+' ('+hvInsps(h.id)[0].date+')</div>':'')
-    +'<div class="r3"><div>'+L(t("h_brood"))+'<input id="hFB" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fB",4)))+'" oninput="aStr();hvUpdTotal()"></div>'
-    +'<div>'+L(t("h_honey"))+'<input id="hFH" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fH",3)))+'" oninput="hvUpdTotal()"><span class="hint">'+t("h_food_h")+'</span></div>'
-    +'<div>'+L(t("h_total"))+'<input id="hFT" type="number" readonly tabindex="-1" style="opacity:.75;cursor:default;" value="'+(h?hvTotal(h):7)+'"><span class="hint">'+t("h_total_h")+'</span></div></div>'
-    +'<div class="r2"><div>'+L("🧩 Rame cu fundație de plastic")+'<input id="hPl" type="number" inputmode="numeric" min="0" value="'+esc(h&&h.plastic?h.plastic:"")+'" placeholder="0"><span class="hint">câte rame din stup au fundație de plastic</span></div><div></div></div>'
-    +'<div style="background:rgba(230,180,34,.07);border-radius:var(--rs);padding:10px;margin:7px 0;">'
-    +'<div style="font-size:.76rem;color:var(--mut);margin-bottom:6px;">'+t("str_hint")+'</div>'
-    +'<div style="display:flex;gap:7px;"><select id="hSt" style="flex:1;margin:0;"><option'+(xv(h,"str","mediu")==="puternic"?" selected":"")+' value="puternic">'+t("str_strong")+'</option><option'+(xv(h,"str","mediu")==="mediu"?" selected":"")+' value="mediu">'+t("str_medium")+'</option><option'+(xv(h,"str","mediu")==="slab"?" selected":"")+' value="slab">'+t("str_weak")+'</option></select>'
-    +'<button class="btn sm" onclick="aStr(true)">'+t("str_auto")+'</button></div></div>'
-    +(function(){var n=hvMagCount(h),o='<option value="0"'+(n===0?" selected":"")+'>'+L2("0 — fără magazie","0 — no super")+'</option>';
-      for(var k=1;k<=8;k++)o+='<option value="'+k+'"'+(n===k?" selected":"")+'>'+k+'</option>';
-      return'<div class="r2"><div>'+L(L2("📦 Număr magazii","📦 Number of supers"))+'<select id="hMgN" onchange="document.getElementById(\'mRow\').style.display=this.value!==\'0\'?\'block\':\'none\'">'+o+'</select></div>'
-      +'<div id="mRow" style="display:'+(n?"block":"none")+'">'+L(L2("🔢 Rame / magazie","🔢 Frames / super"))+'<input id="hMgF" type="number" inputmode="numeric" value="'+(esc(xv(h,"magF",10)))+'"></div></div>';})()
-    +L(t("h_status"))+'<select id="hSc"><option value="green"'+(xv(h,"sc","green")==="green"?" selected":"")+'>'+t("sc_g")+'</option><option value="yellow"'+(xv(h,"sc","")==="yellow"?" selected":"")+'>'+t("sc_y")+'</option><option value="red"'+(xv(h,"sc","")==="red"?" selected":"")+'>'+t("sc_r")+'</option></select>'
-    // ── Queen ──
-    +'<div class="dv"><div class="stt">'+t("hq_section")+'</div></div>'
-    +'<div id="hqBox">'+hqBoxHTML(id||"")+'</div>'
-    +'<div class="dv"></div>'
-    +L(t("h_notes"))+'<textarea id="hNt" rows="2">'+(esc(xv(h,"notes","")))+'</textarea>'
-    +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveH(\''+(id||"")+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
+  var li=h?hvInsps(h.id)[0]:null;
+  var magN=hvMagCount(h),magO='<option value="0"'+(magN===0?" selected":"")+'>Fără magazie</option>';
+  for(var k=1;k<=8;k++)magO+='<option value="'+k+'"'+(magN===k?" selected":"")+'>'+k+' '+(k===1?"magazie":"magazii")+'</option>';
+  openM('<div class="mt">'+(h?"✏️ "+esc(h.name):t("h_new_t"))+'</div>'
+    // 1. identification
+    +fgHTML("🏷️ Identificare",
+      '<div class="r2"><div>'+L("Număr")+'<input id="hNum" type="number" inputmode="numeric" value="'+(esc(xv(h,"num","")))+'" placeholder="1"></div>'
+      +'<div>'+L("Nume")+'<input id="hNm" value="'+(esc(xv(h,"name","")))+'" placeholder="'+t("h_name_ph")+'"></div></div>'
+      +L("📍 Locație")+'<input id="hLc" value="'+(esc(xv(h,"loc","")))+'" placeholder="'+t("h_loc_ph")+'">')
+    // 2. the box
+    +fgHTML("📦 Stupul",
+      '<div class="r2"><div>'+L("Model")+'<select id="hMd">'+mods.map(function(o){return'<option'+(xv(h,"mod","")=== o?" selected":"")+'>'+o+'</option>';}).join("")+'</select></div>'
+      +'<div>'+L("Material")+'<select id="hMt">'+mats.map(function(o){return'<option'+(xv(h,"mat","")=== o?" selected":"")+'>'+o+'</option>';}).join("")+'</select></div></div>'
+      +'<div class="r2"><div>'+L("Magazii")+'<select id="hMgN" onchange="document.getElementById(\'mRow\').style.visibility=this.value!==\'0\'?\'visible\':\'hidden\'">'+magO+'</select></div>'
+      +'<div id="mRow" style="visibility:'+(magN?"visible":"hidden")+'">'+L("Rame / magazie")+'<input id="hMgF" type="number" inputmode="numeric" value="'+(esc(xv(h,"magF",10)))+'"></div></div>'
+      +'<div class="r2"><div>'+L("⬢ Rame cu plastic")+'<input id="hPl" type="number" inputmode="numeric" min="0" value="'+esc(h&&h.plastic?h.plastic:"")+'" placeholder="0"></div><div></div></div>')
+    // 3. the colony now
+    +fgHTML("🐝 Colonia acum",
+      '<div class="r2"><div>'+L("🟤 Rame puiet")+'<input id="hFB" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fB",4)))+'" oninput="aStr();hvUpdTotal()"></div>'
+      +'<div>'+L("🍯 Rame mâncare")+'<input id="hFH" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fH",3)))+'" oninput="aStr();hvUpdTotal()"><span class="hint">miere + păstură</span></div></div>'
+      +'<div class="fg-tot">În cuib: <b id="hFTt">'+(h?hvTotal(h):7)+'</b> rame<input type="hidden" id="hFT" value="'+(h?hvTotal(h):7)+'"></div>'
+      +L("💪 Forță")+segHTML("hSt",[["slab","⚠️ Slab"],["mediu","⚡ Mediu"],["puternic","💪 Puternic"]],xv(h,"str","mediu"))
+      +'<div class="hint">Se calculează singură din rame (vara după puiet, iarna după ramele cu albine); o poți schimba.</div>'
+      +L("🩺 Stare")+segHTML("hSc",[["green","🟢 Sănătos"],["yellow","🟡 Atenție"],["red","🔴 Problemă"]],xv(h,"sc","green")),
+      li?"din inspecția din "+devFmt(li.date):"")
+    // 4. queen
+    +fgHTML(t("hq_section"),'<div id="hqBox">'+hqBoxHTML(id||"")+'</div>')
+    // 5. notes
+    +fgHTML("📝 Observații",'<textarea id="hNt" rows="2" placeholder="Orice vrei să ții minte despre stup">'+(esc(xv(h,"notes","")))+'</textarea>')
+    +'<div class="br mb-foot"><button class="btn" onclick="saveH(\''+(id||"")+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
 
 window.aStr=function(showT){
   var b=parseInt(($q("hFB")||{}).value)||0;var s=strCalc(b,parseInt(($q("hFH")||{}).value)||0);
-  var el=$q("hSt");if(el)el.value=s;
+  segSet("hSt",s);
   if(showT)toast(t("str_auto_t")+" "+t("str_"+s.replace("puternic","strong").replace("mediu","medium").replace("slab","weak")),"🤖");
 };
 
@@ -512,7 +544,7 @@ window.saveH=function(id){
   var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,str:($q("hSt")||{}).value||"mediu",magCount:parseInt(($q("hMgN")||{}).value)||0,hasMag:(parseInt(($q("hMgN")||{}).value)||0)>0,magF:parseInt(($q("hMgF")||{}).value)||0,sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
 
   o.fT=o.fB+o.fH;                        // total frames = brood + food
-  o.plastic=Math.max(0,parseInt(($q("hPl")||{}).value)||0);   // 🧩 frames with plastic foundation
+  o.plastic=Math.max(0,parseInt(($q("hPl")||{}).value)||0);   // ⬢ frames with plastic foundation
   // Supers keep their frames and capped percentage; only the changed count is added / removed
   (function(){var old=id?D.hives.find(function(x){return x.id===id;}):null;
     var a=(old&&Array.isArray(old.mags))?old.mags.slice(0,o.magCount):[];

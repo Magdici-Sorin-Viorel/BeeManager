@@ -83,7 +83,7 @@ function fdHiveChecks(name,hids,checked){
   var st=hs.filter(function(h){return !hvIsNuc(h);}),nu=hs.filter(hvIsNuc);
   var pill=function(h){var on=checked.indexOf(h.id)>=0,away=typeof pTripOf==="function"&&pTripOf(h.id);
     return'<label class="hp-c'+(on?" on":"")+(hvIsNuc(h)?" nuc":"")+'" title="'+esc(h.name)+'"><input type="checkbox" class="fdHv" value="'+h.id+'" onchange="fdOneChk(this)"'+(on?" checked":"")+'>'
-      +'<span class="hp-n">'+esc(fdPillLbl(h))+'</span>'+(away?'<span class="hp-i">🚚</span>':'')+'</label>';};
+      +'<span class="hp-n">'+esc(h.name||fdPillLbl(h))+'</span>'+(away?'<span class="hp-i">🚚</span>':'')+'</label>';};   // full name (pills grow with the text)
   var grp=function(list,title,key){if(!list.length)return"";
     return(st.length&&nu.length?'<div class="hp-gh"><span>'+title+'</span><button type="button" class="hp-mini" onclick="fdSelGrp(this,\''+key+'\')">'+L2("toți","all")+'</button></div>':'')
       +'<div class="hp-grid" data-g="'+key+'">'+list.map(pill).join("")+'</div>';};

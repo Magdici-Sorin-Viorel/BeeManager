@@ -172,7 +172,7 @@ window.nucSave=function(id){
   Object.assign(o,{num:parseInt(($q("nNum")||{}).value)||null,name:nm,loc:($q("nLc")||{}).value||"",notes:($q("nNt")||{}).value||"",
     mod:L2("Cutie roi","Nuc box")+" "+max+" "+L2("rame","frames"),fB:nfB,fH:nfH,parentId:don,genParent:don,nuc:nuc});
   o.fT=hvTotal(o);o.str=strCalc(nfB);
-  if(!h&&fromInsp&&_mvNuc&&_mvNuc.pl)o.plastic=_mvNuc.pl;   // 🧩 plastic frames that went into the nuc
+  if(!h&&fromInsp&&_mvNuc&&_mvNuc.pl)o.plastic=_mvNuc.pl;   // ⬢ plastic frames that went into the nuc
   if(!h){D.hives.push(o);
     // note it on the donor's record (inspection of the day / automatic transfer entry) — see frames.js
     if(taken&&typeof mvNucSaved==="function")mvNucSaved(o,fromInsp,taken.fB,taken.fH,nuc.start);}
@@ -271,10 +271,10 @@ function nucCardHTML(h){
     +hvStatusHTML(h)
     +hvInspSecHTML(h,insps)
     +'<div class="hv-sec hv-act">'
-    +'<button class="btn sm be hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
-    +'<button class="btn sm gh" onclick="nucPromoteM(\''+h.id+'\')" title="'+L2("Devine stup","Make it a hive")+'">⬆️ '+L2("Stup","Hive")+'</button>'
-    +'<button class="btn sm gh" onclick="nucM(\''+h.id+'\')" aria-label="✏️">✏️</button>'
-    +'<button class="btn sm gh hv-del" onclick="nucFailM(\''+h.id+'\')" title="'+L2("Roi eșuat / unit","Failed / merged")+'">❌</button>'
+    +'<button class="btn hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
+    +'<button class="hv-ib" onclick="nucPromoteM(\''+h.id+'\')" title="Devine stup" aria-label="Devine stup">⬆️</button>'
+    +'<button class="hv-ib" onclick="nucM(\''+h.id+'\')" title="Editează" aria-label="Editează">✏️</button>'
+    +'<button class="hv-ib hv-del" onclick="nucFailM(\''+h.id+'\')" title="Roi eșuat / unit" aria-label="Roi eșuat / unit">❌</button>'
     +'</div></div>';
 }
 

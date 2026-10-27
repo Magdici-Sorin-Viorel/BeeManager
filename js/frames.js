@@ -21,17 +21,17 @@
 // frame types — the SAME list for frames taken out and put in
 var MV_T=[["b","🟤 Puiet"],["ba","🐝 Puiet cu albine"],["h","🍯 Miere"],["p","🌼 Păstură"],["e","🟫 Fagure clădit gol"],["f","🟨 Fundație nouă (neclădită)"],["old","⬛ Fagure vechi (de schimbat)"]];
 var MV_OUT_T=MV_T,MV_IN_T=MV_T;
-var MV_OLD={d:"🟫 Fagure clădit gol",pl:"🧩 Fagure de plastic"};   // labels of types saved by an earlier version
+var MV_OLD={d:"🟫 Fagure clădit gol",pl:"⬢ Fagure de plastic"};   // labels of types saved by an earlier version
 function mvTLbl(t){return mvLbl(MV_T,t)||MV_OLD[t]||(t==="e"?"🟫 Fagure clădit gol":"");}
 function mvInLbl(t){return mvTLbl(t);}
 var MV_EMPTY={e:1,f:1,old:1,d:1,pl:1};   // empty frames → column „Noi / Goale” on the sheet
-// 🧩 plastic: every frame type can be on a plastic foundation (second group of the type list) → the hive keeps a count (h.plastic)
-// frame type list with two groups: wax (normal) foundation and 🧩 plastic foundation — value "t" or "t|pl"
+// ⬢ plastic: every frame type can be on a plastic foundation (second group of the type list) → the hive keeps a count (h.plastic)
+// frame type list with two groups: wax (normal) foundation and ⬢ plastic foundation — value "t" or "t|pl"
 function mvTypeOpts(cur,pl){
   var o=function(x,isPl){var v=x[0]+(isPl?"|pl":""),sel=cur===x[0]&&!!pl===isPl;
-    return'<option value="'+v+'"'+(sel?" selected":"")+'>'+(isPl?"🧩 "+mvPlain(x[1])+" (plastic)":x[1])+'</option>';};   // 🧩 first so it shows even when the box is narrow
+    return'<option value="'+v+'"'+(sel?" selected":"")+'>'+(isPl?"⬢ "+mvPlain(x[1])+" (plastic)":x[1])+'</option>';};   // ⬢ first so it shows even when the box is narrow
   return'<optgroup label="Fundație de ceară (normală)">'+MV_T.map(function(x){return o(x,false);}).join("")+'</optgroup>'
-    +'<optgroup label="🧩 Fundație de plastic">'+MV_T.map(function(x){return o(x,true);}).join("")+'</optgroup>';
+    +'<optgroup label="⬢ Fundație de plastic">'+MV_T.map(function(x){return o(x,true);}).join("")+'</optgroup>';
 }
 function mvIsPl(r){return !!(r&&(r.pl||r.t==="pl"));}
 function mvPlTxt(r){return mvIsPl(r)?" (plastic)":"";}
@@ -204,7 +204,7 @@ function mvTxt(i){
   return p.join(" · ");
 }
 
-// ── 🧩 Plastic frames count per hive ─────────────────────────────
+// ── ⬢ Plastic frames count per hive ─────────────────────────────
 function mvPlAdd(hid,n){var h=D.hives.find(function(x){return x.id===hid;});if(!h||!n)return;h.plastic=Math.max(0,(parseInt(h.plastic)||0)+n);}
 // net plastic frames of an inspection's own rows (auto rows are counted when they are created)
 function mvPlNet(mv){var n=0;if(!mv)return 0;

@@ -910,5 +910,108 @@ body.light .hv-st{background:rgba(0,0,0,.02);}
 .mv-bal .btn{margin-top:5px;}
 .mv-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
 .mv-btns .btn{margin:0;}
-/* 🧩 plastic foundation */
+/* ⬢ plastic foundation */
 .bg.hv-pl{background:rgba(220,225,235,.14);color:var(--txt);border:1px solid rgba(220,225,235,.35);}
+/* collapsible Settings cards */
+.se-fold-h{display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer;}
+.se-fold-r{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+
+/* ═══════════════════════════════════════════
+   REDESIGN — Stupi (cards + forms)
+   ═══════════════════════════════════════════ */
+/* card */
+.hv-card .hv-hd{align-items:center;padding-bottom:6px;}
+.hv-num{width:38px;height:38px;font-size:1rem;}
+.hv-name{font-size:1.06rem;}
+.hv-meta{margin-top:2px;}
+.hv-hd-r{flex-direction:row;align-items:center;}
+.hv-sub{padding:0 14px 11px;}
+.hv-chips{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 7px;}
+.hv-chips .bg{font-size:.7rem;padding:3px 9px;}
+.hv-q{font-size:.8rem;display:flex;flex-wrap:wrap;align-items:center;gap:4px;}
+.hv-q b{font-weight:700;}
+.hv-card .hv-notes{padding:6px 0 0;margin:0;}
+.hv-card .hv-win{margin:0 14px 11px;}
+.hv-act{gap:8px;padding:10px 12px;}
+.hv-act-main{flex:1;min-height:44px;white-space:nowrap;padding-left:10px !important;padding-right:10px !important;min-width:0;}
+.hv-ib{width:44px;height:44px;min-height:44px;flex-shrink:0;border-radius:50%;border:1px solid var(--bdr);background:rgba(255,255,255,.06);
+  font-size:1.05rem;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;box-shadow:none;color:var(--txt);}
+.hv-ib:active{transform:scale(.94);}
+.hv-ib.hv-del{opacity:.8;}
+body.light .hv-ib{background:rgba(0,0,0,.04);}
+
+/* forms: groups, segmented buttons */
+.fg{background:rgba(255,255,255,.025);border:1px solid var(--bdr);border-radius:var(--rm);padding:10px 12px 12px;margin:0 0 10px;}
+body.light .fg{background:rgba(0,0,0,.02);}
+.fg-t{font-size:.86rem;font-weight:800;color:var(--gold2);display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.fg-s{font-size:.68rem;font-weight:600;color:var(--mut);}
+.fg label.L:first-of-type{margin-top:6px;}
+.fg-tot{font-size:.8rem;color:var(--mut);margin:8px 0 2px;}
+.fg-tot b{color:var(--txt);font-size:1rem;}
+.seg{display:flex;gap:4px;background:var(--sur);border:1px solid var(--bdr);border-radius:40px;padding:3px;}
+.seg-b{flex:1;border:none;background:none;color:var(--mut);font-weight:700;font-size:.78rem;padding:8px 4px;border-radius:40px;cursor:pointer;min-height:38px;box-shadow:none;white-space:nowrap;}
+.seg-b.on{background:linear-gradient(145deg,var(--gold),#c8911a);color:#121212;}
+.mb-foot .btn{flex:1;}   /* Save / Cancel at the end of the form (kept non-sticky on purpose: phone keyboards) */
+
+/* ═══════════════════════════════════════════════════════════════
+   MODERN LAYOUT — whole app, original look (gold · dark · emoji)
+   Phone first: bigger touch targets, clear sections, tidy spacing.
+   ═══════════════════════════════════════════════════════════════ */
+.c{border-radius:16px;border-color:rgba(230,180,34,.13);}
+.g{gap:12px;}
+.al{border-radius:12px;line-height:1.45;}
+.sa{border-radius:14px;}
+
+/* page header: title + main button on one row */
+.hv-top{margin-bottom:12px;}
+.hv-top h2{display:flex;align-items:center;gap:8px;}
+@media(max-width:650px){
+  #pg>.hv-top:first-child h2,#pg>h2:first-child{font-size:1.1rem;}
+}
+
+/* sections inside forms: clear headers */
+.dv{margin:16px 0 8px;padding-top:12px;border-top:1px solid var(--bdr);}
+.stt{display:flex;align-items:center;gap:6px;font-size:.95rem;font-weight:800;color:var(--gold2);padding-left:9px;border-left:3px solid var(--gold);line-height:1.2;margin-bottom:6px;}
+label.L{margin-top:11px;margin-bottom:4px;}
+.mt{font-size:1.15rem;}
+
+/* inputs: comfortable on the phone (16px text = no auto-zoom on focus) */
+input,select,textarea{border-radius:12px;padding:11px 13px;}
+@media(max-width:650px){
+  input:not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px;min-height:46px;}
+  textarea{min-height:70px;}
+  .mb-b{padding:18px 16px 32px;}
+  .br .btn:not(.sm){flex:1;justify-content:center;}
+}
+.ck{min-height:36px;}
+.ck input[type=checkbox]{width:20px;height:20px;}
+
+/* bottom bar: readable labels */
+@media(max-width:650px){
+  .mob-nav{height:64px;}
+  .mob-ni span{font-size:.62rem;}
+  .mob-ni i{font-size:1.25rem;}
+  .more-drw{bottom:64px;}
+  .main{padding-bottom:88px !important;}
+  .toast{left:12px;right:12px;bottom:76px;text-align:center;border-radius:14px;}
+}
+
+/* hive picker: pills sized to the name, wrap on several rows */
+.hp-grid{display:flex;flex-wrap:wrap;gap:7px;}
+.hp-c{height:38px;padding:0 14px;border-radius:20px;}
+.hp-n{font-size:.86rem;white-space:nowrap;}
+.hp-c.on{padding-right:24px;}
+.hp-c.on::after{top:50%;right:9px;transform:translateY(-50%);font-size:.72rem;}
+.hp-i{position:static;margin-left:5px;font-size:.75rem;}
+
+/* lists of rows in cards (treatments, feedings, pastorage): breathing room */
+.ps-row,.fd-row{gap:10px;}
+/* phone: the top bar already shows the page name → hide the repeated title, the main button takes the row */
+@media(max-width:650px){
+  #pg>.hv-top:first-child>h2,#pg>h2:first-child,#pg>div:first-child>h2:first-child{display:none;}
+  #pg>.hv-top:first-child,#pg>div:first-child:has(>h2:first-child){margin-bottom:12px!important;}
+  #pg>.hv-top:first-child>.btn,#pg>.hv-top:first-child>.tv-hbtn,#pg>div:first-child:has(>h2:first-child)>.btn{flex:1;justify-content:center;}
+  #pg>.hv-top:first-child>.tv-hbtn .btn{width:100%;justify-content:center;}
+}
+/* Hrănire history filters: two compact dropdowns on one row */
+select[onchange*="_hrHiveFilter"],select[onchange*="_hrMonthFilter"]{width:auto!important;flex:1;min-width:130px;min-height:40px!important;padding:8px 12px!important;font-size:.88rem!important;}
