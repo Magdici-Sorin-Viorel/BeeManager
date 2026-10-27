@@ -67,6 +67,11 @@ function fdStatus(f){   // planned / active / done
   return fdActiveHives(f).length?"active":"done";
 }
 function fdDayN(f,day){return Math.max(1,Math.round((new Date(day||fdToday())-new Date(f.date))/86400000)+1);}
+// Quantity converted to the base unit (kg or L): grams are divided by 1000 so totals don't mix g with kg.
+function fdBase(q,unit){q=parseFloat(q)||0;return unit==="g"?q/1000:q;}
+function fdBaseQty(f){return fdBase(fdSumQty(f),f.unit||fdType(f).u);}
+// Compact number: up to 2 decimals for small values, 1 decimal otherwise, no trailing zeros.
+function fdNum(x){x=+x||0;return String(parseFloat(x.toFixed(Math.abs(x)<10?2:1)));}
 function fdQtyTxt(f){var q=fdSumQty(f);return q?q+' '+(f.unit||fdType(f).u||"kg"):"";}
 
 // Hive picker (feeding, migration…): pills with the hive number, grouped (🏠 Stupi / 🐝 Roiuri),
@@ -169,14 +174,14 @@ function renderHranire(){
   var sorted=filtered.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);});
 
   // ── Stats for current filter ──────────────────────────────────
-  var totQty=filtered.reduce(function(s,f){return s+(fdSumQty(f)||0);},0);
+  var totQty=filtered.reduce(function(s,f){return s+fdBaseQty(f);},0);
   var byType={};
-  filtered.forEach(function(f){byType[f.feedType]=(byType[f.feedType]||0)+(f.qty||0);});
+  filtered.forEach(function(f){byType[f.feedType]=(byType[f.feedType]||0)+fdBaseQty(f);});
   var uniqueHives=new Set([].concat.apply([],filtered.map(function(f){return fdHives(f);}))).size;
-  var avgPerHive=uniqueHives>0?(totQty/uniqueHives).toFixed(1):"—";
+  var avgPerHive=uniqueHives>0?fdNum(totQty/uniqueHives):"—";
 
   var statH='<div class="g" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px;">'
-    +'<div class="c"><div class="cl">'+t("hr_total_qty")+'</div><div class="cv">'+totQty.toFixed(1)+'</div><div class="cs">kg + L</div></div>'
+    +'<div class="c"><div class="cl">'+t("hr_total_qty")+'</div><div class="cv">'+fdNum(totQty)+'</div><div class="cs">kg + L</div></div>'
     +'<div class="c"><div class="cl">'+t("hr_total_entries")+'</div><div class="cv">'+filtered.length+'</div></div>'
     +'<div class="c"><div class="cl">'+t("hr_avg_per_hive")+'</div><div class="cv" style="font-size:1.1rem;">'+avgPerHive+'</div><div class="cs">kg+L</div></div>'
     +'</div>';
@@ -194,7 +199,7 @@ function renderHranire(){
     typeBarH+='<div>'
       +'<div style="display:flex;justify-content:space-between;margin-bottom:3px;">'
       +'<span style="font-size:.75rem;color:var(--txt);">'+emoji+' '+tp.l.replace(/^[^ ]+ /,"")+'</span>'
-      +'<span style="font-size:.75rem;font-weight:700;color:var(--gold);">'+qty.toFixed(1)+' '+(tp.u||"kg")+'</span>'
+      +'<span style="font-size:.75rem;font-weight:700;color:var(--gold);">'+fdNum(qty)+' '+(tp.u||"kg")+'</span>'
       +'</div>'
       +'<div style="height:5px;border-radius:5px;background:rgba(200,135,14,.15);">'
       +'<div style="width:'+pct+'%;height:100%;border-radius:5px;background:var(--gold);transition:width .4s;"></div>'
@@ -207,14 +212,14 @@ function renderHranire(){
   var hvCardsH='<div class="g" style="grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px;margin-bottom:14px;">';
   D.hives.forEach(function(hv){
     var hvFeeds=started.filter(function(f){return fdCovers(f,hv.id);});
-    var hvTot=hvFeeds.reduce(function(s,f){return s+(f.qty||0);},0);
+    var hvTot=hvFeeds.reduce(function(s,f){return s+fdBaseQty(f);},0);
     var hvLast=hvFeeds.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
     var on=fdActiveFor(hv.id).length>0;
     var daysSince=hvLast?Math.round((Date.now()-new Date(hvLast.date))/86400000):null;
     var freshness=on?"var(--ok)":daysSince===null?"var(--mut)":daysSince<=30?"var(--gold)":"var(--danger)";
     hvCardsH+='<div class="c" style="cursor:pointer;border-left:3px solid '+freshness+';" onclick="_hrHiveFilter=\''+hv.id+'\';renderHranire();">'
       +'<div class="cl" style="margin-bottom:3px;">🏠 '+esc(hv.name)+(on?' <span class="bg gg">🍬</span>':'')+'</div>'
-      +'<div style="font-size:1.2rem;font-weight:700;color:var(--gold);">'+hvTot.toFixed(1)+' <span style="font-size:.7rem;font-weight:400;color:var(--mut);">kg+L</span></div>'
+      +'<div style="font-size:1.2rem;font-weight:700;color:var(--gold);">'+fdNum(hvTot)+' <span style="font-size:.7rem;font-weight:400;color:var(--mut);">kg+L</span></div>'
       +'<div style="font-size:.69rem;color:var(--mut);margin-top:2px;">'+(hvLast?'📅 '+hvLast.date+' ('+daysSince+(isEN?"d ago":"z)"):isEN?"No feedings":"Nicio hrănire")+'</div>'
       +'<div style="font-size:.68rem;color:var(--mut);">'+hvFeeds.length+(isEN?" feedings":" hrăniri")+'</div>'
       +'</div>';
@@ -280,7 +285,7 @@ function renderHranire(){
       var data=Array.from({length:12},function(_,m){
         return started.filter(function(f){return _hrHiveFilter==="all"||fdCovers(f,_hrHiveFilter);})
           .reduce(function(s,f){return s+fdPortions(f).filter(function(p){var d=p.date||"";return d.startsWith(yr+"-")&&parseInt(d.slice(5,7))-1===m;})
-            .reduce(function(a,p){return a+(parseFloat(p.qty)||0);},0);},0);
+            .reduce(function(a,p){return a+fdBase(p.qty,f.unit||fdType(f).u);},0);},0);
       });
       return{
         label:String(yr),data:data,

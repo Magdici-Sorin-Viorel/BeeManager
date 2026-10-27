@@ -4,7 +4,7 @@
 // ┌─────────────────────────────────────────────────────────────────┐
 // │ MODULES DISABLED                                                │
 // │ Modules in this list appear nowhere in the app (menu,           │
-// │ Dashboard, Settings, Excel export, Hrănire → Inventar link).    │
+// │ Dashboard, Settings, Hrănire → Inventar link).                  │
 // │ Their code and already-saved data stay untouched.               │
 // │                                                                 │
 // │ To bring a module back: remove it from the list.                │

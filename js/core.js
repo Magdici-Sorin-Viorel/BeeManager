@@ -31,10 +31,9 @@ function load(){
   if(s){var p=JSON.parse(s);D={...D,...p};}
   cleanTestData();   // first start of the production version: drop demo / test data left from testing
   if(!D.settings)D.settings={dark:true,lang:"ro",tempUnit:"C"};
-  if(!D.settings.lang)D.settings.lang="ro";
-  if(!D.settings.tempUnit)D.settings.tempUnit="C";
+  D.settings.lang="ro"; // app is Romanian-only (English option removed from Settings)
+  D.settings.tempUnit="C"; // temperature always in Celsius (unit option removed from Settings)
   if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=INSP_ALERT_DEFAULT;
-  if(D.settings.autoDownloadInsp===undefined)D.settings.autoDownloadInsp=false;
   if(!D.pastorage)D.pastorage=[];
   if(!D.finances)D.finances=[];
   if(!D.varroa)D.varroa=[];
@@ -178,7 +177,23 @@ function sBadge(s){
   return'<span class="bg gr">'+t("str_weak")+'</span>';
 }
 function matIc(m){return{Lemn:"🪵",Polistiren:"🧊",Plastic:"🔵",Wood:"🪵",Polystyrene:"🧊"}[m]||"📦";}
-function strCalc(b){var n=parseInt(b)||0;if(n>=6)return"puternic";if(n>=3)return"mediu";return"slab";}
+// Colony strength (puternic / mediu / slab) — depends on the season:
+//  • Active season (April–September): frames with brood — ≥6 strong, 3–5 medium, ≤2 weak.
+//  • Cold season (October–March) there is little or no brood, so brood can't be used; the measure is
+//    the frames (interspaces) covered by bees — the winter cluster. Dadant frames:
+//      October–January: ≥7 strong, 5–6 medium, ≤4 weak  (5 frames of bees going into winter = a normal colony;
+//                       Ontario BMP: 7–8 frames of bees are ideal for wintering in cold regions)
+//      February–March:  ≥6 strong, 4–5 medium, ≤3 weak  (the cluster shrinks by late winter;
+//                       ≥4 occupied interspaces = enough — Apis e.V. Infobrief 2014/03)
+//    If the frames with bees aren't known, brood + food frames are used as an estimate.
+// strCalc(brood, food, beeFrames, date) — food / beeFrames / date are optional (date = today).
+function strCalc(b,food,bees,date){
+  var n=parseInt(b)||0,m=parseInt(String(date||todayISO()).slice(5,7))||1;
+  if(m>=4&&m<=9)return n>=6?"puternic":n>=3?"mediu":"slab";
+  var f=bees!=null&&bees!==""&&!isNaN(parseInt(bees))?parseInt(bees):n+(parseInt(food)||0);
+  if(m>=10||m===1)return f>=7?"puternic":f>=5?"mediu":"slab";
+  return f>=6?"puternic":f>=4?"mediu":"slab";
+}
 // Escape for text placed in HTML (value="...", <textarea>): quotes or < in
 // names/notes no longer break the forms
 function esc(v){if(v===null||v===undefined)return"";return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}

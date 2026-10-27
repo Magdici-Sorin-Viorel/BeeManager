@@ -14,7 +14,7 @@ BeeManagerPro/
 ├── service-worker.js     ← face aplicația să meargă offline
 ├── css/style.css         ← tot designul
 ├── icons/                ← iconițele aplicației
-├── lib/                  ← biblioteci (grafice, PDF, Excel, iconițe Font Awesome)
+├── lib/                  ← biblioteci (grafice, iconițe Font Awesome)
 └── js/
     ├── i18n.js           ← traducerile RO / EN
     ├── core.js           ← datele (D), salvare/încărcare, toast, confirmare, helperi
@@ -22,7 +22,7 @@ BeeManagerPro/
     ├── nav.js            ← meniul, navigarea între pagini, ferestrele (modal)
     ├── dashboard.js      ← Dashboard
     ├── hives.js          ← Stupi (inclusiv regina stupului)
-    ├── inspections.js    ← formularul de inspecție + PDF/XLS (afișat din Stupi)
+    ├── inspections.js    ← formularul de inspecție (afișat din Stupi)
     ├── queens.js         ← Regine (meniu separat, dezactivat — vezi hives.js)
     ├── honey.js          ← Recoltă miere
     ├── treatments.js     ← formularul de tratament (scop: varroa / altul)
@@ -39,7 +39,7 @@ BeeManagerPro/
     ├── tasks.js          ← Sarcini
     ├── varroa.js         ← numărători varroa, legătura cu tratamentele, faze înainte/în timpul/după
     ├── finance.js        ← Financiar + vânzare miere
-    ├── export.js         ← Export Excel / PDF / backup JSON
+    ├── export.js         ← backup JSON: Google Drive, telefon, import
     ├── app.js            ← pornirea aplicației
     └── pwa.js            ← înregistrarea pentru offline / instalare
 ```
@@ -71,21 +71,21 @@ Un singur modul, cu 2 taburi: **💊 În curs & planificate** · **✅ Încheiat
 
 - **🚚 Plec în pastorare**: bifezi stupii (sau „Toți”), locația (scrisă o dată, apoi aleasă din listă), culesul, data plecării și întoarcerea aproximativă.
 - Cât timp e plecat, stupul apare în **Stupi** doar ca bandă mică („🚚 în pastorare · Lunca · 10 zile” → te duce în Pastorare). **Cardul complet** (inspecții, ✏️, 🐝) e în pagina **Pastorare**, sub deplasarea lui, cu **★ stiva de magazii pe % căpăcit**.
-- Inspecțiile făcute cât e plecat se salvează cu locația (🚚 în istoricul inspecțiilor, coloana *Pastorare* în Excel).
+- Inspecțiile făcute cât e plecat se salvează cu locația (🚚 în istoricul inspecțiilor).
 - **🏁 Întoarcere acasă…**: bifezi stupii care vin acasă (ceilalți rămân la cules) sau toți. Deplasările încheiate rămân în istoric.
 
 ### 📅 Calendar cules (`js/calendar.js` + baza de date `js/plants.js`)
 
 - Folosește data și locația telefonului (decalaj ~4 zile / grad de latitudine față de câmpia de referință 45,5°N — neschimbat).
 - **🌼 Culesul principal acum** (rapiță, salcâm, tei, floarea-soarelui): faza (început / 💯 nectar maxim / spre final), bara înfloririi cu ziua de azi, zile rămase, nectar / polen, kg/ha, activitatea după vreme.
-- **🌸 3 culesuri secundare posibile** (întâi cele ★ prioritare: pomi, corcoduș, prun, cireș, gutui, trifoi, facelie, mentă, lavandă, aromatice), plus „toate plantele în floare acum”.
-- **⏭️ Urmează** — culesurile principale următoare; **📅 Calendarul anului** — bare pe 12 luni (principale / + prioritare / toate cele 62 de plante).
+- **🌸 3 culesuri secundare posibile** (întâi cele ★ prioritare: pomi, prun, cireș, gutui, trifoi, facelie, mentă, lavandă, aromatice), plus „toate plantele în floare acum”.
+- **⏭️ Urmează** — culesurile principale următoare; **📅 Calendarul anului** — bare pe 12 luni (principale / + prioritare / toate cele 52 de plante).
 - **👀 Ce vezi pe teren**: butonul *Am văzut înflorit* (sau 👀 lângă fiecare plantă) — alegi planta, *🌱 primele flori* sau *💯 plină floare*, data. Calendarul se ajustează:
   - planta văzută se mută exact după observație; celelalte după observațiile apropiate în timp (pondere e^(−zile/45), cu o „ancoră” 0,35 spre calendar) — ex. rapița cu 13 zile mai devreme → salcâmul ~8, teiul ~6, floarea-soarelui ~5 zile mai devreme;
   - pornește de la media anilor trecuți din zona ta (anii recenți contează mai mult);
   - observațiile țin de zonă (raza 30 km față de locul unde ești) — în pastorare în altă zonă nu se amestecă.
   Pe fiecare plantă apare ↻ / 👀 ±zile. Logica: `plAdjModel` în `js/plants.js`.
-- Baza de date: 62 de plante melifere din România (inclusiv zona Timiș / Banat: amorfă, sulfină, salcâm japonez, splinuță, salcie de luncă…), cu înflorire, perioada de nectar maxim, valoare nectar / polen, kg/ha și unde se găsesc.
+- Baza de date: 52 de plante melifere din România, verificate cu surse (doar plante care dau nectar și polen pentru miere) (inclusiv zona Timiș / Banat: amorfă, sulfină, salcâm japonez, splinuță, salcie de luncă…), cu înflorire, perioada de nectar maxim, valoare nectar / polen, kg/ha și unde se găsesc.
 
 ### 🍬 Hrănire (perioade)
 
@@ -122,7 +122,7 @@ Momentan sunt **ascunse**: Financiar, Analize, Inventar, Recoltă miere, Dashboa
 **Regine** nu e pierdut: e integrat în **Stupi** (secțiunea 👑 Regina din formularul stupului, cu înlocuire și istoric).
 **Inspecții** e integrat tot în **Stupi**: butonul 🔍 Inspecție de pe card + câmpul 📋 Inspecții (istoricul stupului), iar alerta pentru stupi neinspectați apare sus pe pagina Stupi.
 Aplicația pornește pe primul meniu activ (acum **Stupi**).
-Nu apar în meniu, pe Dashboard, în Setări, în exportul Excel sau în formularul de Hrănire.
+Nu apar în meniu, pe Dashboard, în Setări sau în formularul de Hrănire.
 Codul lor și datele deja salvate rămân neatinse.
 
 Ca să readuci un modul, scoate-l din lista din `js/config.js`:
@@ -194,7 +194,7 @@ Când aplicația e finalizată:
 ## 📝 Modificări față de fișierul original
 
 - Cod împărțit pe module (fără schimbări de funcționalitate).
-- Biblioteci locale → grafice, PDF, Excel și iconițe merg fără internet.
+- Biblioteci locale → grafice și iconițe merg fără internet.
 - PWA: instalare pe telefon + funcționare offline.
 - Reparat: butoanele *Salvează JSON pe Drive* / *Încarcă JSON* (dădeau eroare); importul cere confirmare în aplicație.
 - Reparat: lista *Auto-salvare per stup* din Setări era goală.

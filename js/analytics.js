@@ -232,8 +232,7 @@ function renderAnalytics(){
     +(botciHTML||"")
     +(byTChart||"")
     +evolChart
-    +distHTML
-    +'<button class="btn" onclick="exportToPDF()" style="margin-top:4px;">'+t("an_export")+'</button>');
+    +distHTML);
 
   setTimeout(function(){
     var cO={responsive:true,plugins:{legend:{labels:{color:"#b9b5ae",font:{size:10}}}},scales:{x:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}},y:{ticks:{color:"#b9b5ae",font:{size:9}},grid:{color:"rgba(255,255,255,.05)"}}}};

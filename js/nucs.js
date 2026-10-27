@@ -147,12 +147,16 @@ window.nucSave=function(id){
   var don=f?null:(($q("nDon")||{}).value||null);
   if(!f&&!don){toast("⚠️ "+L2("Alege stupul donator","Choose the donor hive"));return;}
   var fb=Math.max(0,parseInt(($q("nFB")||{}).value)||0),fh=Math.max(0,parseInt(($q("nFH")||{}).value)||0);
+  var mbN=document.getElementById("MB"),fromInsp=!h&&mbN&&mbN.dataset.fromInsp?mbN.dataset.fromInsp:null;
+  if(!don&&fromInsp&&_mvNuc)don=_mvNuc.donor;   // donor select is locked (disabled) when coming from an inspection
+  var inInsp=fromInsp||(h&&h.nuc&&h.nuc.taken&&h.nuc.taken.inInsp)||null;   // frames already out in the donor's inspection → never deducted here
   // frames taken: first restore last time's (when editing), then deduct the new ones
-  if(h&&h.nuc&&h.nuc.taken){var od=D.hives.find(function(x){return x.id===h.nuc.taken.donor;});
+  if(!inInsp&&h&&h.nuc&&h.nuc.taken){var od=D.hives.find(function(x){return x.id===h.nuc.taken.donor;});
     if(od){od.fB=(od.fB||0)+(h.nuc.taken.fB||0);od.fH=(od.fH||0)+(h.nuc.taken.fH||0);od.fT=hvTotal(od);od.str=strCalc(od.fB);}}
   var taken=null;
-  if(don){var d=D.hives.find(function(x){return x.id===don;});
-    if(d){var tb=Math.min(fb,d.fB||0),th=Math.min(fh,d.fH||0);d.fB=(d.fB||0)-tb;d.fH=(d.fH||0)-th;d.fT=hvTotal(d);d.str=strCalc(d.fB);taken={donor:don,fB:tb,fH:th};}}
+  if(don&&inInsp)taken={donor:don,fB:fb,fH:fh,inInsp:inInsp};
+  else if(don){var d=D.hives.find(function(x){return x.id===don;});
+    if(d){var tb=Math.min(fb,d.fB||0),th=Math.min(fh,d.fH||0);d.fB=(d.fB||0)-tb;d.fH=(d.fH||0)-th;d.fT=hvTotal(d);d.str=strCalc(d.fB,d.fH);taken={donor:don,fB:tb,fH:th};}}
   var max=parseInt(($q("nMax")||{}).value)||6;
   var nuc={start:($q("nDt")||{}).value||nucToday(),found:f,max:max,
     stage:f?{}:{egg:!!($q("nEg")||{}).checked,larva:!!($q("nLv")||{}).checked,capped:!!($q("nCp")||{}).checked,cell:!!($q("nBc")||{}).checked},
@@ -168,7 +172,11 @@ window.nucSave=function(id){
   Object.assign(o,{num:parseInt(($q("nNum")||{}).value)||null,name:nm,loc:($q("nLc")||{}).value||"",notes:($q("nNt")||{}).value||"",
     mod:L2("Cutie roi","Nuc box")+" "+max+" "+L2("rame","frames"),fB:nfB,fH:nfH,parentId:don,genParent:don,nuc:nuc});
   o.fT=hvTotal(o);o.str=strCalc(nfB);
-  if(!h)D.hives.push(o);
+  if(!h&&fromInsp&&_mvNuc&&_mvNuc.pl)o.plastic=_mvNuc.pl;   // 🧩 plastic frames that went into the nuc
+  if(!h){D.hives.push(o);
+    // note it on the donor's record (inspection of the day / automatic transfer entry) — see frames.js
+    if(taken&&typeof mvNucSaved==="function")mvNucSaved(o,fromInsp,taken.fB,taken.fH,nuc.start);}
+  _mvNuc=null;
   // found swarm with queen → the queen (natural origin); the line starts here
   if(!D.queens)D.queens=[];
   if(f&&nuc.queenIn&&!hqCurrent(o.id))D.queens.push({id:uid(),hive:o.id,yr:parseInt(nuc.start.slice(0,4))||null,from:nuc.start,motherQ:null,motherSet:true,race:"",lay:null,aggr:null,orig:(t("q_origins")||[])[4]||"Natural (roi)",origHive:null,line:"",status:"activă"});
@@ -255,7 +263,7 @@ function nucCardHTML(h){
     +'<div class="hv-hd-t"><div class="hv-name">'+esc(h.name)+' <span class="bg gy nuc-b">🐝 '+L2("Roi","Nuc")+'</span></div>'
     +'<div class="hv-meta">'+origin+'</div>'
     +'<div class="hv-q">'+qLine+'</div></div>'
-    +'<div class="hv-hd-r">'+nucIconHTML(h)+'<span class="hv-ts">'+(b+f)+' / '+max+' '+L2("rame","frames")+'</span></div>'
+    +'<div class="hv-hd-r">'+nucIconHTML(h)+'<span class="hv-ts">'+(b+f)+' / '+max+' '+L2("rame","frames")+'</span>'+(typeof hvPlBadge==="function"?hvPlBadge(h):'')+'</div>'
     +'</div>'
     +'<div class="nuc-meta">📅 '+L2("Început","Started")+' '+devFmt(n.start)+' · '+(days<=0?L2("azi","today"):days+' '+t("hv_days"))
     +' · 🟤 '+b+' '+L2("puiet","brood")+' · 🍯 '+f+' '+L2("mâncare","food")+(h.loc?' · 📍 '+esc(h.loc):'')+'</div>'
@@ -304,7 +312,8 @@ var GEN_COLORS=["#e6b422","#4a9eff","#6fbf4c","#e07c4c","#b07cf0","#3fc1c9","#f0
 var _genLine="all",_genRankAll=false,_genCache=null,_genSort="score";
 
 function genShort(h){   // short label: #10 = hive, R3 = nuc (so Roi #1 isn't confused with Stupul #1)
-  var nm=h.name||"?",m=/#\s*([0-9A-Za-z]+)/.exec(nm),isR=hvIsNucEver(h)&&/^\s*roi/i.test(nm);
+  var nm=h.name||"?",m=/#\s*([0-9A-Za-z]+)/.exec(nm)||/^\s*roi\s+([0-9A-Za-z]+)/i.exec(nm)||/(\d+)/.exec(nm),isR=hvIsNucEver(h)&&/^\s*roi/i.test(nm);
+  if(!m&&h.num)m=[0,String(h.num)];   // no number in the name → the hive number
   return m?(isR?"R":"#")+m[1]:nm.slice(0,7);}
 function qHiveQs(hid){return(D.queens||[]).filter(function(q){return q.hive===hid;});}
 function qFind(id){return id?(D.queens||[]).find(function(q){return q.id===id;}):null;}
@@ -380,6 +389,9 @@ function genScoresAll(){
       if(i.hiveId!==q.hive||!i.date||i.date<f||(t2&&i.date>=t2))return;
       if(h&&h.nuc&&!h.promotedAt&&h.kind==="roi")return;
       var y=i.date.slice(0,4),Y=yrs[y]=yrs[y]||{n:0,ag:[],sw:0,cap:null,win:null,sup:0};
+      if(i.winterMode){   // ❄️ winter inspection: only the cluster size counts (no temperament / swarming data)
+        if(i.winter&&i.winter.frames!=null&&(i.date.slice(5,7)>="10"||Y.win==null))Y.win=parseInt(i.winter.frames);
+        return;}
       Y.n++;if(i.behav)Y.ag.push(parseInt(i.behav));if(i.botci)Y.sw++;
       var ms=Array.isArray(i.mags)?i.mags:null;
       var capF=ms?ms.reduce(function(s,m){return s+(parseInt(m.f)||0)*(parseInt(m.cap)||0)/100;},0):(i.magCap!=null?parseInt(i.magCap)||0:null);

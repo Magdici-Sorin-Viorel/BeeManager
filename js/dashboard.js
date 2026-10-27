@@ -196,10 +196,10 @@ function renderDashboard(){
   // ── Feeding: KPI card + recent 3 entries panel ────────────────
   var curYrStr=String(new Date().getFullYear());
   var yrFeeds=(D.feedings||[]).filter(function(f){return(f.date||"").startsWith(curYrStr);});
-  var totFeedQty=yrFeeds.reduce(function(s,f){return s+(f.qty||0);},0);
+  var totFeedQty=yrFeeds.reduce(function(s,f){return s+fdBaseQty(f);},0);
   var hrKpiH='<div class="c" style="cursor:pointer;" onclick="go(\'hranire\')">'
     +'<div class="cl">🍬 '+t("hr_kpi_label")+'</div>'
-    +'<div class="cv" style="font-size:1.1rem;">'+totFeedQty.toFixed(1)+'</div>'
+    +'<div class="cv" style="font-size:1.1rem;">'+fdNum(totFeedQty)+'</div>'
     +'<div class="cs">'+t("hr_kpi_unit")+' · '+yrFeeds.length+' '+t("hr_total_entries")+'</div>'
     +'</div>';
 

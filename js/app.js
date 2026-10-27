@@ -6,6 +6,7 @@
 // ═══════════════════════════════════════════
 function init(){
   load();
+  if(typeof demoMaybe==="function")demoMaybe();   // demo data — only in the Claude preview (see demo.js)
   applyMenuOrder();   // menu order saved in Settings
   curP=HOME;
   updateOfflineBar();

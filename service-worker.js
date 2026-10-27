@@ -11,7 +11,7 @@
 // When you add a new file to the project, add it to the list below too.
 // When you change the list, bump the number in CACHE.
 
-var CACHE = "beemanager-v9";
+var CACHE = "beemanager-v15";
 
 var FILES = [
   "./",
@@ -27,6 +27,7 @@ var FILES = [
   "js/dashboard.js",
   "js/hives.js",
   "js/inspections.js",
+  "js/frames.js",
   "js/queens.js",
   "js/honey.js",
   "js/treatments.js",
@@ -44,11 +45,12 @@ var FILES = [
   "js/treatvarroa.js",
   "js/finance.js",
   "js/export.js",
+  "js/fisa.js",
   "js/app.js",
   "js/pwa.js",
   "lib/chart.umd.min.js",
-  "lib/html2pdf.bundle.min.js",
-  "lib/xlsx.full.min.js",
+  "lib/fonts/caveat-latin-600-normal.woff2",
+  "lib/fonts/caveat-latin-ext-600-normal.woff2",
   "lib/fontawesome/css/all.min.css",
   "lib/fontawesome/webfonts/fa-solid-900.woff2",
   "lib/fontawesome/webfonts/fa-regular-400.woff2",

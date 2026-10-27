@@ -20,7 +20,6 @@ var MELIFERE=[
   {id:"floarea",n:"Floarea-soarelui",ne:"Sunflower",lat:"Helianthus annuus",ic:"🌻",cat:"main",b:[6,25,8,10],pk:[7,1,7,28],nec:2,pol:3,kg:"30–60",nt:[22,32],z:"cultivată, câmpie (Banat, Câmpia Română, Dobrogea)",dc:"Cules lung de vară. Atenție la tratamentele culturilor și la secetă."},
 
   // ── PRIORITY SECONDARY (fruit trees, clover, phacelia, aromatics) ──
-  {id:"corcodus",n:"Corcoduș",ne:"Cherry plum",lat:"Prunus cerasifera",ic:"🌸",cat:"pri",b:[3,15,4,10],pk:[3,22,4,5],nec:2,pol:2,nt:[10,20],z:"garduri vii, margini de sat",dc:"Primul pom; bun pentru dezvoltarea familiilor."},
   {id:"cais",n:"Cais",ne:"Apricot",lat:"Prunus armeniaca",ic:"🍑",cat:"pri",b:[3,20,4,10],pk:[3,25,4,5],nec:2,pol:2,nt:[10,20],z:"livezi, grădini",dc:"Înflorește devreme; poate fi prins de înghețuri."},
   {id:"piersic",n:"Piersic",ne:"Peach",lat:"Prunus persica",ic:"🍑",cat:"pri",b:[3,25,4,15],pk:[4,1,4,12],nec:2,pol:2,nt:[10,22],z:"livezi, grădini",dc:""},
   {id:"prun",n:"Prun",ne:"Plum",lat:"Prunus domestica",ic:"🌸",cat:"pri",b:[4,1,4,25],pk:[4,5,4,20],nec:2,pol:2,nt:[10,22],z:"livezi, grădini (mult în deal)",dc:"Cules de stimulare; în livezi mari poate da și miere."},
@@ -42,10 +41,7 @@ var MELIFERE=[
   {id:"busuioc",n:"Busuioc",ne:"Basil",lat:"Ocimum basilicum",ic:"🌿",cat:"pri",b:[7,1,9,30],pk:[7,15,8,31],nec:2,pol:1,nt:[22,32],z:"grădini, culturi",dc:"Aromatică."},
 
   // ── SECONDARY (other Romanian honey plants, incl. Timiș / Banat area) ──
-  {id:"alun",n:"Alun",ne:"Hazel",lat:"Corylus avellana",ic:"🌰",cat:"sec",b:[2,10,3,15],pk:[2,20,3,10],nec:0,pol:3,nt:[8,16],z:"margini de pădure, garduri",dc:"Doar polen — primul polen al anului."},
-  {id:"ghiocel",n:"Ghiocel",ne:"Snowdrop",lat:"Galanthus nivalis",ic:"🤍",cat:"sec",b:[2,15,3,20],pk:[2,25,3,15],nec:1,pol:2,nt:[8,16],z:"păduri de foioase",dc:"Polen timpuriu."},
   {id:"cornul",n:"Corn",ne:"Cornelian cherry",lat:"Cornus mas",ic:"🌼",cat:"sec",b:[3,1,3,31],pk:[3,10,3,25],nec:1,pol:2,nt:[10,18],z:"păduri de deal, garduri",dc:""},
-  {id:"brandusa",n:"Brândușă de primăvară",ne:"Spring crocus",lat:"Crocus sp.",ic:"🪻",cat:"sec",b:[3,1,3,31],pk:[3,10,3,25],nec:1,pol:2,nt:[8,16],z:"pajiști",dc:"Polen timpuriu."},
   {id:"salcie",n:"Salcie căprească",ne:"Goat willow",lat:"Salix caprea",ic:"🌿",cat:"sec",b:[3,10,4,15],pk:[3,20,4,10],nec:2,pol:3,nt:[10,18],z:"lunci, maluri de râu (Timiș, Bega, Mureș)",dc:"Foarte importantă primăvara — polen și nectar pentru dezvoltare."},
   {id:"paltinc",n:"Paltin de câmp",ne:"Norway maple",lat:"Acer platanoides",ic:"🍁",cat:"sec",b:[4,1,4,25],pk:[4,5,4,20],nec:2,pol:2,nt:[10,20],z:"păduri, parcuri",dc:""},
   {id:"papadie",n:"Păpădie",ne:"Dandelion",lat:"Taraxacum officinale",ic:"🌼",cat:"sec",b:[4,1,5,20],pk:[4,10,5,5],nec:2,pol:3,kg:"~50",nt:[12,24],z:"pajiști, livezi, peste tot",dc:"Cules de dezvoltare foarte bun."},
@@ -54,17 +50,14 @@ var MELIFERE=[
   {id:"castans",n:"Castan sălbatic",ne:"Horse chestnut",lat:"Aesculus hippocastanum",ic:"🌰",cat:"sec",b:[4,25,5,20],pk:[5,1,5,15],nec:2,pol:2,nt:[14,24],z:"parcuri, orașe",dc:""},
   {id:"paducel",n:"Păducel",ne:"Hawthorn",lat:"Crataegus monogyna",ic:"🤍",cat:"sec",b:[5,1,5,25],pk:[5,5,5,20],nec:1,pol:2,nt:[15,24],z:"tufărișuri, margini de pădure",dc:""},
   {id:"mustar",n:"Muștar alb",ne:"White mustard",lat:"Sinapis alba",ic:"🟡",cat:"sec",b:[5,1,6,15],pk:[5,10,6,5],nec:2,pol:2,kg:"~100",nt:[14,26],z:"cultivat; semănat și în miriște (toamna)",dc:""},
-  {id:"maces",n:"Măceș",ne:"Dog rose",lat:"Rosa canina",ic:"🌹",cat:"sec",b:[5,15,6,15],pk:[5,25,6,10],nec:1,pol:2,nt:[16,26],z:"tufărișuri, pășuni",dc:"Mai mult polen."},
   {id:"spar",n:"Sparcetă",ne:"Sainfoin",lat:"Onobrychis viciifolia",ic:"🌺",cat:"sec",b:[5,15,6,20],pk:[5,25,6,15],nec:3,pol:2,kg:"100–400",nt:[18,28],z:"cultivată pe terenuri calcaroase",dc:"Cules foarte bun unde se cultivă."},
   {id:"amorfa",n:"Amorfă (salcâm mic)",ne:"False indigo",lat:"Amorpha fruticosa",ic:"🟣",cat:"sec",b:[5,25,6,30],pk:[6,1,6,25],nec:2,pol:2,kg:"~100",nt:[18,28],z:"lunci, diguri — frecventă în Banat (Timiș, Bega)",dc:"Cules bun după salcâm în zonele cu lunci."},
   {id:"gladita",n:"Glădiță",ne:"Honey locust",lat:"Gleditsia triacanthos",ic:"🌳",cat:"sec",b:[5,25,6,15],pk:[6,1,6,12],nec:2,pol:1,nt:[18,28],z:"aliniamente, perdele (câmpie)",dc:""},
-  {id:"lemnc",n:"Lemn câinesc",ne:"Privet",lat:"Ligustrum vulgare",ic:"🤍",cat:"sec",b:[6,1,6,30],pk:[6,5,6,25],nec:2,pol:1,nt:[18,28],z:"garduri vii, tufărișuri",dc:""},
   {id:"otetar",n:"Oțetar fals (cenușer)",ne:"Tree of heaven",lat:"Ailanthus altissima",ic:"🌳",cat:"sec",b:[6,5,6,30],pk:[6,10,6,25],nec:2,pol:2,nt:[20,30],z:"terenuri părăsite, orașe (mult în vest și sud)",dc:"Miere cu gust specific."},
   {id:"sulfina",n:"Sulfină",ne:"Sweet clover",lat:"Melilotus officinalis / albus",ic:"🌾",cat:"sec",b:[6,1,8,31],pk:[6,15,7,31],nec:3,pol:2,kg:"200–600",nt:[20,30],z:"terenuri necultivate, margini de drum, diguri (Banat)",dc:"Una dintre cele mai bune plante de vară."},
   {id:"ghizdei",n:"Ghizdei",ne:"Bird's-foot trefoil",lat:"Lotus corniculatus",ic:"🌼",cat:"sec",b:[6,1,8,31],pk:[6,10,7,20],nec:2,pol:2,nt:[18,28],z:"pajiști",dc:""},
   {id:"lucerna",n:"Lucernă",ne:"Alfalfa",lat:"Medicago sativa",ic:"🟣",cat:"sec",b:[6,1,8,31],pk:[6,15,7,31],nec:1,pol:1,kg:"25–30",nt:[22,32],z:"cultivată",dc:"Albinele o lucrează mai ales pe căldură mare."},
   {id:"echium",n:"Iarba-șarpelui",ne:"Viper's bugloss",lat:"Echium vulgare",ic:"🔵",cat:"sec",b:[6,1,8,31],pk:[6,15,7,31],nec:3,pol:2,kg:"300–400",nt:[18,30],z:"terenuri uscate, margini de drum",dc:""},
-  {id:"coada",n:"Coada-șoricelului",ne:"Yarrow",lat:"Achillea millefolium",ic:"🤍",cat:"sec",b:[6,1,8,31],pk:[6,15,7,31],nec:1,pol:1,nt:[18,30],z:"pajiști",dc:""},
   {id:"mur",n:"Mur",ne:"Blackberry",lat:"Rubus fruticosus",ic:"🫐",cat:"sec",b:[6,1,7,31],pk:[6,10,7,15],nec:2,pol:2,nt:[18,28],z:"margini de pădure, tufărișuri",dc:""},
   {id:"zmeur",n:"Zmeur",ne:"Raspberry",lat:"Rubus idaeus",ic:"🫐",cat:"sec",b:[6,1,7,10],pk:[6,10,7,5],nec:3,pol:2,kg:"50–100",nt:[16,26],z:"deal și munte (nu în câmpia Timișului)",dc:"Cules bun la munte."},
   {id:"castanc",n:"Castan comestibil",ne:"Sweet chestnut",lat:"Castanea sativa",ic:"🌰",cat:"sec",b:[6,15,7,10],pk:[6,20,7,5],nec:2,pol:3,nt:[20,30],z:"Banatul montan (Caraș), Maramureș, Vâlcea",dc:"Miere închisă la culoare, amăruie."},
@@ -72,13 +65,10 @@ var MELIFERE=[
   {id:"dovleac",n:"Dovleac",ne:"Pumpkin",lat:"Cucurbita pepo",ic:"🎃",cat:"sec",b:[6,15,8,31],pk:[7,1,8,15],nec:2,pol:3,nt:[20,30],z:"culturi, grădini",dc:""},
   {id:"pepeni",n:"Pepeni",ne:"Melons",lat:"Citrullus / Cucumis",ic:"🍉",cat:"sec",b:[6,15,8,15],pk:[7,1,8,5],nec:1,pol:1,nt:[22,32],z:"culturi (vest, sud)",dc:""},
   {id:"hrisca",n:"Hrișcă",ne:"Buckwheat",lat:"Fagopyrum esculentum",ic:"🤍",cat:"sec",b:[7,1,8,31],pk:[7,10,8,15],nec:3,pol:2,kg:"50–100",nt:[18,28],z:"cultivată (și în cultură a doua)",dc:"Miere închisă, aromată; secretă dimineața."},
-  {id:"porumb",n:"Porumb",ne:"Maize",lat:"Zea mays",ic:"🌽",cat:"sec",b:[7,1,8,15],pk:[7,10,8,5],nec:0,pol:2,nt:[20,32],z:"culturi, toată țara",dc:"Doar polen."},
   {id:"sophora",n:"Salcâm japonez",ne:"Pagoda tree",lat:"Styphnolobium (Sophora) japonicum",ic:"🌳",cat:"sec",b:[7,15,8,15],pk:[7,20,8,10],nec:3,pol:2,kg:"~300",nt:[22,32],z:"aliniamente în orașe (ex. Timișoara, Arad, București)",dc:"Cules bun de vară târzie lângă orașe."},
   {id:"zburat",n:"Zburătoare",ne:"Fireweed",lat:"Chamerion angustifolium",ic:"🌸",cat:"sec",b:[7,1,8,15],pk:[7,10,8,5],nec:3,pol:2,kg:"~600",nt:[16,26],z:"munte (tăieturi de pădure)",dc:"Cules de munte."},
   {id:"solidago",n:"Splinuță (Solidago)",ne:"Goldenrod",lat:"Solidago canadensis / gigantea",ic:"🟡",cat:"sec",b:[8,10,9,30],pk:[8,20,9,20],nec:2,pol:2,kg:"~100",nt:[18,28],z:"terenuri părăsite, lunci — răspândită în vest (Timiș)",dc:"Cules de toamnă, bun pentru rezerve."},
-  {id:"ambrozie",n:"Ambrozie",ne:"Ragweed",lat:"Ambrosia artemisiifolia",ic:"🌿",cat:"sec",b:[8,1,9,15],pk:[8,10,9,5],nec:0,pol:2,nt:[20,30],z:"terenuri părăsite (mult în vest)",dc:"Doar polen."},
   {id:"mustart",n:"Muștar în miriște",ne:"Stubble mustard",lat:"Sinapis alba (cultură a doua)",ic:"🟡",cat:"sec",b:[8,20,10,15],pk:[9,1,10,5],nec:2,pol:2,nt:[14,24],z:"semănat după recoltarea păioaselor",dc:"Pentru rezervele de iarnă."},
-  {id:"aster",n:"Tufănele / aster",ne:"Asters",lat:"Aster sp., Symphyotrichum",ic:"🪻",cat:"sec",b:[9,1,10,20],pk:[9,10,10,10],nec:1,pol:2,nt:[14,24],z:"grădini, lunci",dc:"Ultimul polen."},
   {id:"iedera",n:"Iederă",ne:"Ivy",lat:"Hedera helix",ic:"🍃",cat:"sec",b:[9,5,10,20],pk:[9,15,10,10],nec:2,pol:2,nt:[14,22],z:"păduri, ziduri, parcuri",dc:"Ultimul nectar al anului."}
 ];
 var PLANTS=MELIFERE;   // compatibility (Dashboard / getFlow)

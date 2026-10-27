@@ -88,6 +88,23 @@ function hqRead(){
 // ── Hive inspections (merged from the Inspections module) ─────────
 var _hvInspOpen={};    // hives with the inspection list expanded
 var _hvInspDetail={};  // inspections expanded in detail
+// ❄️ Wintering status: the hive is "în iernare" while its latest inspection is a winter-mode one.
+// since = first winter-mode inspection of the current run; food / frames = from the latest check.
+// It ends by itself with the first normal (non-winter) inspection.
+function hvWinterState(h){
+  var l=hvInsps(h.id);if(!l.length||!l[0].winterMode)return null;
+  var since=l[0].date;for(var k=0;k<l.length&&l[k].winterMode;k++)since=l[k].date;
+  var w=l[0].wch||{};
+  return{since:since,food:w.food||"",frames:l[0].winter&&l[0].winter.frames!=null?l[0].winter.frames:null,last:l[0].date};
+}
+// 🧩 plastic-foundation frames in the hive (badge on the card)
+function hvPlBadge(h){var n=parseInt(h&&h.plastic)||0;return n?'<span class="bg hv-pl" title="Rame cu fundație de plastic">🧩 '+n+' plastic</span>':'';}
+function hvWinterBanner(h){
+  var w=hvWinterState(h);if(!w)return"";
+  var fd={ok:["ok","provizii suficiente"],limit:["lim","provizii la limită"],low:["low","provizii insuficiente — de hrănit"]}[w.food]||null;
+  return'<div class="hv-win'+(fd?" "+fd[0]:"")+'">❄️ <b>În iernare</b> din '+devFmt(w.since)
+    +(w.frames!=null?' · 🐝 ghem pe '+w.frames+' rame':'')+(fd?' · 🍯 '+fd[1]:'')+'</div>';
+}
 function hvInsps(hiveId){
   return D.inspections.filter(function(i){return i.hiveId===hiveId&&i.date;})
     .sort(function(a,b){return new Date(b.date)-new Date(a.date);});
@@ -207,7 +224,10 @@ function hvFramesHTML(h,withMags){
     +'<span class="hv-fr-tot"><b>'+tot+'</b> '+t("hv_frames")+'</span>'
     +'</div>'
     +'<div class="hv-bar">'+(tot?'<i class="b" style="width:'+pb+'%"></i><i class="f" style="width:'+(100-pb)+'%"></i>':'')+'</div>'
-    +'<div class="hv-leg"><span><i class="dot b"></i><b>'+b+'</b> '+t("hv_brood_l")+'</span><span><i class="dot f"></i><b>'+f+'</b> '+t("hv_food_l")+'</span></div>'
+    +'<div class="hv-leg"><span><i class="dot b"></i><b>'+b+'</b> '+t("hv_brood_l")+'</span><span><i class="dot f"></i><b>'+f+'</b> '+t("hv_food_l")+'</span>'
+    // ❄️ cold season: the cluster size (frames with bees) is what the strength is based on
+    +(h.bees!=null&&h.beesDate&&(function(){var m=parseInt(todayISO().slice(5,7));return m>=10||m<=3;})()&&hvDaysSince(h.beesDate)<120?'<span title="Rame cu albine la inspecția din '+devFmt(h.beesDate)+'">🐝 <b>'+h.bees+'</b> cu albine</span>':'')
+    +'</div>'
     +(withMags?hvMagsHTML(h):'')   // ★ capping-percentage module — in Pastorare
     +'</div>';
 }
@@ -224,16 +244,19 @@ function hvPastBanner(h){
 // Inspections: latest + collapsible history (each inspection expands in detail)
 function hvInspSecHTML(h,insps){
   var open=!!_hvInspOpen[h.id],li=insps[0];
-  var late=!hvIsNuc(h)&&(!li||hvDaysSince(li.date)>=hvThreshold());   // nucs have no weekly warning
+  var late=!hvIsNuc(h)&&!hvWinterState(h)&&(!li||hvDaysSince(li.date)>=hvThreshold());   // nucs and wintering hives have no weekly warning
   var rows=insps.map(function(i){
     var det=!!_hvInspDetail[i.id];
     var detail=inspCardHTML(i,false).replace('<div class="c">','<div class="c" style="margin:4px 0 8px;padding:10px;box-shadow:none;background:rgba(255,255,255,.03);">');
     return'<div class="hv-ir">'
       +'<div class="hv-ir-h" onclick="hvInspDetail(\''+i.id+'\')">'
       +'<span class="hv-ir-d">'+i.date+'</span>'
-      +'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑✅":"👑❓")+'</span>'
+      +(i.transfer?'<span class="bg gb">🔄 transfer</span><span class="bg gy">🥚 '+(i.fB||0)+'</span><span class="bg gg">🍯 '+inspFood(i)+'</span>'
+        :i.winterMode?'<span class="bg gb">❄️</span>'+(i.winter&&i.winter.frames!=null?'<span class="bg gy">🐝 '+i.winter.frames+'</span>':'')
+        :'<span class="bg '+(i.qSeen?"gg":"gy")+'">'+(i.qSeen?"👑✅":"👑❓")+'</span>'
       +'<span class="bg gy">🥚 '+(i.fB||0)+'</span>'
-      +'<span class="bg gg">🍯 '+inspFood(i)+'</span>'
+      +'<span class="bg gg">🍯 '+inspFood(i)+'</span>')
+      +(i.weight&&i.weight.kg?'<span class="bg gb">⚖️ '+String(i.weight.kg).replace(".",",")+'</span>':"")
       +(i.botci?'<span class="bg gr">🐛</span>':"")
       +(i.pastId?'<span class="bg gb" title="'+esc(i.pastLoc||"")+'">🚚</span>':"")
       +((i.diseases||[]).length?'<span class="bg gr">🦠</span>':"")
@@ -248,7 +271,6 @@ function hvInspSecHTML(h,insps){
     +' <span id="hvIA_'+h.id+'" class="hv-arr">'+(open?"▲":"▼")+'</span></span></div>'
     +'<div id="hvI_'+h.id+'" class="hv-ins-list" style="display:'+(open?"block":"none")+';">'
     +(insps.length?rows:'<div class="hv-ts" style="padding:8px 2px;">'+t("hv_insp_none")+'</div>')
-    +'<div class="br" style="margin-top:6px;"><button class="btn sm gh" onclick="exportHivePDF(\''+h.id+'\')">'+t("hv_report")+'</button></div>'
     +'</div></div>';
 }
 
@@ -265,8 +287,9 @@ function hvCardHTML(h,opt){
     +'<div class="hv-hd-t"><div class="hv-name">'+esc(h.name)+'</div>'
     +'<div class="hv-meta">📍 '+esc(h.loc||"—")+' · '+esc(h.mod||"")+' · '+matIc(h.mat)+' '+esc(h.mat||"")+'</div>'
     +hvQueenLine(h)+'</div>'
-    +'<div class="hv-hd-r">'+sBadge(h.str)+'<span class="hv-sc">'+scLbl+'</span>'+hvHiveIcon(h)+'</div>'
+    +'<div class="hv-hd-r">'+sBadge(h.str)+(hvWinterState(h)?'<span class="bg gb">❄️ Iarnă</span>':'')+hvPlBadge(h)+'<span class="hv-sc">'+scLbl+'</span>'+hvHiveIcon(h)+'</div>'
     +'</div>'
+    +hvWinterBanner(h)
     +(h.notes?'<div class="hv-notes">📝 '+esc(h.notes)+'</div>':'')
     // 2. migration
     +(opt.past?'':hvPastBanner(h))
@@ -314,6 +337,8 @@ function hvSummaryHTML(){
   if(tr)chips.push(['gb','💊 '+tr+' '+t("hv_s_tr")]);
   if(pa)chips.push(['gb','🚚 '+pa+' '+t("hv_s_past")]);
   if(fe)chips.push(['gg','🍬 '+fe+' '+t("hv_s_fed")]);
+  var wi=n(function(h){return !!hvWinterState(h);});
+  if(wi)chips.push(['gb','❄️ '+wi+' în iernare']);
 
   return'<div class="hv-sum">'+chips.map(function(c){return'<span class="bg '+c[0]+'">'+c[1]+'</span>';}).join("")+'</div>';
 }
@@ -321,7 +346,7 @@ function hvSummaryHTML(){
 // Alert: hives not inspected beyond the threshold in Settings
 function hvAlertHTML(){
   var th=hvThreshold();
-  var late=D.hives.filter(function(h){return !hvIsNuc(h);}).map(function(h){var li=hvInsps(h.id)[0];return{h:h,d:li?hvDaysSince(li.date):null};})
+  var late=D.hives.filter(function(h){return !hvIsNuc(h)&&!hvWinterState(h);})   // wintering hives: no weekly alert.map(function(h){var li=hvInsps(h.id)[0];return{h:h,d:li?hvDaysSince(li.date):null};})
     .filter(function(x){return x.d===null||x.d>=th;});
   if(!late.length)return"";
   return'<div class="sa hv-alert">'
@@ -400,7 +425,7 @@ function hvGridHTML(q){
       +(home.length?'<div class="tv-sec-t">🏠 '+L2("Acasă","At home")+' <span class="bg gy">'+home.length+'</span></div>':''):'')
     +(home.length?'<div class="g gc hv-grid">'+home.map(function(h){return hvCardHTML(h);}).join("")+'</div>':'');
 }
-window.hvTab=function(tab){_hvTab=tab;renderHives();};
+window.hvTab=function(tab){_hvTab=tab;if(tab==="nucs")_hvNucStay=true;renderHives();};   // tapping 🐝 Roiuri opens the tab even when there is no nuc yet
 function renderHives(q){
   // Search: updates only the list (search field stays focused, keyboard doesn't close)
   if(typeof q==="string"){
@@ -453,6 +478,7 @@ function hiveM(id){
     +'<div class="r3"><div>'+L(t("h_brood"))+'<input id="hFB" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fB",4)))+'" oninput="aStr();hvUpdTotal()"></div>'
     +'<div>'+L(t("h_honey"))+'<input id="hFH" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fH",3)))+'" oninput="hvUpdTotal()"><span class="hint">'+t("h_food_h")+'</span></div>'
     +'<div>'+L(t("h_total"))+'<input id="hFT" type="number" readonly tabindex="-1" style="opacity:.75;cursor:default;" value="'+(h?hvTotal(h):7)+'"><span class="hint">'+t("h_total_h")+'</span></div></div>'
+    +'<div class="r2"><div>'+L("🧩 Rame cu fundație de plastic")+'<input id="hPl" type="number" inputmode="numeric" min="0" value="'+esc(h&&h.plastic?h.plastic:"")+'" placeholder="0"><span class="hint">câte rame din stup au fundație de plastic</span></div><div></div></div>'
     +'<div style="background:rgba(230,180,34,.07);border-radius:var(--rs);padding:10px;margin:7px 0;">'
     +'<div style="font-size:.76rem;color:var(--mut);margin-bottom:6px;">'+t("str_hint")+'</div>'
     +'<div style="display:flex;gap:7px;"><select id="hSt" style="flex:1;margin:0;"><option'+(xv(h,"str","mediu")==="puternic"?" selected":"")+' value="puternic">'+t("str_strong")+'</option><option'+(xv(h,"str","mediu")==="mediu"?" selected":"")+' value="mediu">'+t("str_medium")+'</option><option'+(xv(h,"str","mediu")==="slab"?" selected":"")+' value="slab">'+t("str_weak")+'</option></select>'
@@ -471,7 +497,7 @@ function hiveM(id){
 }
 
 window.aStr=function(showT){
-  var b=parseInt(($q("hFB")||{}).value)||0;var s=strCalc(b);
+  var b=parseInt(($q("hFB")||{}).value)||0;var s=strCalc(b,parseInt(($q("hFH")||{}).value)||0);
   var el=$q("hSt");if(el)el.value=s;
   if(showT)toast(t("str_auto_t")+" "+t("str_"+s.replace("puternic","strong").replace("mediu","medium").replace("slab","weak")),"🤖");
 };
@@ -486,6 +512,7 @@ window.saveH=function(id){
   var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,str:($q("hSt")||{}).value||"mediu",magCount:parseInt(($q("hMgN")||{}).value)||0,hasMag:(parseInt(($q("hMgN")||{}).value)||0)>0,magF:parseInt(($q("hMgF")||{}).value)||0,sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
 
   o.fT=o.fB+o.fH;                        // total frames = brood + food
+  o.plastic=Math.max(0,parseInt(($q("hPl")||{}).value)||0);   // 🧩 frames with plastic foundation
   // Supers keep their frames and capped percentage; only the changed count is added / removed
   (function(){var old=id?D.hives.find(function(x){return x.id===id;}):null;
     var a=(old&&Array.isArray(old.mags))?old.mags.slice(0,o.magCount):[];

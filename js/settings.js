@@ -1,11 +1,10 @@
 // BeeManager Pro — settings.js
-// Settings, local backup, per-hive PDF
+// Settings, local backup
 
 // ═══════════════════════════════════════════
 // SETTINGS
 // ═══════════════════════════════════════════
 function renderSettings(){
-  var totH=D.honeyHarvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
   var th=parseInt(D.settings.inspAlertThreshold)||INSP_ALERT_DEFAULT;
   var isEN=D.settings.lang==="en";
 
@@ -31,8 +30,6 @@ function renderSettings(){
           +'<span class="bg gg" style="font-size:.63rem;">🍯 '+inspFood(insp)+'</span>'
           +'<div style="margin-left:auto;display:flex;gap:4px;">'
           +'<button class="btn sm be" onclick="inspM(\''+insp.hiveId+'\',\''+insp.id+'\')">✏️</button>'
-          +'<button class="btn sm gh" onclick="exportInspPDF(\''+insp.id+'\')">📄</button>'
-          +'<button class="btn sm gh" onclick="exportInspXLS(\''+insp.id+'\')">📊</button>'
           +'</div></div>';
       }).join("");
       return'<div style="margin:3px 0;"><div onclick="toggleArc(\''+hivArcId2+'\')" style="cursor:pointer;padding:9px 14px;background:rgba(230,180,34,.04);border:1px solid var(--bdr);border-radius:var(--rs);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
@@ -48,7 +45,15 @@ function renderSettings(){
 
   // ── Drive: manual JSON export/import ────────────────────────────
   var driveLastExport=D.settings.driveLastExport?new Date(D.settings.driveLastExport).toLocaleString():"—";
-  var driveStatusHTML='<div style="background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 14px;font-size:.8rem;">'    +'<p style="margin:0 0 10px;font-size:.78rem;color:var(--mut);line-height:1.45;">'+(isEN      ?"Save a JSON backup directly to any folder (including Google Drive). No login or token required — just pick the location when prompted."      :"Salvează un backup JSON direct în orice folder (inclusiv Google Drive). Fără autentificare sau token — alegi locația la salvare.")+'</p>'    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'    +'<button class="btn" onclick="driveExportJSON()" style="flex:1;min-width:140px;">⬆️ '+(isEN?"Save JSON to Drive":"Salvează JSON pe Drive")+'</button>'    +'<button class="btn gh" onclick="driveImportJSON()" style="flex:1;min-width:140px;">⬇️ '+(isEN?"Load JSON from file":"Încarcă JSON din fișier")+'</button>'    +'</div>'    +'<div style="font-size:.7rem;color:var(--mut);">'+(isEN?"Last export: ":"Ultimul export: ")+driveLastExport+'</div>'    +'</div>';
+  var driveStatusHTML='<div style="background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--rs);padding:11px 14px;font-size:.8rem;">'
+    +'<p style="margin:0 0 10px;font-size:.78rem;color:var(--mut);line-height:1.45;">Apeși butonul, alegi <b>Drive</b> din meniul telefonului și apeși <b>Salvează</b>. O copie rămâne și pe telefon (backup dublu).</p>'
+    +'<button class="btn" onclick="driveShareJSON()" style="width:100%;margin-bottom:8px;">☁️ Backup în Google Drive</button>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">'
+    +'<button class="btn gh" onclick="driveExportJSON()" style="flex:1;min-width:140px;">💾 Doar pe telefon</button>'
+    +'<button class="btn gh" onclick="driveImportJSON()" style="flex:1;min-width:140px;">⬇️ Încarcă backup din fișier</button>'
+    +'</div>'
+    +'<div style="font-size:.7rem;color:var(--mut);">Ultimul backup: '+driveLastExport+'</div>'
+    +'</div>';
   // ── Per-hive snapshots status ─────────────────────────────────
   var hiveSnapHTML='';
   if(D.hives.length>0){
@@ -59,11 +64,10 @@ function renderSettings(){
       return'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bdr);font-size:.76rem;">'
         +'<span style="font-weight:700;">🏠 '+h.name+'</span>'
         +'<span style="color:var(--mut);font-size:.7rem;">'+inspCnt+' insp. · '+savedAt+'</span>'
-        +'<button class="btn sm gh" style="font-size:.65rem;" onclick="exportHivePDF(\''+h.id+'\')">📄</button>'
         +'</div>';
     }).join("");
     hiveSnapHTML='<div class="c" style="margin-bottom:14px;"><div class="ct">🏠 '+(isEN?"Auto-save per hive":"Auto-salvare per stup")+'</div>'
-      +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Each hive has its own local snapshot updated on every save. Export individual hive reports below.":"Fiecare stup are propriul snapshot local, actualizat la fiecare salvare. Exportați rapoarte individuale mai jos.")+'</p>'
+      +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Each hive has its own local snapshot updated on every save.":"Fiecare stup are propriul snapshot local, actualizat la fiecare salvare.")+'</p>'
       +snapRows
       +'</div>';
   }
@@ -89,16 +93,7 @@ function renderSettings(){
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_display")+'</div>'
     +'<div class="ck" style="margin-top:8px;"><input type="checkbox" id="dkTg"'+(D.settings.dark?" checked":"")
     +' onchange="D.settings.dark=this.checked;applyTheme();save();"><label for="dkTg">'+t("se_dark")+'</label></div>'
-    +'<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
-    +'<span style="font-size:.78rem;font-weight:700;color:var(--gold);">'+t("se_lang")+'</span>'
-    +'<button class="btn sm'+(D.settings.lang==="ro"?" ":" gh ")+'" onclick="setLang(\'ro\')">'+t("se_lang_ro")+'</button>'
-    +'<button class="btn sm'+(D.settings.lang==="en"?" ":" gh ")+'" onclick="setLang(\'en\')">'+t("se_lang_en")+'</button>'
     +'</div>'
-    +'<div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
-    +'<span style="font-size:.78rem;font-weight:700;color:var(--gold);">'+t("temp_unit_lbl")+'</span>'
-    +'<button class="btn sm'+(D.settings.tempUnit==="C"?" ":" gh ")+'" onclick="setTempUnit(\'C\')">'+t("temp_C")+'</button>'
-    +'<button class="btn sm'+(D.settings.tempUnit==="F"?" ":" gh ")+'" onclick="setTempUnit(\'F\')">'+t("temp_F")+'</button>'
-    +'</div></div>'
 
     // ── Menu order ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("mno_title")+'</div>'
@@ -114,8 +109,6 @@ function renderSettings(){
     +'<span style="font-size:.82rem;font-weight:700;">'+(isEN?"Days without inspection → alert":"Zile fără inspecție → alertă")+'</span>'
     +'<input type="number" inputmode="numeric" min="1" max="90" value="'+th+'" style="width:70px;" oninput="D.settings.inspAlertThreshold=parseInt(this.value)||INSP_ALERT_DEFAULT;save(false);">'
     +'</div>'
-    +'<div class="ck" style="margin-top:12px;"><input type="checkbox" id="autoDlTg"'+(D.settings.autoDownloadInsp?" checked":"")
-    +' onchange="D.settings.autoDownloadInsp=this.checked;save(false);"><label for="autoDlTg">'+t("se_auto_dl")+'</label></div>'
     +'</div>'
 
     // ── Weather ──
@@ -133,20 +126,18 @@ function renderSettings(){
     // ── Auto-save per hive ──
     +hiveSnapHTML
 
+    // ── Observation sheet ──
+    +fisaCardHTML()
+    +(typeof demoCardHTML==="function"?demoCardHTML():"")
+
     // ── Backup & Export ──
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_backup")+'</div>'
-    +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">'+(isEN?"Manual export: all hives + all inspections in one file.":"Export manual: toți stupii + toate inspecțiile într-un singur fișier.")+'</p>'
-    +'<button class="btn" style="margin-top:4px;display:block;" onclick="exportToExcel()">📊 Export Excel complet</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="exportToPDF()">📄 Export PDF complet</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="expData()">'+t("se_exp")+' (JSON)</button>'
-    +'<button class="btn gh" style="margin-top:8px;display:block;" onclick="impData()">'+t("se_imp")+'</button>'
-    +'<button class="btn bd" style="margin-top:8px;display:block;" onclick="rstData()">'+t("se_rst")+'</button></div>'
-
-    // ── Stats ──
-    +'<div class="c"><div class="ct">'+t("se_stats")+'</div>'
-    +'<p style="font-size:.83rem;margin-top:6px;">'+t("se_st_h")+' <strong>'+D.hives.length+'</strong> · '+t("se_st_i")+' <strong>'+D.inspections.length+'</strong>'+(modOn("honey")?' · '+t("se_st_hr")+' <strong>'+totH.toFixed(1)+' kg</strong>':'')+(modOn("inventory")?' · '+t("se_st_inv")+' <strong>'+D.inventory.length+' '+t("se_st_a")+'</strong>':'')+'</p>'
-    +'<p style="font-size:.72rem;color:var(--mut);margin-top:8px;">💾 Stocare locală: '+(Math.round(JSON.stringify(D).length/1024))+' KB · Conexiune: '+(navigator.onLine?'<span style="color:var(--ok)">Online</span>':'<span style="color:var(--danger)">Offline</span>')+'</p>'
-    +'</div>');
+    +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">📥 Import JSON — alege de unde iei fișierul de backup (.json):</p>'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+    +'<button class="btn" style="flex:1;min-width:150px;" onclick="impFrom(\'phone\')">📱 Din telefon</button>'
+    +'<button class="btn" style="flex:1;min-width:150px;" onclick="impFrom(\'drive\')">☁️ Din Google Drive</button>'
+    +'</div>'
+    +'<p style="font-size:.72rem;color:var(--mut);margin:10px 0 0;line-height:1.45;">📱 <b>Telefon:</b> fișierul e de obicei în <b>Descărcări</b> (Downloads).<br>☁️ <b>Drive:</b> în fereastra care se deschide apasă <b>☰</b> (sus, stânga) și alege <b>Drive</b>, apoi fișierul.<br>⚠️ Importul înlocuiește datele actuale din aplicație.</p></div>');
   mnoInitDrag();
 }
 
@@ -212,46 +203,8 @@ function mnoInitDrag(){
 }
 window.expData=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:"application/json"}));a.download="beemanager_backup_"+todayISO()+".json";a.click();};
 window.impData=function(){driveImportJSON();};
+// Import source buttons: both open the system file picker (a web app can't open Drive directly);
+// the toast reminds where to tap for the chosen source.
+window.impFrom=function(src){toast(src==="drive"?"Apasă ☰ (sus, stânga) → Drive → alege fișierul":"Alege fișierul din Descărcări (Downloads)",src==="drive"?"☁️":"📱");driveImportJSON();};
 window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");location.reload();});};
 
-// Export PDF per hive (individual hive report)
-window.exportHivePDF=function(hiveId){
-  var hive=D.hives.find(function(h){return h.id===hiveId;});
-  if(!hive){toast("Stupul nu a fost găsit","❌");return;}
-  var isEN=D.settings.lang==="en";
-  var insps=D.inspections.filter(function(i){return i.hiveId===hiveId;}).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-  var harvests=D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;});
-  var totalReal=harvests.reduce(function(s,h){return s+(h.actualQty||h.qty||0);},0);
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+hive.name+'</title>'
-    +'<style>body{font-family:Arial,sans-serif;font-size:12px;color:#222;margin:30px;}h1{color:#c8860a;font-size:18px;}h2{color:#555;font-size:13px;margin-top:18px;border-bottom:1px solid #eee;padding-bottom:4px;}table{width:100%;border-collapse:collapse;margin-top:8px;}th,td{border:1px solid #ddd;padding:5px 8px;text-align:left;}th{background:#f5f5f5;font-size:11px;}tr:nth-child(even){background:#fafafa;}.label{font-weight:bold;color:#666;font-size:11px;}.val{font-weight:bold;font-size:13px;}.badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;margin-right:3px;}</style>'
-    +'</head><body>'
-    +'<h1>🏠 '+hive.name+(hive.loc?" — "+hive.loc:"")+'</h1>'
-    +'<p style="color:#888;font-size:11px;">'+(isEN?"Report generated":"Raport generat")+': '+new Date().toLocaleString()+'</p>'
-    +'<table><tr><th colspan="4">🐝 '+(isEN?"Hive info":"Informații stup")+'</th></tr>'
-    +'<tr><td><span class="label">'+(isEN?"Material":"Material")+'</span><br><span class="val">'+(hive.mat||"—")+'</span></td>'
-    +'<td><span class="label">'+(isEN?"Model":"Model")+'</span><br><span class="val">'+(hive.mod||"—")+'</span></td>'
-    +'<td><span class="label">'+(isEN?"Strength":"Forță")+'</span><br><span class="val">'+(hive.str||"—")+'</span></td>'
-    +'<td><span class="label">'+L2("Magazii","Supers")+'</span><br><span class="val">'+(hvMagCount(hive)?hvMags(hive).map(function(m,i){return'M'+(i+1)+': '+m.f+' '+L2("rame","fr.")+' · '+m.cap+'%';}).join('<br>'):"—")+'</span></td></tr>'
-    +'<tr><td><span class="label">'+(isEN?"Brood frames":"Rame puiet")+'</span><br><span class="val">'+(hive.fB||0)+'</span></td>'
-    +'<td><span class="label">'+(isEN?"Food frames":"Rame mâncare")+'</span><br><span class="val">'+(hive.fH||0)+' <small style="color:#888;font-weight:normal;">('+(isEN?"total":"total")+' '+hvTotal(hive)+')</small></span></td>'
-    +(modOn("honey")?'<td colspan="2"><span class="label">'+(isEN?"Total honey harvested":"Total miere recoltată")+'</span><br><span class="val">'+totalReal.toFixed(1)+' kg</span></td>':'<td colspan="2"></td>')+'</tr></table>'
-    +(insps.length>0?
-      '<h2>📋 '+(isEN?"Inspections ("+insps.length+")":"Inspecții ("+insps.length+")")+'</h2>'
-      +'<table><tr><th>Data</th><th>'+(isEN?"Brood":"Puiet")+'</th><th>'+(isEN?"Food":"Mâncare")+'</th><th>Regina</th><th>Botci</th><th>Note</th></tr>'
-      +insps.slice(0,15).map(function(i){
-        return'<tr><td>'+i.date+'</td><td>'+i.fB+'</td><td>'+inspFood(i)+'</td>'
-          +'<td>'+(i.qSeen?"✅":"❓")+'</td>'
-          +'<td>'+(i.botci?"🐛 "+(i.botciN||0):"—")+'</td>'
-          +'<td style="font-size:10px;">'+(i.notes||"")+'</td></tr>';
-      }).join("")
-      +'</table>':"")
-    +(harvests.length>0&&modOn("honey")?
-      '<h2>🍯 '+(isEN?"Honey harvests":"Recolte miere")+'</h2>'
-      +'<table><tr><th>Data</th><th>Tip</th><th>Estimat(kg)</th><th>Real(kg)</th><th>Umid.%</th></tr>'
-      +harvests.map(function(h){return'<tr><td>'+(h.extractionDate||h.date||"")+'</td><td>'+(h.honeyType||"")+'</td><td>'+(h.estQty||0)+'</td><td>'+(h.actualQty||h.qty||0)+'</td><td>'+(h.humidity||"")+'</td></tr>';}).join("")
-      +'</table>':"")
-    +'</body></html>';
-  var w=window.open("","_blank");if(!w)return;
-  w.document.write(html);w.document.close();
-  setTimeout(function(){w.print();},500);
-};
