@@ -11,7 +11,7 @@
 // When you add a new file to the project, add it to the list below too.
 // When you change the list, bump the number in CACHE.
 
-var CACHE = "beemanager-v17";
+var CACHE = "beemanager-v20";
 
 var FILES = [
   "./",

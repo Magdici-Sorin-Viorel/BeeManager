@@ -11,6 +11,8 @@
 
 var _hrHiveFilter="all";
 var _hrMonthFilter="all";
+var _hrTab="now";   // Hrănire page tabs: "now" (în curs + planificate) · "hist" (istoric) · "stats" (statistici)
+var _hrOpen={};     // history rows opened (details)
 
 // ═══════════════════════════════════════════
 // HELPERS
@@ -122,11 +124,12 @@ function fdActiveCardHTML(f){
   return'<div class="c fd-card fd-on">'
     +'<div class="fd-card-h"><span class="fd-ico">'+fdTypeIco(f)+'</span><div class="fd-card-t"><b>'+esc(fdTypeShort(f))+'</b>'+(fdQtyTxt(f)?' · <b class="fd-q">'+fdQtyTxt(f)+'</b>':'')
     +'<div class="hv-ts">▶ '+L2("Pornită","Started")+' '+devFmt(f.date)+' · '+L2("ziua","day")+' '+fdDayN(f)+(n>1?' · '+n+' '+L2("porții","portions"):'')+'</div></div></div>'
-    +'<div class="fd-hvs">🏠 '+esc(fdHiveNames(f,act))+(stopped.length?' <span class="hv-ts">· ⏹️ '+L2("oprită la","stopped at")+': '+esc(fdHiveNames({},stopped))+'</span>':'')+'</div>'
+    +'<div class="fd-chips">'+act.map(function(h){return'<span class="fd-hc">🏠 '+esc(fdHiveNames({},[h]))+'</span>';}).join("")
+    +(stopped.length?'<span class="fd-hc off">⏹️ '+esc(fdHiveNames({},stopped))+'</span>':'')+'</div>'
     +'<div class="fd-btns">'
-    +'<button class="btn sm fd-stop" onclick="fdStopM(\''+f.id+'\')">⏹️ '+L2("Oprește","Stop")+'</button>'
-    +'<button class="btn sm gh" onclick="fdRefillM(\''+f.id+'\')">➕ '+L2("Am mai pus","Added more")+'</button>'
-    +'<button class="btn sm gh" onclick="hrM(\''+f.id+'\')" aria-label="✏️">✏️</button>'
+    +'<button class="btn sm" onclick="fdRefillM(\''+f.id+'\')">➕ Am mai pus</button>'
+    +'<button class="btn sm fd-stop" onclick="fdStopM(\''+f.id+'\')">⏹️ Oprește</button>'
+    +'<button class="btn sm gh fd-ib" onclick="hrM(\''+f.id+'\')" aria-label="Editează">✏️</button>'
     +'</div></div>';
 }
 function fdPlannedCardHTML(f){
@@ -134,12 +137,12 @@ function fdPlannedCardHTML(f){
   return'<div class="c fd-card fd-pl'+(late?' late':'')+'">'
     +'<div class="fd-card-h"><span class="fd-ico">🗓️</span><div class="fd-card-t"><b>'+esc(fdTypeShort(f))+'</b> · '+devFmt(f.date)
     +'<div class="hv-ts '+(late?'fd-late':'')+'">'+(d<0?L2("Întârziată","Overdue")+' '+(-d)+' '+t("hv_days"):d===0?L2("Azi","Today"):d===1?L2("Mâine","Tomorrow"):L2("În","In")+' '+d+' '+t("hv_days"))+'</div></div></div>'
-    +'<div class="fd-hvs">🏠 '+esc(fdHiveNames(f,fdPlannedHives(f)))+'</div>'
+    +'<div class="fd-chips">'+fdPlannedHives(f).map(function(h){return'<span class="fd-hc">🏠 '+esc(fdHiveNames({},[h]))+'</span>';}).join("")+'</div>'
     +(f.notes?'<div class="hv-ts" style="margin-bottom:6px;">📝 '+esc(f.notes)+'</div>':'')
     +'<div class="fd-btns">'
     +'<button class="btn sm fd-go" onclick="fdStartM(\''+f.id+'\')">▶ '+L2("Am hrănit","Fed now")+'</button>'
-    +'<button class="btn sm gh" onclick="hrM(\''+f.id+'\')" aria-label="✏️">✏️</button>'
-    +'<button class="btn sm gh" onclick="delHr(\''+f.id+'\')" aria-label="🗑️">🗑️</button>'
+    +'<button class="btn sm gh fd-ib" onclick="hrM(\''+f.id+'\')" aria-label="Editează">✏️</button>'
+    +'<button class="btn sm gh fd-ib" onclick="delHr(\''+f.id+'\')" aria-label="Șterge">🗑️</button>'
     +'</div></div>';
 }
 
@@ -154,8 +157,8 @@ function renderHranire(){
   var active=feedings.filter(function(f){return fdStatus(f)==="active";}).sort(function(a,b){return a.date<b.date?1:-1;});
   var planned=feedings.filter(function(f){return f.planned&&fdPlannedHives(f).length;}).sort(function(a,b){return a.date<b.date?-1:1;});
 
-  var nowH='<div class="fd-sec-h"><span>🍬 '+L2("În curs","In progress")+' <span class="bg gy">'+active.length+'</span></span>'
-    +(active.length?'<button class="btn sm fd-stop" onclick="fdStopM(\'\')">⏹️ '+L2("Oprește hrănirea…","Stop feeding…")+'</button>':'')+'</div>'
+  var nowH='<div class="fd-sec-h"><span>🍬 În curs <span class="bg gy">'+active.length+'</span></span>'
+    +(active.length>1?'<button class="btn sm gh" onclick="fdStopM(\'\')">⏹️ Oprește la mai mulți…</button>':'')+'</div>'
     +(active.length?'<div class="fd-grid">'+active.map(fdActiveCardHTML).join("")+'</div>'
       :'<div class="hv-ts" style="margin:0 0 12px;">'+L2("Niciun stup nu e sub hrănire acum.","No hive is being fed right now.")+'</div>');
   var plH=planned.length?'<div class="fd-sec-h"><span>🗓️ '+L2("Planificate","Planned")+' <span class="bg gy">'+planned.length+'</span></span></div>'
@@ -180,7 +183,7 @@ function renderHranire(){
   var uniqueHives=new Set([].concat.apply([],filtered.map(function(f){return fdHives(f);}))).size;
   var avgPerHive=uniqueHives>0?fdNum(totQty/uniqueHives):"—";
 
-  var statH='<div class="g" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px;">'
+  var statH='<div class="g fd-tiles" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'
     +'<div class="c"><div class="cl">'+t("hr_total_qty")+'</div><div class="cv">'+fdNum(totQty)+'</div><div class="cs">kg + L</div></div>'
     +'<div class="c"><div class="cl">'+t("hr_total_entries")+'</div><div class="cv">'+filtered.length+'</div></div>'
     +'<div class="c"><div class="cl">'+t("hr_avg_per_hive")+'</div><div class="cv" style="font-size:1.1rem;">'+avgPerHive+'</div><div class="cs">kg+L</div></div>'
@@ -208,52 +211,48 @@ function renderHranire(){
   if(!Object.keys(byType).length) typeBarH+='<div style="font-size:.8rem;color:var(--mut);">'+t("hr_no_data")+'</div>';
   typeBarH+='</div></div>';
 
-  // ── Per-hive summary cards ────────────────────────────────────
-  var hvCardsH='<div class="g" style="grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px;margin-bottom:14px;">';
-  D.hives.forEach(function(hv){
+  // ── Per hive: one row each (tap → history of that hive) ──
+  var hvCardsH='<div class="c fd-stat"><div class="ct">🏠 Pe stupi</div>'+D.hives.map(function(hv){
     var hvFeeds=started.filter(function(f){return fdCovers(f,hv.id);});
-    var hvTot=hvFeeds.reduce(function(s,f){return s+fdBaseQty(f);},0);
+    var hvTot=hvFeeds.reduce(function(s2,f){return s2+fdBaseQty(f);},0);
     var hvLast=hvFeeds.slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
     var on=fdActiveFor(hv.id).length>0;
     var daysSince=hvLast?Math.round((Date.now()-new Date(hvLast.date))/86400000):null;
-    var freshness=on?"var(--ok)":daysSince===null?"var(--mut)":daysSince<=30?"var(--gold)":"var(--danger)";
-    hvCardsH+='<div class="c" style="cursor:pointer;border-left:3px solid '+freshness+';" onclick="_hrHiveFilter=\''+hv.id+'\';renderHranire();">'
-      +'<div class="cl" style="margin-bottom:3px;">🏠 '+esc(hv.name)+(on?' <span class="bg gg">🍬</span>':'')+'</div>'
-      +'<div style="font-size:1.2rem;font-weight:700;color:var(--gold);">'+fdNum(hvTot)+' <span style="font-size:.7rem;font-weight:400;color:var(--mut);">kg+L</span></div>'
-      +'<div style="font-size:.69rem;color:var(--mut);margin-top:2px;">'+(hvLast?'📅 '+hvLast.date+' ('+daysSince+(isEN?"d ago":"z)"):isEN?"No feedings":"Nicio hrănire")+'</div>'
-      +'<div style="font-size:.68rem;color:var(--mut);">'+hvFeeds.length+(isEN?" feedings":" hrăniri")+'</div>'
-      +'</div>';
-  });
-  hvCardsH+='</div>';
+    var dot=on?"ok":daysSince===null?"mut":daysSince<=30?"warn":"bad";
+    return'<div class="fd-hrow" role="button" onclick="_hrHiveFilter=\''+hv.id+'\';_hrTab=\'hist\';renderHranire();">'
+      +'<span class="fd-dot '+dot+'"></span><div class="fd-hrow-t"><b>'+esc(hv.name)+'</b>'+(on?' <span class="bg gg">🍬 acum</span>':'')
+      +'<div class="hv-ts">'+(hvLast?'ultima: '+devFmt(hvLast.date)+' · '+hvFeeds.length+' hrăniri':'nicio hrănire')+'</div></div>'
+      +'<span class="fd-hrow-q">'+fdNum(hvTot)+'<small> kg+L</small></span><span class="hv-arr">›</span></div>';
+  }).join("")+'</div>';
 
   // ── Monthly chart ─────────────────────────────────────────────
   var chartH='<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("hr_chart_title")+'</div><canvas id="hrChart" height="70"></canvas></div>';
 
-  // ── History ───────────────────────────────────────────────────
-  var listH=sorted.length?sorted.map(function(f){
-    var st=fdStatus(f),tp=fdType(f);
+  // ── History: grouped by month, one compact row per feeding (tap → details + buttons) ──
+  var mNames=["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+  var lastMonth="",listH="";
+  sorted.forEach(function(f){
+    var st=fdStatus(f),tp=fdType(f),ps=fdPortions(f),m=(f.date||"").slice(0,7),open=!!_hrOpen[f.id];
+    if(m!==lastMonth){lastMonth=m;listH+='<div class="fd-month">'+(m?mNames[parseInt(m.slice(5,7))-1]+' '+m.slice(0,4):"—")+'</div>';}
     var invItem=(f.invItemId&&modOn("inventory"))?D.inventory.find(function(i){return i.id===f.invItemId;}):null;
-    var endTxt=st==="active"?'<span class="bg gg">▶ '+L2("în curs","in progress")+'</span>'
-      :'<span class="bg gy">⏹️ '+(f.per?(f.endDate?devFmt(f.endDate):L2("oprită","stopped")):L2("încheiată","finished"))+'</span>';
-    var ps=fdPortions(f);
-    return'<div class="c" style="padding:10px 13px;margin-bottom:7px;">'
-      +'<div style="display:flex;align-items:flex-start;gap:9px;">'
-      +'<div style="width:36px;height:36px;border-radius:50%;background:rgba(200,135,14,.13);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;">'+fdTypeIco(f)+'</div>'
-      +'<div style="flex:1;min-width:0;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:4px;">'
-      +'<span style="font-size:.86rem;font-weight:700;color:var(--txt);">'+esc(tp.l.replace(/^[^ ]+ /,""))+'</span>'
-      +'<span style="font-size:.78rem;font-weight:700;color:var(--gold);">'+(f.qty||0)+' '+(f.unit||tp.u||"kg")+'</span>'
-      +'</div>'
-      +'<div style="font-size:.74rem;color:var(--mut);margin-top:3px;">📅 '+f.date+' &nbsp;🏠 '+esc(fdHiveNames(f))+(f.reason?' &nbsp;'+esc(f.reason):"")+' '+endTxt+'</div>'
-      +(ps.length>1?'<div style="font-size:.7rem;color:var(--mut);margin-top:2px;">➕ '+ps.map(function(p){return devFmt(p.date)+': '+p.qty;}).join(" · ")+'</div>':'')
-      +(invItem?'<div style="font-size:.68rem;color:var(--mut);margin-top:2px;">📦 '+invItem.name+' ('+t("hr_inv_stock")+' '+invItem.qty+' '+(isEN?"units":"buc")+')</div>':"")
-      +(f.notes?'<div style="font-size:.72rem;color:var(--mut);font-style:italic;margin-top:2px;">'+esc(f.notes)+'</div>':"")
-      +'</div>'
-      +'<div style="display:flex;gap:4px;flex-shrink:0;">'
-      +'<button class="btn sm be" onclick="hrM(\''+f.id+'\')">✏️</button>'
-      +'<button class="btn sm bd" onclick="delHr(\''+f.id+'\')">🗑️</button>'
-      +'</div></div></div>';
-  }).join(""):'<div class="al ali">'+t("hr_no_data")+'</div>';
+    var stB=st==="active"?'<span class="bg gg">▶ în curs</span>':'<span class="bg gy">⏹️ '+(f.endDate?devFmt(f.endDate):"încheiată")+'</span>';
+    listH+='<div class="c fd-row'+(open?' open':'')+'">'
+      +'<div class="fd-row-h" onclick="_hrOpen[\''+f.id+'\']=!_hrOpen[\''+f.id+'\'];renderHranire();" role="button">'
+      +'<span class="fd-ico sm">'+fdTypeIco(f)+'</span>'
+      +'<div class="fd-row-t"><div class="fd-row-n">'+esc(fdTypeShort(f))+' <b class="fd-q">'+(fdQtyTxt(f)||"")+'</b></div>'
+      +'<div class="hv-ts">📅 '+devFmt(f.date)+(ps.length>1?' · '+ps.length+' porții':'')+' · 🏠 '+esc(fdHiveNames(f))+'</div></div>'
+      +stB+'<span class="hv-arr">'+(open?'▲':'▼')+'</span></div>'
+      +(open?'<div class="fd-row-d">'
+        +(f.reason?'<div>💡 '+esc(f.reason)+'</div>':'')
+        +(ps.length>1?'<div>➕ Porții: '+ps.map(function(p){return devFmt(p.date)+' — '+p.qty+' '+(f.unit||tp.u||"kg");}).join(" · ")+'</div>':'')
+        +(invItem?'<div>📦 '+esc(invItem.name)+' ('+t("hr_inv_stock")+' '+invItem.qty+' buc)</div>':'')
+        +(f.notes?'<div class="fd-note">📝 '+esc(f.notes)+'</div>':'')
+        +'<div class="fd-btns"><button class="btn sm gh" onclick="hrM(\''+f.id+'\')">✏️ Editează</button>'
+        +'<button class="btn sm bd" onclick="delHr(\''+f.id+'\')">🗑️ Șterge</button></div>'
+        +'</div>':'')
+      +'</div>';
+  });
+  if(!listH)listH='<div class="al ali">'+t("hr_no_data")+'</div>';
 
   // Filters row
   var hiveOpts='<option value="all">'+t("hr_all_hives")+'</option>'
@@ -262,18 +261,19 @@ function renderHranire(){
     +allMonths.map(function(m){return'<option value="'+m+'"'+(_hrMonthFilter===m?" selected":"")+'>'+m+'</option>';}).join("");
   var selStyle='font-size:.8rem;padding:5px 8px;border-radius:var(--rs);background:var(--sur);border:1px solid var(--bdr);color:var(--txt);';
 
-  setP('<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">'
-    +'<h2 style="margin:0;font-size:1.2rem;"><i class="fas fa-bowl-rice" style="color:var(--gold)"></i> '+t("hr_title")+'</h2>'
-    +'<button class="btn sm" onclick="hrM(\'\')">'+t("hr_new")+'</button>'
-    +'</div>'
-    +nowH+plH
-    +'<div class="fd-sec-h"><span>📜 '+L2("Istoric","History")+'</span></div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">'
-    +t("hr_filter_hive")+'<select style="'+selStyle+'" onchange="_hrHiveFilter=this.value;renderHranire();">'+hiveOpts+'</select>'
-    +t("hr_filter_month")+'<select style="'+selStyle+'" onchange="_hrMonthFilter=this.value;renderHranire();">'+monthOpts+'</select>'
-    +'<button class="btn sm gh" onclick="_hrHiveFilter=\'all\';_hrMonthFilter=\'all\';renderHranire();">↺</button>'
-    +'</div>'
-    +listH+statH+hvCardsH+typeBarH+chartH);
+  var filterH='<div class="fd-filters">'
+    +'<select onchange="_hrHiveFilter=this.value;renderHranire();">'+hiveOpts+'</select>'
+    +'<select onchange="_hrMonthFilter=this.value;renderHranire();">'+monthOpts+'</select>'
+    +((_hrHiveFilter!=="all"||_hrMonthFilter!=="all")?'<button class="btn sm gh" onclick="_hrHiveFilter=\'all\';_hrMonthFilter=\'all\';renderHranire();" title="Toate">↺</button>':'')
+    +'</div>';
+  var tab=function(id,lbl,n){return'<button class="tv-tab'+(_hrTab===id?" on":"")+'" onclick="_hrTab=\''+id+'\';renderHranire();">'+lbl+(n!=null?' <span class="bg gy">'+n+'</span>':'')+'</button>';};
+  var body=_hrTab==="hist"?filterH+'<div class="fd-sum">'+filtered.length+' hrăniri · total <b>'+fdNum(totQty)+'</b> kg+L</div>'+listH
+    :_hrTab==="stats"?filterH+statH+hvCardsH+typeBarH+chartH
+    :nowH+plH+(!active.length&&!planned.length?'':'');
+  setP('<div class="hv-top"><h2><i class="fas fa-bowl-rice" style="color:var(--gold)"></i> '+t("hr_title")+'</h2>'
+    +'<button class="btn" onclick="hrM(\'\')">'+t("hr_new")+'</button></div>'
+    +'<div class="tv-tabs">'+tab("now","🍬 Acum",active.length+planned.length)+tab("hist","📜 Istoric",started.length)+tab("stats","📊 Statistici",null)+'</div>'
+    +body);
 
   // Monthly chart (by portions: each top-up counts in its own month)
   setTimeout(function(){

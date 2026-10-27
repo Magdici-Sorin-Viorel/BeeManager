@@ -126,6 +126,7 @@ function go(p){
   // Varroa is a tab inside „Tratamente”
   if(p==="varroa"&&!modOn("varroa")&&modOn("treatments")){_trTab="counts";p="treatments";}
   else if(p==="treatments"&&curP!=="treatments")_trTab="treat";
+  if(p==="settings"&&curP!=="settings"&&typeof _seSec!=="undefined")_seSec=null;   // Settings opens on its menu
   if(!modOn(p))p=HOME;
   curP=p;
   closeMoreDrw();
@@ -200,7 +201,9 @@ window.addEventListener("popstate",function(){
   // 2. the form
   if(document.getElementById("MB")){requestCloseM(null,true);return;}
   // 3. the „Mai mult” drawer
-  if(_moreOpen){_moreOpen=false;document.getElementById("moreDrw").classList.remove("open");document.getElementById("moreOv").classList.remove("show");buildNav();}
+  if(_moreOpen){_moreOpen=false;document.getElementById("moreDrw").classList.remove("open");document.getElementById("moreOv").classList.remove("show");buildNav();return;}
+  // 4. a Settings page → back to the Settings menu
+  if(curP==="settings"&&typeof _seSec!=="undefined"&&_seSec){_seSec=null;renderSettings();window.scrollTo(0,0);}
 });
 document.addEventListener("keydown",function(e){
   if(e.key!=="Escape")return;

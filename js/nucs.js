@@ -310,6 +310,7 @@ function genStatusBadge(h){
 // (v1 / v2 = tree by hives; saved in the genealogie_v1 / genealogie_v2 archives)
 var GEN_COLORS=["#e6b422","#4a9eff","#6fbf4c","#e07c4c","#b07cf0","#3fc1c9","#f06292","#a1887f"];
 var _genLine="all",_genRankAll=false,_genCache=null,_genSort="score";
+var _genTab="tree",_genHelp=false;   // Genealogie tabs: "tree" (arbore) · "rank" (clasament) · "lines" (liniile pe scurt)
 
 function genShort(h){   // short label: #10 = hive, R3 = nuc (so Roi #1 isn't confused with Stupul #1)
   var nm=h.name||"?",m=/#\s*([0-9A-Za-z]+)/.exec(nm)||/^\s*roi\s+([0-9A-Za-z]+)/i.exec(nm)||/(\d+)/.exec(nm),isR=hvIsNucEver(h)&&/^\s*roi/i.test(nm);
@@ -516,7 +517,7 @@ function renderGenealogy(){
   rows.sort(function(a,b){return kf(b)-kf(a);});
   var shown=_genRankAll?rows:rows.slice(0,5);
   var comp=function(s){if(!s)return'<span class="hv-dim">'+L2("fără regină înregistrată","no queen recorded")+'</span>';var a=s.avg;
-    return'🍯 '+(a.honey!=null?a.honey:'—')+' · 😊 '+(a.gentle!=null?a.gentle:'—')+' · 🐝 '+(a.swarm!=null?a.swarm:'—')+' · ❄️ '+(a.winter!=null?a.winter:'—')+' <span class="hv-dim">· '+s.years+' '+L2("ani","yrs")+'</span>';};
+    return'🍯 '+(a.honey!=null?a.honey:'—')+' · 😊 '+(a.gentle!=null?a.gentle:'—')+' · 🐝 '+(a.swarm!=null?a.swarm:'—')+' · ❄️ '+(a.winter!=null?a.winter:'—')+' <span class="hv-dim">· '+(s.years===1?'1 an':s.years+' ani')+'</span>';};
   var rank=shown.map(function(r,i){var stop=r.q&&genStoppedAtQ(r.q);
     return'<div class="gr-row'+(stop?" stopped":"")+'" onclick="'+(r.q?"genCard('"+r.q.id+"')":"")+'"><span class="gr-i">'+(i<3&&!stop&&r.s&&r.s.score!=null?["🥇","🥈","🥉"][i]:(i+1))+'</span>'
       +'<span class="gen-dot" style="background:'+(r.l?r.l.color:"#888")+'"></span>'
@@ -524,23 +525,42 @@ function renderGenealogy(){
       +'<div class="hv-ts">'+(r.q?qCodeTag(r.q)+' '+esc(r.q.race||"—")+' '+qYr2(qFrom(r.q))+' · ':'')+comp(r.s)+'</div></div>'
       +'<button class="btn sm gh" onclick="event.stopPropagation();nucM(\'\',\''+r.h.id+'\')" title="'+L2("Fă roi din el","Make a nuc from it")+'">🐝</button></div>';
   }).join("");
-  var sortBtns=[["score","⭐"],["honey","🍯"],["gentle","😊"],["swarm","🐝"],["winter","❄️"]]
-    .map(function(x){return'<button class="tv-tab'+(_genSort===x[0]?" on":"")+'" onclick="_genSort=\''+x[0]+'\';renderGenealogy()">'+x[1]+'</button>';}).join("");
+  var sortBtns=[["score","⭐ Nota"],["honey","🍯 Miere"],["gentle","😊 Blândețe"],["swarm","🐝 Roire"],["winter","❄️ Iernare"]]
+    .map(function(x){return'<button class="gen-chip'+(_genSort===x[0]?" on":"")+'" onclick="_genSort=\''+x[0]+'\';renderGenealogy()">'+x[1]+'</button>';}).join("");
   var lines=_genLine==="all"?M.lines:M.lines.filter(function(l){return l.r.id===_genLine;});
+  var legend='<div class="gen-legend"><span><i class="lg hv"></i>regina de acum</span><span><i class="lg old"></i>înlocuită</span><span><i class="lg nuc"></i>roi</span><span><i class="lg off"></i>eșuat</span><span><i class="lg stop"></i>⛔ oprită</span>'
+    +'<span class="hv-dim">G0 = începutul liniei, G1 = fiicele, G2 = nepoatele… · ⭐ nota · ▲ / ▼ = mai mare / mai mică decât a mamei</span></div>';
+  var help='<button class="gen-help-b" onclick="_genHelp=!_genHelp;renderGenealogy()">ℹ️ Cum citesc arborele și nota '+(_genHelp?'▲':'▼')+'</button>'
+    +(_genHelp?legend+GEN_INFO_HTML():'');
+  // ── tab „Liniile”: one row per line (tap → its tree)
+  var depth=function(n){var d=0,c=n;while(c&&c.parent){d++;c=M.byId[c.parent];}return d;};
+  var linesH=M.lines.map(function(l){
+    var qs=l.mem.filter(function(n){return !n.pseudo;}),cur=qs.filter(function(n){return !qTo(n.q)&&!n.h.closed;}),nucs=l.mem.filter(function(n){return n.pseudo&&!n.h.closed;}).length;
+    var best=qs.filter(function(n){return S[n.id]&&S[n.id].score!=null;}).sort(function(a,b){return S[b.id].score-S[a.id].score;})[0];
+    var gens=l.mem.reduce(function(a,n){return Math.max(a,depth(n));},0)+1;
+    return'<div class="c gl-row" role="button" onclick="_genLine=\''+l.r.id+'\';_genTab=\'tree\';renderGenealogy()" style="--c:'+l.color+'">'
+      +'<div class="gl-h"><span class="gen-dot" style="background:'+l.color+'"></span><b>'+esc(genLineName(l))+'</b><span class="hv-ts">'+esc(genLineSub(l))+'</span>'+genScoreBadge(l.score)+'</div>'
+      +'<div class="gl-kv"><span><b>'+cur.length+'</b> regine acum</span><span><b>'+qs.length+'</b> în total</span><span><b>'+gens+'</b> '+(gens===1?"generație":"generații")+'</span>'+(nucs?'<span><b>'+nucs+'</b> '+(nucs===1?"roi":"roiuri")+' în formare</span>':'')+'</div>'
+      +(best?'<div class="hv-ts">🏆 cea mai bună: <b>'+esc(qLabel(best.q))+'</b> '+genScoreBadge(S[best.id].score)+' · '+esc(best.h.name)+'</div>':'')
+      +'</div>';
+  }).join("");
+  var tab=function(id,lbl,n){return'<button class="tv-tab'+(_genTab===id?" on":"")+'" onclick="_genTab=\''+id+'\';renderGenealogy()">'+lbl+(n!=null?' <span class="bg gy">'+n+'</span>':'')+'</button>';};
+  var body=_genTab==="rank"
+      ?chips+'<div class="tv-sec-t">🏆 Din ce stup fac roi? <span class="hv-dim">(regina de acum)</span></div>'
+        +'<div class="gen-sortchips">'+sortBtns+'</div>'
+        +(rows.length?'<div class="c gr-list">'+rank
+          +(rows.length>5?'<button class="gen-more" onclick="_genRankAll=!_genRankAll;renderGenealogy()">'+(_genRankAll?"▲ Doar primii 5":"▼ Vezi toți ("+rows.length+")")+'</button>':'')+'</div>'
+          :'<div class="al ali">Niciun stup în această linie acum.</div>')
+        +'<button class="gen-help-b" onclick="_genHelp=!_genHelp;renderGenealogy()">ℹ️ Cum se calculează nota '+(_genHelp?'▲':'▼')+'</button>'+(_genHelp?GEN_INFO_HTML():'')
+    :_genTab==="lines"?'<div class="hv-ts" style="margin:0 2px 8px;">Apasă pe o linie ca să-i vezi arborele.</div>'+linesH
+    :chips+help+lines.map(function(l){return genLineCardHTML(l,M);}).join("");
   setP('<div class="hv-top"><h2><i class="fas fa-sitemap" style="color:var(--gold)"></i> '+L2("Genealogie","Genealogy")+'</h2>'
-    +'<button class="btn sm" onclick="nucM()">🐝 '+L2("Roi nou","New nuc")+'</button></div>'
-    +chips
-    +'<div class="tv-sec-t">🏆 '+L2("Din ce stup fac roi? (regina actuală)","Which hive to breed from? (current queen)")+'</div>'
-    +'<div class="tv-tabs gen-sort">'+sortBtns+'</div>'
-    +(rows.length?'<div class="c gr-list">'+rank
-      +(rows.length>5?'<button class="gen-more" onclick="_genRankAll=!_genRankAll;renderGenealogy()">'+(_genRankAll?"▲ "+L2("Doar primii 5","Top 5 only"):"▼ "+L2("Vezi toți","Show all")+" ("+rows.length+")")+'</button>':'')+'</div>'
-      :'<div class="al ali">'+L2("Niciun stup în această linie acum.","No hive in this line right now.")+'</div>')
-    +'<div class="tv-sec-t">🌳 '+L2("Arbore pe regine","Queen tree")+'</div>'
-    +'<div class="gen-legend"><span><i class="lg hv"></i>'+L2("regina de acum","current queen")+'</span><span><i class="lg old"></i>'+L2("înlocuită","replaced")+'</span><span><i class="lg nuc"></i>'+L2("roi","nuc")+'</span><span><i class="lg off"></i>'+L2("eșuat","failed")+'</span><span><i class="lg stop"></i>⛔</span>'
-    +'<span class="hv-dim">'+L2("G0 = începutul liniei, G1 = fiicele, G2 = nepoatele… · ⭐ nota · ▲ / ▼ = mai mare / mai mică decât a mamei","G0 = start of line, G1 = daughters, G2 = granddaughters… · ⭐ score · ▲ / ▼ = higher / lower than the mother")+'</span></div>'
-    +lines.map(function(l){return genLineCardHTML(l,M);}).join("")
-    +'<div class="al ali tv-info" style="margin-top:10px;">ℹ️ '+L2("Arborele e pe <b>regine</b>, nu pe stupi: numărul stupului rămâne, dar când îi pui o regină cumpărată pornește o linie nouă, iar urmașii reginei vechi rămân în linia ei. <b>⭐ Nota (1–100) pe fiecare an</b>, din inspecțiile cât regina a fost în stup: 🍯 miere 40% (vârful de rame căpăcite în magazii, față de cel mai bun din același an) · 😊 blândețe 20% · 🐝 roire 20% (% inspecții cu botci) · ❄️ iernare 20% (rame cu albine la intrarea în iarnă: 3 → 0, 9+ → 100). Lipsește ceva → se împarte pe rest.","The tree is on <b>queens</b>, not hives: the hive number stays, but a purchased queen starts a new line while the old queen's descendants stay in hers. <b>⭐ Score (1–100) per year</b>, from inspections while the queen was in the hive: 🍯 honey 40% (peak capped super frames vs. the best that year) · 😊 gentleness 20% · 🐝 swarming 20% (% inspections with cells) · ❄️ wintering 20% (frames of bees going into winter: 3 → 0, 9+ → 100). Missing parts are spread over the rest.")+'</div>');
+    +'<button class="btn" onclick="nucM()">🐝 Roi nou</button></div>'
+    +'<div class="tv-tabs">'+tab("tree","🌳 Arbore",null)+tab("rank","🏆 Clasament",null)+tab("lines","🧬 Linii",M.lines.length)+'</div>'
+    +body);
 }
+// explanation of the tree / score (shown on demand)
+function GEN_INFO_HTML(){return '<div class="al ali tv-info" style="margin-top:8px;">ℹ️ '+L2("Arborele e pe <b>regine</b>, nu pe stupi: numărul stupului rămâne, dar când îi pui o regină cumpărată pornește o linie nouă, iar urmașii reginei vechi rămân în linia ei. <b>⭐ Nota (1–100) pe fiecare an</b>, din inspecțiile cât regina a fost în stup: 🍯 miere 40% (vârful de rame căpăcite în magazii, față de cel mai bun din același an) · 😊 blândețe 20% · 🐝 roire 20% (% inspecții cu botci) · ❄️ iernare 20% (rame cu albine la intrarea în iarnă: 3 → 0, 9+ → 100). Lipsește ceva → se împarte pe rest.","The tree is on <b>queens</b>, not hives: the hive number stays, but a purchased queen starts a new line while the old queen's descendants stay in hers. <b>⭐ Score (1–100) per year</b>, from inspections while the queen was in the hive: 🍯 honey 40% (peak capped super frames vs. the best that year) · 😊 gentleness 20% · 🐝 swarming 20% (% inspections with cells) · ❄️ wintering 20% (frames of bees going into winter: 3 → 0, 9+ → 100). Missing parts are spread over the rest.")+'</div>';}
 // Queen detail sheet
 window.genCard=function(id){
   var M=genModel(),n=M.byId[id];if(!n)return;

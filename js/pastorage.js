@@ -39,29 +39,70 @@ function pTripHeadHTML(p){
     +'<button class="btn sm gh" onclick="pastorM(\''+p.id+'\')">✏️ '+L2("Editează","Edit")+'</button></div>'
     +'</div>';
 }
+// Pastorare page tabs: "now" (plecați acum + planificate) · "hist" (încheiate) · "stats" (statistici)
+var _psTab="now",_psOpen={};
+function pDur(p){var e=p.endDate||pToday();return Math.max(0,Math.round((new Date(e)-new Date(p.startDate))/86400000));}
 function renderPastorage(){
   var all=D.pastorage||[];
   var act=all.filter(pActive).sort(function(a,b){return a.startDate<b.startDate?1:-1;});
   var done=all.filter(function(p){return !pActive(p)&&!(p.startDate>pToday());}).sort(function(a,b){return(a.endDate||a.startDate)<(b.endDate||b.startDate)?1:-1;});
-  var future=all.filter(function(p){return p.startDate>pToday();});
+  var future=all.filter(function(p){return p.startDate>pToday();}).sort(function(a,b){return a.startDate<b.startDate?-1:1;});
+  // ── tab „Acum”: trips under way (header + hive cards) and planned departures
   var actH=act.map(function(p){
     var hs=pAwayHives(p).map(function(id){return D.hives.find(function(h){return h.id===id;});}).filter(Boolean);
     return'<div class="ps-block">'+pTripHeadHTML(p)
       +'<div class="g gc hv-grid">'+hs.map(function(h){return hvIsNuc(h)?nucCardHTML(h):hvCardHTML(h,{past:true});}).join("")+'</div></div>';
   }).join("");
-  var futH=future.map(function(p){return'<div class="c ps-row"><div><b>🗓️ '+esc(p.location)+'</b> · '+esc(p.target||"")+'<div class="hv-ts">'+L2("plecare pe","leaving on")+' '+devFmt(p.startDate)+' · '+pHives(p).map(pHiveName).map(esc).join(", ")+'</div></div><button class="btn sm gh" onclick="pastorM(\''+p.id+'\')">✏️</button></div>';}).join("");
-  var doneH=done.map(function(p){
-    var hs=pHives(p),n=(D.inspections||[]).filter(function(i){return i.pastId===p.id;}).length;
-    return'<div class="c ps-row"><div><b>📍 '+esc(p.location||"—")+'</b> · 🌸 '+esc(p.target||"")
-      +'<div class="hv-ts">'+devFmt(p.startDate)+' → '+(p.endDate?devFmt(p.endDate):"—")+' · '+hs.length+' '+(hs.length===1?L2("stup","hive"):L2("stupi","hives"))+(n?' · 🔍 '+n+' '+L2("inspecții","inspections"):'')+'</div>'
-      +'<div class="hv-ts">🏠 '+hs.map(pHiveName).map(esc).join(", ")+'</div></div>'
-      +'<div class="ps-rb"><button class="btn sm gh" onclick="pastorM(\''+p.id+'\')" aria-label="✏️">✏️</button><button class="btn sm gh" onclick="delPast(\''+p.id+'\')" aria-label="🗑️">🗑️</button></div></div>';
+  var futH=future.map(function(p){
+    var d=-hvDaysSince(p.startDate);
+    return'<div class="c ps-row"><div class="ps-row-t"><b>🗓️ '+esc(p.location)+'</b> · 🌸 '+esc(p.target||"")
+      +'<div class="hv-ts">pleci pe '+devFmt(p.startDate)+' ('+(d===1?"mâine":"în "+d+" zile")+')</div>'
+      +'<div class="fd-chips">'+pHives(p).map(function(h){return'<span class="fd-hc">🏠 '+esc(pHiveName(h))+'</span>';}).join("")+'</div></div>'
+      +'<div class="ps-rb"><button class="btn sm gh fd-ib" onclick="pastorM(\''+p.id+'\')" aria-label="Editează">✏️</button><button class="btn sm gh fd-ib" onclick="delPast(\''+p.id+'\')" aria-label="Șterge">🗑️</button></div></div>';
   }).join("");
+  var nowBody=(act.length?'<div class="fd-sec-h"><span>🚚 Plecați acum <span class="bg gy">'+act.length+'</span></span></div>'+actH
+      :'<div class="al ali">Niciun stup în pastorare acum. Apasă «🚚 Plec în pastorare», bifezi stupii, locația și culesul.</div>')
+    +(future.length?'<div class="fd-sec-h"><span>🗓️ Plecări planificate <span class="bg gy">'+future.length+'</span></span></div>'+futH:'');
+  // ── tab „Istoric”: finished trips, grouped by month, compact rows (tap → details)
+  var mNames=["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
+  var lastM="",histH="";
+  done.forEach(function(p){
+    var m=(p.startDate||"").slice(0,7),open=!!_psOpen[p.id],hs=pHives(p),n=(D.inspections||[]).filter(function(i){return i.pastId===p.id;}).length;
+    if(m!==lastM){lastM=m;histH+='<div class="fd-month">'+(m?mNames[parseInt(m.slice(5,7))-1]+' '+m.slice(0,4):"—")+'</div>';}
+    histH+='<div class="c fd-row'+(open?' open':'')+'">'
+      +'<div class="fd-row-h" onclick="_psOpen[\''+p.id+'\']=!_psOpen[\''+p.id+'\'];renderPastorage();" role="button">'
+      +'<span class="fd-ico sm">🚚</span>'
+      +'<div class="fd-row-t"><div class="fd-row-n">📍 '+esc(p.location||"—")+'</div>'
+      +'<div class="hv-ts">🌸 '+esc(p.target||"—")+' · '+devFmt(p.startDate)+' → '+(p.endDate?devFmt(p.endDate):"—")+' · '+hs.length+' '+(hs.length===1?"stup":"stupi")+'</div></div>'
+      +'<span class="bg gy">'+pDur(p)+' zile</span><span class="hv-arr">'+(open?'▲':'▼')+'</span></div>'
+      +(open?'<div class="fd-row-d">'
+        +'<div class="fd-chips" style="margin:0;">'+hs.map(function(h){return'<span class="fd-hc">🏠 '+esc(pHiveName(h))+(p.returned&&p.returned[h]?' · '+devFmt(p.returned[h]):'')+'</span>';}).join("")+'</div>'
+        +(n?'<div>🔍 '+(n===1?"1 inspecție făcută":n+" inspecții făcute")+' acolo</div>':'')
+        +(p.notes?'<div class="fd-note">📝 '+esc(p.notes)+'</div>':'')
+        +'<div class="fd-btns"><button class="btn sm gh" onclick="pastorM(\''+p.id+'\')">✏️ Editează</button>'
+        +'<button class="btn sm bd" onclick="delPast(\''+p.id+'\')">🗑️ Șterge</button></div>'
+        +'</div>':'')
+      +'</div>';
+  });
+  if(!histH)histH='<div class="al ali">Nicio pastorare încheiată încă.</div>';
+  // ── tab „Statistici”: totals, by location, by flow
+  var trips=done.concat(act),days=trips.reduce(function(a,p){return a+pDur(p);},0),hvTrips=trips.reduce(function(a,p){return a+pHives(p).length;},0);
+  var group=function(key){var g={};trips.forEach(function(p){var k=p[key]||"—";g[k]=g[k]||{n:0,d:0,h:0};g[k].n++;g[k].d+=pDur(p);g[k].h+=pHives(p).length;});
+    return Object.keys(g).sort(function(a,b){return g[b].n-g[a].n;}).map(function(k){return{k:k,v:g[k]};});};
+  var rows=function(list,ico){return list.map(function(x){return'<div class="fd-hrow" style="cursor:default;"><div class="fd-hrow-t"><b>'+ico+' '+esc(x.k)+'</b>'
+    +'<div class="hv-ts">'+x.v.n+' '+(x.v.n===1?"plecare":"plecări")+' · '+(x.v.h===1?'1 stup dus':x.v.h+' stupi duși')+'</div></div><span class="fd-hrow-q">'+x.v.d+'<small> zile</small></span></div>';}).join("");};
+  var statsH=trips.length?'<div class="g fd-tiles" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'
+      +'<div class="c"><div class="cl">Plecări</div><div class="cv">'+trips.length+'</div></div>'
+      +'<div class="c"><div class="cl">Zile plecat</div><div class="cv">'+days+'</div></div>'
+      +'<div class="c"><div class="cl">Stupi duși</div><div class="cv">'+hvTrips+'</div><div class="cs">în total</div></div></div>'
+      +'<div class="c fd-stat"><div class="ct">📍 Pe locații</div>'+rows(group("location"),"📍")+'</div>'
+      +'<div class="c fd-stat"><div class="ct">🌸 Pe culesuri</div>'+rows(group("target"),"🌸")+'</div>'
+    :'<div class="al ali">Încă nu ai nicio pastorare înregistrată.</div>';
+  var tab=function(id,lbl,n){return'<button class="tv-tab'+(_psTab===id?" on":"")+'" onclick="_psTab=\''+id+'\';renderPastorage();">'+lbl+(n!=null?' <span class="bg gy">'+n+'</span>':'')+'</button>';};
   setP('<div class="hv-top"><h2><i class="fas fa-truck" style="color:var(--gold)"></i> '+t("past_title")+'</h2>'
     +'<button class="btn" onclick="pastorM()">🚚 '+L2("Plec în pastorare","Go on migration")+'</button></div>'
-    +(act.length?actH:'<div class="al ali">'+L2("Niciun stup în pastorare acum. Apasă «🚚 Plec în pastorare», bifezi stupii, locația și culesul.","No hive on migration now. Tap «🚚 Go on migration», tick the hives, the location and the flow.")+'</div>')
-    +(future.length?'<div class="tv-sec-t">🗓️ '+L2("Plecări planificate","Planned trips")+'</div>'+futH:'')
-    +(done.length?'<div class="tv-sec-t">📜 '+L2("Pastorări încheiate","Finished trips")+' <span class="bg gy">'+done.length+'</span></div>'+doneH:''));
+    +'<div class="tv-tabs">'+tab("now","🚚 Acum",act.length+future.length)+tab("hist","📜 Istoric",done.length)+tab("stats","📊 Statistici",null)+'</div>'
+    +(_psTab==="hist"?histH:_psTab==="stats"?statsH:nowBody));
 }
 window.delPast=function(id){showConfirm(t("past_del_c"),function(){D.pastorage=D.pastorage.filter(function(p){return p.id!==id;});save();render();});};
 
