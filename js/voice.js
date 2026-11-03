@@ -159,7 +159,7 @@ window.vcOpen=function(hid){
     +'<div id="vcStat" class="vc-stat"></div>'
     +'<div class="vc-micw"><button id="vcMic" class="vc-mic" onclick="vcToggle()" aria-label="Pornește / oprește"><span>🎙️</span></button>'
     +'<div id="vcMicL" class="vc-micl">Apasă și vorbește</div></div>'
-    +'<textarea id="vcTx" rows="5" class="vc-tx" oninput="vcPrev()" placeholder="Vorbește liber, de exemplu: „matca văzută, ouă și larve, puiet compact pe 6 rame, 3 rame cu miere, albine blânde, două botci tăiate, are nevoie de magazie”"></textarea>'
+    +'<textarea id="vcTx" rows="5" class="vc-tx" oninput="vcPrev();vcDraftSave()" placeholder="Vorbește liber, de exemplu: „matca văzută, ouă și larve, puiet compact pe 6 rame, 3 rame cu miere, albine blânde, două botci tăiate, are nevoie de magazie”"></textarea>'
     +'<div id="vcInt" class="vc-int"></div>'
     +'<div id="vcChips" class="vc-chips"></div>'
     +'<div class="br" style="margin-top:12px;"><button class="btn" onclick="vcFill()">✅ Completează formularul</button>'
@@ -171,7 +171,19 @@ window.vcOpen=function(hid){
     +'<div id="vcAudL" class="vc-audl"></div></details>');
   try{_vc.local=localStorage.getItem("vcLocal")==="available";}catch(e){}
   vcStatus();vcAudList();
+  // what you said earlier for this hive and did not save yet (app closed, phone locked…) comes back
+  var dr=vcDraftGet(hid);
+  if(dr&&dr.txt){var tx=document.getElementById("vcTx");tx.value=dr.txt;vcPrev();
+    var d=new Date(dr.ts),st=document.getElementById("vcStat");
+    if(st)st.insertAdjacentHTML("afterend",'<div class="vc-draft">↺ Am păstrat ce ai spus la '+String(d.getHours()).padStart(2,"0")+':'+String(d.getMinutes()).padStart(2,"0")+(d.toDateString()!==new Date().toDateString()?' ('+devFmt(dr.ts.slice(0,10))+')':'')+'. Continui de unde ai rămas. <button class="lnk" onclick="vcDraftClear(_vc.hid);document.getElementById(\'vcTx\').value=\'\';vcPrev();this.parentNode.remove()">Încep din nou</button></div>');}
 };
+// ── draft: the text is saved on the phone after every phrase, until the inspection is saved ──
+function vcDraftGet(hid){try{var d=JSON.parse(localStorage.getItem("vcDraft_"+hid)||"null");if(d&&Date.now()-new Date(d.ts).getTime()<2*86400000)return d;}catch(e){}return null;}
+function vcDraftSave(){var tx=document.getElementById("vcTx");if(!tx||!_vc.hid)return;
+  try{if(tx.value.trim())localStorage.setItem("vcDraft_"+_vc.hid,JSON.stringify({txt:tx.value,ts:new Date().toISOString()}));else localStorage.removeItem("vcDraft_"+_vc.hid);}catch(e){}}
+window.vcDraftClear=function(hid){try{localStorage.removeItem("vcDraft_"+hid);}catch(e){}};
+// called by saveInsp (inspections.js): the voice text of this hive is now in the inspection
+function vcSaved(hid){if(_vc.pend===hid){vcDraftClear(hid);_vc.pend=null;}}
 function vcStatus(msg){
   var el=document.getElementById("vcStat");if(!el)return;
   var SR=vcSR(),on=navigator.onLine;
@@ -225,23 +237,41 @@ function vcStart(){
     var iv=document.getElementById("vcInt");if(iv)iv.textContent=interim.trim();
     vcPrev();
   };
+  r.onstart=function(){_vc.active=true;};
   r.onerror=function(e){
     if(e.error==="no-speech"||e.error==="aborted")return;
-    if(e.error==="network"){vcStop();vcStatus('📴 <b>Semnalul a căzut.</b> Continuă cu <b>🎤 de pe tastatură</b> în casetă — ce ai spus până acum a rămas.');return;}
+    if(e.error==="network"){_vc.resume=true;vcStop(true);vcStatus('📴 <b>Semnalul a căzut.</b> Ce ai spus până acum a rămas. Reiau ascultarea singur când revine semnalul — sau continuă cu <b>🎤 de pe tastatură</b>.');return;}
     if(e.error==="not-allowed"||e.error==="service-not-allowed"){vcStop();vcStatus('⚠️ Microfonul nu e permis. Permite microfonul pentru aplicație (lacătul de lângă adresă → Permisiuni) sau folosește 🎤 de pe tastatură.');return;}
     if(e.error==="language-not-supported"){vcStop();vcStatus('⚠️ Româna nu e disponibilă aici. Folosește 🎤 de pe tastatură.');return;}
   };
-  r.onend=function(){   // Android stops after a pause → restart until you press stop
-    if(_vc.on&&document.getElementById("vcTx")){try{r.start();}catch(e){}}
-    else vcUI(false);
+  // the phone stops listening after every silence → start again until you press stop (an inspection can last 30 min)
+  r.onend=function(){
+    _vc.active=false;
+    if(_vc.on&&_vc.rec===r&&document.getElementById("vcTx"))vcRestart(r,0);
+    else if(!_vc.on)vcUI(false);
   };
-  _vc.rec=r;_vc.on=true;_vc.last="";
+  _vc.rec=r;_vc.on=true;_vc.last="";_vc.resume=false;
   try{r.start();}catch(e){_vc.on=false;return;}
-  vcUI(true);
-  try{if(navigator.wakeLock)navigator.wakeLock.request("screen").then(function(l){_vc.wl=l;}).catch(function(){});}catch(e){}
+  if(!_vc.t0s)_vc.t0s=Date.now();
+  clearInterval(_vc.tick);_vc.tick=setInterval(function(){if(!document.getElementById("vcTx")){vcStop();return;}vcUI(_vc.on);},1000);
+  vcUI(true);vcWake();
 }
-function vcStop(){
-  _vc.on=false;
+function vcRestart(r,n){
+  setTimeout(function(){
+    if(!_vc.on||_vc.rec!==r||!document.getElementById("vcTx"))return;
+    if(document.hidden)return;                     // screen off: resumes when you come back (visibilitychange)
+    try{r.start();}catch(e){if(n<20)vcRestart(r,n+1);}
+  },n?800:250);
+}
+function vcWake(){try{if(navigator.wakeLock&&!_vc.wl)navigator.wakeLock.request("screen").then(function(l){_vc.wl=l;l.addEventListener&&l.addEventListener("release",function(){_vc.wl=null;});}).catch(function(){});}catch(e){}}
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden||!_vc.on||!document.getElementById("vcTx"))return;
+  vcWake();if(!_vc.active&&_vc.rec)vcRestart(_vc.rec,0);
+});
+window.addEventListener("online",function(){if(_vc.resume&&document.getElementById("vcTx")){_vc.resume=false;vcStatus();vcStart();toast("Semnalul a revenit — ascult din nou","🎙️");}});
+function vcStop(keepTimer){
+  _vc.on=false;_vc.active=false;
+  if(!keepTimer){clearInterval(_vc.tick);}
   if(_vc.rec){try{_vc.rec.stop();}catch(e){}_vc.rec=null;}
   if(_vc.wl){try{_vc.wl.release();}catch(e){}_vc.wl=null;}
   var iv=document.getElementById("vcInt");if(iv)iv.textContent="";
@@ -250,17 +280,23 @@ function vcStop(){
 function vcUI(on){
   var b=document.getElementById("vcMic"),l=document.getElementById("vcMicL");
   if(b)b.classList.toggle("on",on);
-  if(l)l.textContent=on?"Ascult… apasă ca să opresc":"Apasă și vorbește";
+  var el=_vc.t0s?Math.round((Date.now()-_vc.t0s)/1000):0,tm=Math.floor(el/60)+":"+String(el%60).padStart(2,"0");
+  if(l)l.textContent=on?"Ascult… "+tm+" · apasă ca să opresc":(el?"Oprit la "+tm+" · apasă ca să continui":"Apasă și vorbește");
 }
 // Android sometimes repeats a final phrase with more words → replace instead of duplicating
 function vcAppend(tx,s){
   var cur=tx.value.replace(/\s+$/,""),n=vcNorm(s),ln=vcNorm(_vc.last);
   if(_vc.last&&n.indexOf(ln)===0&&cur.slice(-_vc.last.length)===_vc.last){cur=cur.slice(0,cur.length-_vc.last.length).replace(/[,\s]+$/,"");}
   else if(_vc.last&&ln.indexOf(n)===0&&ln.length>=n.length)return;
+  // voice command: „gata inspecția” / „termin inspecția” → stop and fill the form (hands busy, gloves on)
+  var cmd=/\b(gata|termin\w*|stop|incheie|inchei|final)\s+(cu\s+)?(inspectia|inspectie|inspectiei)\b/;
+  if(cmd.test(vcNorm(s))){s=s.replace(/(gata|termin\S*|stop|[iî]ncheie|[iî]nchei|final)\s+(cu\s+)?inspec\S*/i,"").replace(/^[\s,.]+|[\s,.]+$/g,"");
+    if(s){tx.value=(cur?cur+", ":"")+s;}else tx.value=cur;_vc.last="";vcDraftSave();vcStop();setTimeout(vcFill,300);return;}
   tx.value=(cur?cur+", ":"")+s;_vc.last=s;
   tx.scrollTop=tx.scrollHeight;
+  vcDraftSave();
 }
-function vcStopAll(){vcStop();if(_vc.mr)vcRecStop();}
+function vcStopAll(){vcStop();_vc.t0s=0;_vc.resume=false;if(_vc.mr)vcRecStop();}
 
 // ── audio recording (no signal) ──
 window.vcRecToggle=function(){if(_vc.mr)vcRecStop();else vcRecStart();};
@@ -330,24 +366,42 @@ function vcDigits(s){
   s=s.replace(/\b(o|un|una) (rama|botca|magazie|singura rama|singura botca)\b/g,"1 $2");
   return s.replace(/\b[a-z]+\b/g,function(w){return w!=="noua"&&VC_NUM.hasOwnProperty(w)?String(VC_NUM[w]):w;});
 }
-function vcParse(raw){
-  var s=" "+vcDigits(vcNorm(raw))+" ";
+// Speech recognition gives almost no punctuation → cut the text into short clauses at connector words,
+// so a „nu” or a number only applies to its own clause.
+function vcClauses(raw){
+  var x=" "+vcDigits(vcNorm(String(raw||"").replace(/[,.;:!?\n]+/g," qqsep "))).replace(/\bqqsep\b/g,",")+" ";
+  x=x.replace(/ (si|iar|dar|apoi|deci|plus|insa|totusi|dupa aceea|pe urma|in rest|mai departe|acum) (?!(pe )?(rama|ramele|\d)\b)/g," , $1 ");
+  x=x.replace(/ (la) (?=(matca|regina|botc|potc|magazi|cat|caturi|varro|varoa|puiet|oua|hrana|mancare|spatiu|albine|familie|familia|temperament|boli|sanatate|cantar|vreme))/g," , $1 ");
+  // „am pus / am adăugat / am văzut …” starts a new clause (not after a „nu”)
+  x=x.replace(/(\w+) (am (?:pus|adaugat|scos|luat|dat|vazut|gasit|taiat|eliminat|hranit|montat|ridicat|observat))\b/g,function(m0,w,v){return /^(nu|n|nam|mai|le|l|o|i)$/.test(w)?m0:w+" , "+v;});
+  return x.replace(/\s*,\s*(,\s*)*/g," , ").replace(/\s+/g," ");
+}
+function vcParse(raw,hid){
+  var s=" "+vcClauses(raw).trim()+" ";
+  var C=s.split(",").map(function(c){return" "+c.trim()+" ";});
+  var NEG=/\b(nu|n am|nam|fara|niciun|nicio|nici|lipsa|zero)\b/;
+  // frame movements are read first; their clauses are then left out (so „o ramă de puiet” is not taken as the brood count)
+  var MVS=hid?vcMoves(C,hid):[];
+  if(MVS.length){MVS.forEach(function(r){C[r.i]=" ";});s=" "+C.join(",")+" ";}
   var R={v:{},c:{},chips:[],post:[],extra:{}};
   var neg=function(i){return /\b(nu|n am|nam|fara|niciun|nicio|nici)\b[^,]{0,14}$/.test(s.slice(Math.max(0,i-22),i));};
-  var find=function(re){var m=re.exec(s);return m;};
+  // last mention wins: during a long inspection you correct yourself („nu, de fapt 7 rame”)
+  var find=function(re){var g=new RegExp(re.source,"g"),m,last=null;while((m=g.exec(s))){last=m;if(m[0]==="")g.lastIndex++;}return last;};
+  var lastC=function(re){for(var i=C.length-1;i>=0;i--)if(re.test(C[i]))return C[i];return null;};
   var set=function(id,val,chip){R.v[id]=val;if(chip)R.chips.push(chip);};
   var chk=function(id,val,chip){R.c[id]=val;if(chip)R.chips.push(chip);};
   var m;
   // 👑 queen
-  if(/\b((nu|n) (am )?(vazut|gasit|gasesc|vad) (nici )?(matca|regina)|nam (vazut|gasit) (matca|regina)|(matca|regina) nu (am )?(vazut|gasit|e |este|se vede|apare)|fara matca|orfan\w*|bezmetic\w*)/.test(s)){
+  var qc=lastC(/\b(matca|regina|matcuta)\b[^,]*\b(vazut\w*|gasit\w*|vad|gasesc|prezenta|la vedere|se vede|apare)\b|\b(vazut\w*|gasit\w*|vad|gasesc)\b[^,]*\b(matca|regina|matcuta)\b|\b(orfan\w*|bezmetic\w*|fara matca)\b/);
+  if(qc&&(NEG.test(qc)||/orfan|bezmetic/.test(qc))){
     chk("iQS",false,"👑 Matca nevăzută");
-    if(/orfan|bezmetic|fara matca/.test(s))R.chips.push("⚠️ Posibil orfan");
-  }else if(/\b((matca|regina) (e |este |a fost )?(vazuta|prezenta|ok|gasita|acolo|la vedere|buna|frumoasa|excelenta|tanara|marcata)|(am )?(vazut|gasit) (si )?(matca|regina)|matca da)\b/.test(s))chk("iQS",true,"👑 Matca văzută");
+    if(/orfan|bezmetic|fara matca/.test(qc))R.chips.push("⚠️ Posibil orfan");
+  }else if(qc)chk("iQS",true,"👑 Matca văzută");
   // 🥚 eggs / larvae / capped brood
-  if(/\b(fara|nu (am vazut|are|sunt|gasesc|vad|vazut))( niciun| nici un| nici)? (oua|ou|ponta)\b|\boua nu\b/.test(s))chk("iEg",false,"🥚 Fără ouă");
-  else if(/\b(oua|ou|ouat|depune|ponta)\b/.test(s))chk("iEg",true,"🥚 Ouă");
-  if(/\b(fara|nu (am vazut|are|sunt|gasesc|vad))( nicio| nici o| nici)? larv/.test(s))chk("iLv",false,"🐛 Fără larve");
-  else if(/\blarv/.test(s))chk("iLv",true,"🐛 Larve");
+  var ec=lastC(/\b(oua|ou|ouat|depune|ponta)\b/);
+  if(ec)chk("iEg",!NEG.test(ec),NEG.test(ec)?"🥚 Fără ouă":"🥚 Ouă");
+  var lc=lastC(/\blarv/);
+  if(lc)chk("iLv",!NEG.test(lc),NEG.test(lc)?"🐛 Fără larve":"🐛 Larve");
   m=find(/\b(puiet capacit|capacit\w*)/);
   if(m&&!/botc\w*\s*$/.test(s.slice(Math.max(0,m.index-14),m.index))&&!/botc/.test(s.slice(Math.max(0,m.index-14),m.index)))chk("iCap",!neg(m.index),neg(m.index)?"🟤 Fără puiet căpăcit":"🟤 Puiet căpăcit");
   // 📊 frames
@@ -372,9 +426,24 @@ function vcParse(raw){
   else if(new RegExp("\\b"+QW+"(?:medie|asa si asa|mediocra)\\b").test(s))set("iQQ","medie","⭐ Matcă medie");
   else if(new RegExp("\\b"+QW+"(?:buna|ok|frumoasa)\\b").test(s))set("iQQ","buna","⭐ Matcă bună");
   // 👑 queen cells
-  if(/\b(fara|nu (are|am vazut|sunt|gasesc|vad))( niciun| nicio| nici o| nici)? botc/.test(s))chk("iBtc",false,"👑 Fără botci");
-  else if((m=find(/\b(\d+)\s*botc/)||find(/\bbotc\w*\s*(?:\w+ )?(\d+)\b/))){chk("iBtc",true);set("iBtcN",m[1],"👑 "+m[1]+" botci");}
-  else if(/\bbotc/.test(s)){chk("iBtc",true,"👑 Botci");}
+  var BT=/\b(botc\w*|potc\w*|botce|botcute)\b/;
+  var bC=C.filter(function(c){return BT.test(c);});
+  if(bC.length){
+    if(bC.every(function(c){return NEG.test(c);}))chk("iBtc",false,"👑 Fără botci");
+    else{
+      chk("iBtc",true);var bn=0,bMax=0,pos=[];
+      bC.forEach(function(c){if(NEG.test(c))return;
+        var q=/\b(\d+)\s*(?:de )?(?:botc|potc)\w*/.exec(c)||/\b(?:botc|potc)\w*\s*(?:\w+ )?(\d+)\b(?! ?rame?)/.exec(c);
+        var k=q?parseInt(q[1]):/\b(botca|potca|botce)\b/.test(c)?1:0;
+        if(q&&k>1)bMax=k;
+        var rr=c.match(/\b(?:pe )?ram(?:a|ele)? (?:nr |numarul )?(\d+(?: si \d+)*)/g);
+        if(rr)rr.forEach(function(r){pos.push(r.replace(/^pe /,"").replace(/^ram\w*/,"rama"));});
+        if(!(q&&k>1))bn+=k;});
+      bn=Math.max(bMax,bn);
+      if(bn){set("iBtcN",String(bn),"👑 "+bn+(bn===1?" botcă":" botci"));}else R.chips.push("👑 Botci");
+      if(pos.length){R.extra.btcF=pos.join(", ");R.chips.push("📍 "+R.extra.btcF);}
+    }
+  }
   if(R.c.iBtc){
     if(/\baproape capacit/.test(s))set("iBtcS","aproape_cap","· aproape căpăcite");
     else if(/\bbotc\w*\s*(?:\w+ )?(capacit\w*|inchise)/.test(s))set("iBtcS","capacite","· căpăcite");
@@ -421,12 +490,25 @@ function vcParse(raw){
   else if((m=find(/\b(?:stup\w*|cutie|cutia|capac\w*|fund\w*|corp\w*) (?:e |este )?(deteriorat\w*|putred\w*|stricat\w*|rupt\w*|spart\w*|gaurit\w*)/))){set("iStC","deteriorat","🔴 Stup deteriorat");R.extra.stN=m[0].trim();}
   // 🩺 health
   var dz=[];
-  [["dV",/\b(varro\w*|varo\w*|capus\w*|acarian\w*)\b/,"🕷️ Varroa"],["dL",/\bloca\b/,"🦠 Locă"],["dN",/\b(nosem\w*|diaree)\b/,"💩 Nosemoză"],["dVr",/\b(puiet varos|varos|ascosfer\w*|mumii|mumifiat\w*)\b/,"🍄 Puiet văros"]].forEach(function(d){
-    var mm=d[1].exec(s);if(mm&&!neg(mm.index)){dz.push(d[0]);chk(d[0],true,d[2]);}
+  var VR=/\b(varro\w*|varo\w*|varoa|capus\w*|acarian\w*)\b/;
+  // varroa count: number in the varroa clause, or in the clause right after it („… deci e 0”, „căzute 3”)
+  var vN=null,vNeg=false,vPos=false;
+  C.forEach(function(c,i){if(!VR.test(c))return;
+    var q=/\b(?:varro\w*|varo\w*|capus\w*|acarian\w*)\s*(?:cazute |gasite |numarate |pe fund |e |sunt )?(\d+)\b/.exec(c)||/\b(\d+)\s*(?:de )?(?:varro\w*|varo\w*|capus\w*|acarian\w*)/.exec(c);
+    if(q==null&&C[i+1]&&/^\s*(deci|adica|e|sunt|am numarat|cazute|au cazut)\b/.test(C[i+1])&&!/\b(puiet|rame?|botc|matca|magazi|miere|hrana)\b/.test(C[i+1]))q=/\b(\d+)\b/.exec(C[i+1]);
+    if(q)vN=parseInt(q[1]);
+    if(NEG.test(c))vNeg=true;else vPos=true;});
+  if(vN===0)vNeg=true,vPos=false;
+  if(vN!=null){R.extra.varN=String(vN);}
+  if(vNeg&&!vN)R.chips.push("🕷️ Varroa: 0 (nu am văzut)");
+  [["dV",VR,"🕷️ Varroa"],["dL",/\bloca\b/,"🦠 Locă"],["dN",/\b(nosem\w*|diaree)\b/,"💩 Nosemoză"],["dVr",/\b(puiet varos|varos|ascosfer\w*|mumii|mumifiat\w*)\b/,"🍄 Puiet văros"]].forEach(function(d){
+    var cs=C.filter(function(c){return d[1].test(c);});if(!cs.length)return;
+    var yes=d[0]==="dV"?(vPos&&!(vNeg&&!vN)):cs.some(function(c){return !NEG.test(c);});
+    if(yes){dz.push(d[0]);chk(d[0],true,d[2]);}
   });
   if(dz.length)chk("dOk",false);
   else if(/\b(sanatoas\w*|sanatos|fara boli|nicio boala|nici o boala)\b/.test(s))chk("dOk",true,"✅ Sănătos");
-  if((m=find(/\bvarro\w*\D{0,14}?\b(\d+)\b/)||find(/\b(\d+)\s*(?:de )?(?:varro\w*|capus\w*|acarien\w*)/))&&R.c.dV){R.extra.varN=m[1];R.chips.push("🕷️ "+m[1]+" varroa căzute");}
+  if(vN)R.chips.push("🕷️ "+vN+" varroa");
   // 🍬 feeding
   if(/\b(s a terminat|a terminat|au terminat|au mancat tot|gata) (siropul|hrana|mancarea|turta|turtele|candy|fondantul)\b|\bopr\w* hranirea\b/.test(s)){R.extra.fdFin=true;R.chips.push("⏹️ Hrănire oprită");}
   if((m=find(/\bam (mai )?(pus|dat|completat|turnat)\b[^,]{0,20}\b(sirop|turt\w*|candy|fondant|apifond\w*|serbet|zahar|hrana|mancare|inlocuitor|polen)\b[^,]*|\bam hranit\b[^,]*/))){
@@ -438,10 +520,37 @@ function vcParse(raw){
     R.chips.push("🍬 Hrănit"+(R.extra.fd.q?" "+R.extra.fd.q+" "+R.extra.fd.u:""));
   }else if(/\b(hrana putina|putina hrana|fara hrana|nu (mai )?are hrana|de hranit|trebuie hranit\w*|trebuie sa hranesc|nu are mancare|putina mancare)\b/.test(s)){R.extra.fdPlan=true;R.chips.push("🗓️ De hrănit — planific");}
   // 📦 supers
-  if((m=find(/\bam (pus|adaugat|dat)\s*(?:inca |si )?(?:(\d+|o|a doua|a treia) )?magazi/))){R.extra.magAdd=m[2]&&/^\d+$/.test(m[2])?parseInt(m[2]):1;R.chips.push("📦 +"+R.extra.magAdd+" magazie");}
-  if((m=find(/\bam (scos|luat|ridicat)\s*(?:(\d+|o) )?magazi/))){R.extra.magRm=m[2]&&/^\d+$/.test(m[2])?parseInt(m[2]):1;R.chips.push("📦 −"+R.extra.magRm+" magazie");}
+  var MG=/\b(magazi\w*|cat|caturi|catul|etaj\w*|corp de magazie)\b/;
+  C.forEach(function(c){if(!MG.test(c)||NEG.test(c))return;
+    var cnt=function(){var q=/\b(\d+)\s*(?:de )?(?:magazi|caturi|cat|etaj)/.exec(c);return q&&parseInt(q[1])<5?parseInt(q[1]):(/\b(a doua|inca o|inca un|un|o|1)\b/.test(c)?1:1);};
+    var fr=/\b(\d+)\s*(?:de )?rame?\b/.exec(c);
+    if(/\b(adaug\w*|pus|pun|dat|montat|ridicat cu|marit)\b/.test(c)&&!/\b(scos|luat|scot)\b/.test(c)){R.extra.magAdd=(R.extra.magAdd||0)+cnt();if(fr)R.extra.magF=parseInt(fr[1]);}
+    else if(/\b(scos|luat|scot|ridicat|recoltat)\b/.test(c)){R.extra.magRm=(R.extra.magRm||0)+cnt();}
+  });
+  if(R.extra.magAdd)R.chips.push("📦 +"+R.extra.magAdd+" magazie"+(R.extra.magF?" cu "+R.extra.magF+" rame":""));
+  if(R.extra.magRm)R.chips.push("📦 −"+R.extra.magRm+" magazie");
   // ⚖️ weight
   if((m=find(/\b(?:cantar\w*|greutate\w*|cantarit\w*|cantareste)\b[^,]{0,12}?\b(\d+(?: virgula \d)?)\s*(?:kg|kile|kilograme)?\b/))){R.extra.kg=m[1].replace(" virgula ",".");R.chips.push("⚖️ "+R.extra.kg+" kg");}
+  // 🔄 frames moved between hives / to a new nuc
+  R.extra.mv=MVS;
+  R.extra.mv.forEach(function(r){R.chips.push(vcMoveTxt(r));});
+  // ✏️ corrections: „puiet pe 6 rame … nu stai, de fapt 7” → the number goes to what you talked about just before
+  var lastT=null;
+  C.forEach(function(c){
+    var num=/\b(\d+)\b/.exec(c);
+    if(/\bpuiet\b/.test(c)&&/\brame?\b/.test(c))lastT="iFB";
+    else if(/\b(miere|hrana|mancare|provizii|rezerv\w*)\b/.test(c)&&/\brame?\b/.test(c))lastT="iFH";
+    else if(/\b(magazi\w*|cat|caturi)\b/.test(c))lastT="mag";
+    else if(/\b(botc\w*|potc\w*)\b/.test(c))lastT="btc";
+    else if(/\bvarro\w*|\bvaro\w*/.test(c))lastT="var";
+    else if(num&&lastT&&/\b(de fapt|corectez|corect|adica|stai|gresit|ba nu|nu nu|ba)\b/.test(c)){
+      var v=num[1];
+      if(lastT==="iFB"){set("iFB",v);}else if(lastT==="iFH"){set("iFH",v);}
+      else if(lastT==="mag"){R.extra.magF=parseInt(v);}else if(lastT==="btc"){set("iBtcN",v);}else if(lastT==="var"){R.extra.varN=v;}
+      var lbl={iFB:["rame puiet","🥚 "+v+" rame puiet"],iFH:["rame mâncare","🍯 "+v+" rame mâncare"],mag:["magazie","📦 magazie cu "+v+" rame"],btc:["botc","👑 "+v+" botci"],var:["varroa","🕷️ "+v+" varroa"]}[lastT];
+      R.chips=R.chips.filter(function(x){return x.indexOf(lbl[0])<0;});R.chips.push(lbl[1]+" ✏️");
+    }
+  });
   // ❄️ winter check (used when the form is in winter mode)
   if((m=find(/\bghem\w*\D{0,14}?\b(\d+)\b/))){set("iWiB",m[1],"❄️ Ghem pe "+m[1]+" rame");}
   if(/\b(provizii|hrana|rezerve)\w* (?:sunt |e |este )?(suficient\w*|destul\w*|multe|multa|bune|ok)\b|\bare (destula )?hrana\b/.test(s))set("iWiF","ok","❄️ Provizii suficiente");
@@ -458,10 +567,67 @@ function vcParse(raw){
   if(/\burdinis\w* (blocat|infundat|astupat)|\b(am )?curatat urdinis\w*/.test(s))chk("iWc_ent",true,"🚪 Urdiniș curățat");
   return R;
 }
+// ── 🔄 frame movements: „am luat o ramă de puiet de la stupul 2”, „am scos 2 rame pentru un roi nou” ──
+// which hive a clause talks about: „stupul 2” / „stupul doi” / „roiul 1” / a hive name
+function vcHiveRef(c,self){
+  var hs=D.hives||[],m=/\b(stup\w*|roi\w*)\s+(?:nr |numarul |numar )?(\d+)\b/.exec(c);
+  if(m){var isR=/^roi/.test(m[1]),n=parseInt(m[2]);
+    var h=hs.filter(function(x){return(x.kind==="roi")===isR&&parseInt(x.num)===n;})[0]
+      ||hs.filter(function(x){return vcNorm(x.name)===vcNorm(m[1].replace(/ul$|ului$/,"")+"ul "+n)||vcNorm(x.name)===(isR?"roi ":"stupul ")+n||vcNorm(x.name)===(isR?"roiul ":"stup ")+n;})[0]
+      ||hs.filter(function(x){return parseInt(x.num)===n;})[0];
+    if(h)return h.id;}
+  var byName=hs.filter(function(x){var nm=vcNorm(x.name);return nm.length>2&&(" "+c+" ").indexOf(" "+nm+" ")>=0;}).sort(function(a,b){return b.name.length-a.name.length;})[0];
+  return byName?byName.id:null;
+}
+function vcFrameType(c){
+  return /\bpuiet\w* cu albin\w*|\bcu albine\b/.test(c)?"ba":/\bpuiet\w*\b/.test(c)?"b":/\b(miere|mancare|hrana|provizii)\b/.test(c)?"h":/\b(pastura|polen)\b/.test(c)?"p":
+    /\b(fundati\w*|artificial\w*|faguri artificiali)\b/.test(c)?"f":/\b(vech\w*|negr\w*)\b/.test(c)?"old":/\b(cladit\w*|goal\w*|gol|faguri)\b/.test(c)?"e":null;
+}
+function vcMoves(C,self){
+  var out=[];
+  var MOVE=/\b(luat|scos|pus|adaugat|dat|mutat|transferat|bagat|introdus|trecut|primit|facut|fac|format)\b/;
+  C.forEach(function(c,i){
+    if(!/\bram(a|e|ele|ei)\b/.test(c)||!MOVE.test(c)||/\b(magazi\w*|cat|caturi)\b/.test(c)||/\bnu\b/.test(c))return;
+    var nm=/\b(\d+)\s*(?:de )?ram(?:a|e|ele)\b/.exec(c),n=nm?parseInt(nm[1]):(/\bram(a|ei)\b/.test(c)?1:0);
+    if(!n||n>12)return;
+    var t=vcFrameType(c)||(C[i+1]&&!/\bram(a|e|ele)\b/.test(C[i+1])&&vcFrameType(C[i+1]))||"b";
+    var ref=vcHiveRef(c,self),other=ref&&ref!==self?ref:null;
+    var nuc=/\broi\b|\broiul nou\b|\broi nou\b|\bpentru roi|\bun roi\b/.test(c)&&!/\broi(ul)? \d/.test(c);
+    var next=(C[i+1]||"")+" "+(C[i+2]||"");
+    var c2=c.replace(/\bde la\b/g,"dela"),fromW=/\b(dela|din|de pe)\b/.test(c2),toW=/\b(in|la|pentru|spre|catre)\s+(stup|roi)|\b(stupului|roiului)\b/.test(c2)||/\b(dat|mutat|transferat|trecut)\b[^,]*\b(stup\w*|roi\w*) \d/.test(c);
+    var r=null;
+    if(nuc||(!other&&/\b(facut|fac|format)\b[^,]*\broi\b/.test(next)&&/\b(luat|scos)\b/.test(c))){r={k:"out",n:n,t:t,dest:"nuc"};
+      var z=c+" "+next;r.nf={eg:/\b(oua|ou|ponta)\b/.test(z),lv:/\blarv/.test(z),cp:/\bcapacit/.test(z)&&!/\bbotc\w* capacit/.test(z),bc:/\b(botc\w*|potc\w*)\b/.test(z)};}
+    else if(other&&fromW&&!toW&&/\b(luat|adus|pus|adaugat|bagat|primit|introdus|mutat|transferat|trecut)\b/.test(c))r={k:"in",n:n,t:t,src:"hive",from:other};
+    else if(other)r={k:"out",n:n,t:t,dest:"hive",to:other};
+    else if(/\b(extractie|extractor|centrifug\w*|recoltat)\b/.test(c))r={k:"out",n:n,t:t==="b"?"h":t,dest:"extract"};
+    else if(/\b(scos|luat)\b/.test(c)&&/\b(depozit|magazie de rame|lada)\b/.test(c))r={k:"out",n:n,t:t,dest:"store"};
+    else if(/\b(pus|adaugat|bagat|introdus)\b/.test(c)&&/\b(fundati\w*|artificial\w*|noi|noua|goale|goala|cladit\w*|faguri)\b/.test(c))r={k:"in",n:n,t:vcFrameType(c)||"f",src:/\bdepozit\b/.test(c)?"store":"new"};
+    if(r){r.i=i;out.push(r);}
+  });
+  return out;
+}
+function vcMoveTxt(r){
+  var tl=mvPlain(mvTLbl(r.t)).toLowerCase(),n=r.n+" "+(r.n===1?"ramă":"rame")+" "+tl;
+  if(r.k==="in")return"🔄 +"+n+" ← "+(r.src==="hive"?mvHiveName(r.from):r.src==="store"?"depozit":"noi");
+  return"🔄 −"+n+" → "+(r.dest==="nuc"?"roi nou":r.dest==="hive"?mvHiveName(r.to):r.dest==="extract"?"extracție":r.dest==="store"?"depozit":"altceva");
+}
+// the nuc form opened after saving (frames.js mvNucAfterSave): tick what you said is on its frames
+function vcNucFill(){
+  var f=_vc.nucF;_vc.nucF=null;if(!f)return;
+  [["nEg","eg"],["nLv","lv"],["nCp","cp"],["nBc","bc"]].forEach(function(x){var el=$q(x[0]);if(el&&f[x[1]]&&!el.checked){el.checked=true;try{el.dispatchEvent(new Event("change",{bubbles:true}));}catch(e){}var c=el.closest("label")||el;c.classList.add("vc-hit");}});
+  if(typeof nucPrev==="function")nucPrev();
+}
+// phrases that mention something about the hive (keywords) — the rest is small talk
+var VC_KW=/\b(matc\w*|regin\w*|oua|ou|ponta|larv\w*|puiet\w*|capacit\w*|rame?|ramele|miere|hrana|mancare|provizii|rezerv\w*|pastura|polen|botc\w*|potc\w*|albin\w*|familia|familie|populati\w*|blande|calme|agresiv\w*|agitate|intep\w*|spatiu|loc|plin|roi\w*|magazi\w*|cat|caturi|varro\w*|varo\w*|capus\w*|nosem\w*|diaree|loca|varos|boal\w*|bolnav\w*|sanatos\w*|tratament\w*|sirop|turt\w*|candy|fondant|hranit\w*|fum|grade|ploaie|soare|vant\w*|noros|stup\w*|capac\w*|fund\w*|cantar\w*|kg|kile|litri|ghem\w*|zumzet\w*|moarte|umezeal\w*|mucegai|soarec\w*|urdinis\w*)\b/;
+function vcRelevant(txt){
+  return String(txt).split(/\s*[,.;\n]\s*/).filter(function(p){return p&&VC_KW.test(vcDigits(vcNorm(p)));})
+    .map(function(p){return p.charAt(0).toUpperCase()+p.slice(1);}).join(". ");
+}
 // live preview of what was understood
 window.vcPrev=function(){
   var tx=document.getElementById("vcTx"),el=document.getElementById("vcChips");if(!tx||!el)return;
-  var R=vcParse(tx.value);
+  var R=vcParse(tx.value,_vc.hid);
   el.innerHTML=R.chips.length?'<div class="hv-ts" style="width:100%;margin-bottom:2px;">Am înțeles:</div>'+R.chips.map(function(c){return'<span class="vc-chip">'+esc(c)+'</span>';}).join(""):"";
 };
 function vcHelpHTML(){
@@ -471,6 +637,7 @@ function vcHelpHTML(){
     ["😊 Albinele","foarte blânde · blânde · normale · agitate · agresive"],
     ["🐝 Familia","familie puternică / medie / slabă · populație 70%"],
     ["👑 Botci","două botci · botci căpăcite · le-am tăiat · le las · fără botci"],
+    ["🔄 Rame","am luat o ramă de puiet de la stupul 2 · am dat o ramă cu miere stupului 3 · am scos 2 rame cu albine și am făcut un roi nou (cu ouă și o botcă) · am pus 2 rame cu fundație"],
     ["📦 Spațiu","are loc · aproape plin · lipsă spațiu · am pus magazie · am scos magazia"],
     ["🩺 Sănătate","sănătoasă · varroa · 3 varroa căzute · nosema · puiet văros · locă"],
     ["🌤️ Vremea","soare · noros · vânt · ploaie · 22 de grade · fum puțin / fără fum"],
@@ -484,13 +651,17 @@ window.vcFill=function(){
   var tx=document.getElementById("vcTx");if(!tx)return;
   var txt=tx.value.trim(),hid=_vc.hid;
   vcStopAll();
-  var R=vcParse(txt);
+  var R=vcParse(txt,hid);
   inspM(hid);
   var hit=function(el){if(!el)return;var c=el.closest(".ck")||el.closest(".tr-fin")||el;c.classList.add("vc-hit");};
   var fire=function(el){try{el.dispatchEvent(new Event("change",{bubbles:true}));el.dispatchEvent(new Event("input",{bubbles:true}));}catch(e){}};
   var n=0;
+  if(R.extra.mv&&R.extra.mv.length&&typeof mvAdd==="function"){
+    R.extra.mv.forEach(function(r){var pre={n:r.n,t:r.t};if(r.k==="out"){pre.dest=r.dest;if(r.to)pre.to=r.to;}else{pre.src=r.src;if(r.from)pre.from=r.from;}mvAdd(r.k,pre);n++;});
+    hit(document.getElementById("iRxW"));
+  }
   var SUM=["iQS","iEg","iLv","iCap","iFB","iFH","iBhv","iQQ","iBtc","iBtcN","iPop","iBP","iSp"];
-  var summer=SUM.some(function(k){return k in R.v||k in R.c;})||R.extra.magAdd||R.extra.magRm;
+  var summer=SUM.some(function(k){return k in R.v||k in R.c;})||R.extra.magAdd||R.extra.magRm||(R.extra.mv&&R.extra.mv.length);
   var wm=$q("iWM"),wasW=wm&&wm.checked;
   if(wasW&&summer){wm.checked=false;inspWinterApply();}
   Object.keys(R.v).forEach(function(id){var el=$q(id);if(!el)return;
@@ -504,7 +675,8 @@ window.vcFill=function(){
   var E=R.extra;
   if(E.stN&&$q("iStN")){$q("iStN").value=E.stN.charAt(0).toUpperCase()+E.stN.slice(1);hit($q("iStN"));}
   if(E.btcAct){var rb=document.querySelector("input[name='iBtcAct'][value='"+E.btcAct+"']");if(rb){rb.checked=true;fire(rb);hit(rb.parentNode);n++;}}
-  if(E.varN&&$q("iPostTrVarroa")){$q("iPostTrVarroa").value=E.varN;hit($q("iPostTrVarroa"));}
+  if(E.varN!=null){["iVrMites","iPostTrVarroa"].forEach(function(id){var el=$q(id);if(el){el.value=E.varN;fire(el);hit(el);}});}
+  if(E.btcF&&$q("iBtcF")){$q("iBtcF").value=E.btcF.charAt(0).toUpperCase()+E.btcF.slice(1);hit($q("iBtcF"));}
   if(E.fd){
     var nw=$q("iFdNw"),rf=document.querySelector("#MB .iFdRf");
     if(nw&&!nw.checked){nw.checked=true;fire(nw);}
@@ -514,12 +686,21 @@ window.vcFill=function(){
   if(E.fdFin){var fn=document.querySelector("#MB .iFdFin");if(fn&&!fn.checked){fn.checked=true;fire(fn);hit(fn);n++;}}
   if(E.fdPlan&&!E.fd){var pl=$q("iFdPl");if(pl&&!pl.checked){pl.checked=true;fire(pl);hit(pl);n++;}}
   if(typeof _magSt!=="undefined"&&_magSt&&document.querySelector("#MB .mg2")){
-    for(var a=0;a<(E.magAdd||0);a++)magAdd();
+    for(var a=0;a<(E.magAdd||0);a++){magAdd();if(E.magF){_magSt.cur[_magSt.cur.length-1].f=Math.min(12,E.magF);}}
+    if(E.magF)magRedraw();
     for(var b=0;b<(E.magRm||0)&&_magSt.cur.length;b++)magDel(_magSt.cur.length-1);
     if(E.magAdd||E.magRm){hit(document.getElementById("magBlock"));n++;}
   }
   if(E.kg&&$q("iWgOn")){var wg=$q("iWgOn");if(!wg.checked){wg.checked=true;fire(wg);}if($q("iWgK")){$q("iWgK").value=E.kg;fire($q("iWgK"));}hit(wg);n++;}
-  if(txt&&$q("iNt")){var nt=$q("iNt");nt.value=(nt.value?nt.value+"\n":"")+"🎙️ "+txt.charAt(0).toUpperCase()+txt.slice(1);hit(nt);}
+  // Observații: only the phrases that talk about the hive (the chatting in between is left out);
+  // everything said is kept with the inspection („🎙️ Tot ce ai spus”)
+  if(txt&&$q("iNt")){
+    var rel=vcRelevant(txt),nt=$q("iNt");
+    if(rel){nt.value=(nt.value?nt.value+"\n":"")+"🎙️ "+rel;hit(nt);}
+    var hv=document.createElement("input");hv.type="hidden";hv.id="iVoiceTx";hv.value=txt;nt.parentNode.appendChild(hv);
+  }
+  _vc.pend=hid;
+  _vc.nucF=null;(R.extra.mv||[]).forEach(function(r){if(r.nf)_vc.nucF=r.nf;});
   // banner on top of the form
   var mt=document.querySelector("#MB .mt");
   if(mt){var bn=document.createElement("div");bn.className="vc-ban";

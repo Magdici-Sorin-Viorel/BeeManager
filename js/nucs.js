@@ -116,8 +116,12 @@ window.nucPrev=function(){
       if(d){
         var ex=editId?D.hives.find(function(x){return x.id===editId;}):null,tk=ex&&ex.nuc&&ex.nuc.taken&&ex.nuc.taken.donor===d.id?ex.nuc.taken:{fB:0,fH:0};
         var b0=(d.fB||0)+(tk.fB||0),h0=(d.fH||0)+(tk.fH||0);
+        if(mb&&mb.dataset.fromInsp){   // frames already taken out in the donor's inspection → its numbers are already the remaining ones
+          tx+='<div>🏠 '+esc(d.name)+': '+L2("a rămas cu","is left with")+' <b>'+(d.fB||0)+'</b> '+L2("rame puiet","brood frames")+' · <b>'+(d.fH||0)+'</b> '+L2("mâncare","food")+'</div>';
+        }else{
         tx+='<div>🏠 '+esc(d.name)+': '+L2("rămâne cu","is left with")+' <b>'+Math.max(0,b0-fb)+'</b> '+L2("rame puiet","brood frames")+' · <b>'+Math.max(0,h0-fh)+'</b> '+L2("mâncare","food")+' <span class="hv-dim">('+L2("avea","had")+' '+b0+' / '+h0+')</span></div>';
         if(fb>b0)tx+='<div class="nuc-warn">⚠️ '+L2("Donatorul nu are atâtea rame de puiet","The donor doesn't have that many brood frames")+'</div>';
+        }
         var stop=genStoppedAt(d);if(stop)tx+='<div class="nuc-warn">⛔ '+L2("Ramura acestui stup e oprită din","This hive's branch was stopped on")+' '+stop+'</div>';
       }
     }

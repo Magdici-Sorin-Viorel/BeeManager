@@ -1194,4 +1194,9 @@ select[onchange*="_hrHiveFilter"],select[onchange*="_hrMonthFilter"]{width:auto!
 .ni-scan{background:linear-gradient(135deg,rgba(230,180,34,.22),rgba(230,180,34,.08));color:var(--gold);font-weight:700;margin-bottom:6px;}
 /* hive card actions: when the card is narrow, the main button gets its own row */
 .hv-act{flex-wrap:wrap;justify-content:flex-end;}
-.hv-act-main{flex:1 1 150px;}
+.hv-act-main{flex:1 1 110px;}
+.vc-draft{font-size:.78rem;padding:8px 11px;border-radius:var(--rs);background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.28);margin:-4px 0 12px;}
+.vc-draft .lnk{background:none;border:none;color:var(--info);text-decoration:underline;padding:0;font-size:inherit;cursor:pointer;min-height:auto;box-shadow:none;}
+.vc-full{margin-top:4px;font-size:.72rem;color:var(--mut);}
+.vc-full summary{cursor:pointer;}
+.vc-full div{margin-top:4px;white-space:pre-wrap;max-height:220px;overflow:auto;}

@@ -113,6 +113,7 @@ function inspCardHTML(i,showHiveName){
     +(function(){var x=i.mv?mvTxt(i):rxTxt(i);return x?'<div style="font-size:.76rem;margin-top:3px;">🔄 '+esc(x)+'</div>':"";})()
     +(function(){var v=(D.varroa||[]).find(function(x){return x.inspectionId===i.id;});return v?'<div style="font-size:.76rem;margin-top:3px;">🕷️ '+vrValStr(v)+(v.reapplied?' · 💧':'')+' <span class="bg gb" style="font-size:.6rem;">💊 '+vrPhaseLbl(vrPhase(v))+'</span></div>':"";})()
     +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+esc(i.notes)+'</div>':"")
+    +(i.voiceTx?'<details class="vc-full"><summary>🎙️ Tot ce ai spus</summary><div>'+esc(i.voiceTx)+'</div></details>':"")
     +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️</button>'
     +'<button class="btn sm bd" onclick="delInsp(\''+i.id+'\')">🗑️</button></div>'
     +'</div>';
@@ -640,6 +641,7 @@ window.saveInsp=function(editId,hiveId){
     magFull:(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.magFull||0:0;})(),   // old field, kept on edit
     winter:($q("iWn")&&$q("iWn").checked)?{frames:parseInt(($q("iWnF")||{}).value)||0,food:parseInt(($q("iWnH")||{}).value)||0}:null,
     diseases:dis,diseaseN:dn,notes:($q("iNt")||{}).value||"",
+    voiceTx:($q("iVoiceTx")||{}).value||(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.voiceTx||"":"";})(),   // 🎙️ everything said (voice.js)
     postTr:!!($q("iPostTr")||{}).checked,
     postTrId:($q("iPostTrProd")||{}).value||null,
     postTrEff:($q("iPostTrEff")||{}).value||"",
@@ -706,6 +708,7 @@ window.saveInsp=function(editId,hiveId){
     if(o.mags){hive.mags=o.mags;hive.magCount=o.magCount;hive.hasMag=o.magCount>0;}
   }
   save();closeM();
+  if(typeof vcSaved==="function")vcSaved(hid);   // 🎙️ voice draft of this hive is now saved
   // Per-hive auto-snapshot (saved to separate localStorage key)
   saveHiveSnapshot(hid);
   render();

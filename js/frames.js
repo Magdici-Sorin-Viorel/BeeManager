@@ -299,6 +299,7 @@ function mvNucAfterSave(o){
     var n=document.createElement("div");n.className="mv-bal ok";n.innerHTML="🔄 Ramele vin din inspecția Stupului — sunt deja scăzute din "+esc(mvHiveName(o.hiveId))+", nu se mai scad o dată.";
     var w=$q("nDonW");if(w)w.appendChild(n);
     if(typeof nucPrev==="function")nucPrev();
+    if(typeof vcNucFill==="function")vcNucFill();   // 🎙️ what you said about the nuc's frames
   },350);
 }
 // a nuc was saved: link it to the inspection rows (from inspection) or note it on the donor (🐝 button)
