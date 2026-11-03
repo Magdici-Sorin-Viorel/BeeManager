@@ -7,6 +7,7 @@
 var PGS_DEFAULT=[
   {id:"dashboard",lk:"nav_dashboard",i:"fa-chart-line"},
   {id:"hives",lk:"nav_hives",i:"fa-house"},
+  {id:"scan",lk:"nav_scan",i:"fa-qrcode",act:"qrScan"},   // not a page: opens the QR scanner (voice.js); can be moved like any menu item
   {id:"queens",lk:"nav_queens",i:"fa-crown"},
   {id:"inspections",lk:"nav_inspections",i:"fa-book-open"},
   {id:"honey",lk:"nav_honey",i:"fa-droplet"},
@@ -36,7 +37,8 @@ function applyMenuOrder(){
   order.forEach(function(id){if(byId[id]){res.push(byId[id]);delete byId[id];}});
   avail.forEach(function(p){if(byId[p.id])res.push(p);}); // new / unchosen menu items → at the end
   PGS=res;
-  HOME=PGS.length?PGS[0].id:"hives";
+  var pages=PGS.filter(function(p){return !p.act;});   // the start page is the first real page (not the scanner)
+  HOME=pages.length?pages[0].id:"hives";
   MOB_PRIMARY=PGS.slice(0,4).map(function(p){return p.id;});
 }
 applyMenuOrder();
@@ -91,7 +93,7 @@ function buildNav(){
   var html=PGS.map(function(p){
     return'<div class="ni'+(p.id===curP?" on":"")+'" title="'+t(p.lk)+'" onclick="go(\''+p.id+'\')"><i class="fas '+p.i+'"></i><span>'+t(p.lk)+'</span></div>';
   }).join("");
-  document.getElementById("nav").innerHTML='<div class="ni ni-scan" title="Scanează codul QR al unui stup" onclick="qrScan()"><i class="fas fa-qrcode"></i><span>Scanează QR</span></div>'+html;
+  document.getElementById("nav").innerHTML=html;
 
   // ── Mobile bottom nav ────────────────────────────────────────
   var mobNav=document.getElementById("mobNav");
@@ -101,11 +103,10 @@ function buildNav(){
   var moreActive=morePgs.some(function(p){return p.id===curP;});
 
   // Bottom bar: 4 items + More button
-  var scanB='<button class="mob-ni mob-scan" onclick="qrScan()" aria-label="Scanează codul QR al unui stup"><b>📷</b><span>Scanează</span></button>';
-  mobNav.innerHTML=primaryPgs.map(function(p,i){
-    return(i===2?scanB:'')+'<button class="mob-ni'+(curP===p.id?" active":"")+'" onclick="go(\''+p.id+'\')">'
+  mobNav.innerHTML=primaryPgs.map(function(p){
+    return'<button class="mob-ni'+(curP===p.id?" active":"")+'" onclick="go(\''+p.id+'\')">'
       +'<i class="fas '+p.i+'"></i><span>'+t(p.lk)+'</span></button>';
-  }).join("")+(primaryPgs.length<3?scanB:'')
+  }).join("")
   +'<button class="mob-ni'+(_moreOpen||moreActive?" active":"")+'" id="moreBtnNav" onclick="_moreOpen?closeMoreDrw():openMoreDrw()">'
     +'<i class="fas fa-ellipsis"></i><span>'+(D.settings.lang==="en"?"More":"Mai mult")+'</span></button>';
 
@@ -120,6 +121,9 @@ function buildNav(){
 }
 
 function go(p){
+  // menu items that are actions (📷 scan): run them, stay on the current page
+  var act=PGS_DEFAULT.filter(function(x){return x.id===p&&x.act;})[0];
+  if(act){if(_moreOpen){closeMoreDrw(function(){window[act.act]();});}else window[act.act]();return;}
   // If a form is open, close it first (asking if it has unsaved data)
   if(document.getElementById("MB")){requestCloseM(function(){go(p);});return;}
   // „Mai mult” drawer open: close it first, then change page
@@ -147,7 +151,7 @@ function go(p){
 // Start page from URL: index.html#varroa opens Varroa directly
 function pageFromHash(){
   var h=(location.hash||"").replace("#","");
-  return PGS.some(function(x){return x.id===h;})?h:HOME;
+  return PGS.some(function(x){return x.id===h&&!x.act;})?h:HOME;
 }
 window.addEventListener("hashchange",function(){var p=pageFromHash();if(p!==curP)go(p);});
 

@@ -8,7 +8,7 @@ const TR={
 ro:{
   nav_dashboard:"Dashboard",nav_hives:"Stupi",nav_queens:"Regine",nav_inspections:"Inspecții",
   nav_honey:"Recoltă Miere",nav_treatments:"Tratamente",nav_pastorare:"Pastorare",nav_genealogie:"Genealogie",
-  nav_inventory:"Inventar",nav_calendar:"Calendar",nav_analytics:"Analize",nav_settings:"Setări",
+  nav_inventory:"Inventar",nav_calendar:"Calendar",nav_analytics:"Analize",nav_settings:"Setări",nav_scan:"Scanează QR",
   dash_title:"Dashboard Stupină",dash_colonies:"Colonii active",dash_queens_active:"Regine active",
   dash_honey_kg:"Miere extrasă (kg)",dash_treatments:"Tratamente planificate",
   dash_last_insp:"Ultima inspecție",dash_low_stock:"Stoc scăzut",dash_sessions:"sesiuni",
@@ -54,7 +54,7 @@ ro:{
   q_origins:["Cumpărată","Din roi propriu","Crescută local","Import","Natural (roi)","Schimbare naturală (în stup)"],
   queen_races:["Carnica","Buckfast","Carnica hibrid","Caucasian","Italian","Carpatica","Autohtonă","Altă rasă"],
   q_score:"Scor:",q_no:"Nicio regină înregistrată.",q_del_c:"Ștergi regina?",
-  mno_title:"☰ Ordinea meniului",mno_info:"Ține apăsat pe ☰ și trage meniul în poziția dorită, sau folosește săgețile ▲▼. Pe telefon, primele 4 apar în bara de jos; aplicația pornește pe primul.",mno_bar:"bara de jos",mno_start:"pornire",mno_reset:"↺ Ordinea implicită",mno_saved:"Ordinea meniului salvată",
+  mno_title:"☰ Ordinea meniului",mno_info:"Ține apăsat pe ☰ și trage meniul în poziția dorită, sau folosește săgețile ▲▼. Pe telefon, primele 4 apar în bara de jos; aplicația pornește pe prima pagină din listă (📷 Scanează QR e doar un buton, nu o pagină).",mno_bar:"bara de jos",mno_start:"pornire",mno_reset:"↺ Ordinea implicită",mno_saved:"Ordinea meniului salvată",
   hv_empty:"Niciun stup încă. Apasă «+ Stup nou» ca să adaugi primul.",hv_t_queen:"👑 Regina",hv_q_add:"adaug-o din ✏️ Editează",hv_last:"ultima",hv_feed_none:"nicio hrănire",hv_yday:"ieri",hv_ago_pre:"acum ",hv_ago_post:"",hv_nest:"Rame cuib",hv_frames:"rame",hv_brood_l:"puiet",hv_food_l:"mâncare",hv_insp_l:"Inspecții",hv_never_insp:"niciodată inspectat",hv_new_insp:"Inspecție nouă",hv_edit:"Editează",hv_s_strong:"puternici",hv_s_med:"medii",hv_s_weak:"slabi",hv_s_tr:"sub tratament",hv_s_past:"în pastorare",hv_s_fed:"sub hrănire",hv_left:"plecat",hv_vr_go:"vezi Varroa",
   hv_past:"🚚 În pastorare",hv_past_back:"întoarcere planificată",hv_past_open:"fără dată de întoarcere",
   hv_fed:"🍬 Sub hrănire",hv_tr:"💊 Sub tratament",hv_tr_until:"până la",hv_tr_left:"încă",hv_tr_today:"doar azi",hv_tr_planned:"planificat",hv_tr_from:"din",hv_tr_last:"ultimul",hv_tr_ended:"încheiat",hv_vr:"🕷️ Varroa",hv_vr_none:"nicio numărătoare",hv_mites:"acarieni",hv_bees:"albine",hv_vr_ok:"OK",hv_vr_watch:"Monitorizare",hv_vr_treat:"Tratament necesar",tr_end:"📅 Până la (sfârșit)",tr_end_h:"Gol = tratament de o singură zi",tr_end_err:"Data de sfârșit e înaintea datei de început!",hv_insp_hist:"📋 Inspecții",hv_insp_none:"Nicio inspecție încă. Apasă «🔍 Inspecție» ca să adaugi prima.",hv_days:"zile",hv_today:"azi",hv_report:"📄 Raport complet stup",hv_alert_lbl:"Neinspectați de cel puțin",hv_never:"niciodată",
@@ -316,7 +316,7 @@ ro:{
 en:{
   nav_dashboard:"Dashboard",nav_hives:"Hives",nav_queens:"Queens",nav_inspections:"Inspections",
   nav_honey:"Honey Harvest",nav_treatments:"Treatments",nav_pastorare:"Migratory Beekeeping",nav_genealogie:"Genealogy",
-  nav_inventory:"Inventory",nav_calendar:"Calendar",nav_analytics:"Analytics",nav_settings:"Settings",
+  nav_inventory:"Inventory",nav_calendar:"Calendar",nav_analytics:"Analytics",nav_settings:"Settings",nav_scan:"Scan QR",
   dash_title:"Apiary Dashboard",dash_colonies:"Active Colonies",dash_queens_active:"Active Queens",
   dash_honey_kg:"Honey Extracted (kg)",dash_treatments:"Planned Treatments",
   dash_last_insp:"Last Inspection",dash_low_stock:"Low Stock",dash_sessions:"sessions",

@@ -1185,13 +1185,6 @@ select[onchange*="_hrHiveFilter"],select[onchange*="_hrMonthFilter"]{width:auto!
 .vc-ban{font-size:.8rem;padding:10px 12px;border-radius:var(--rs);background:rgba(230,180,34,.12);border:1px solid rgba(230,180,34,.4);margin:0 0 12px;}
 .vc-hit{outline:2px solid var(--gold)!important;outline-offset:2px;border-radius:6px;background:rgba(230,180,34,.07);}
 .vc-stat .lnk{background:none;border:none;color:var(--info);text-decoration:underline;padding:0;font-size:inherit;cursor:pointer;min-height:auto;box-shadow:none;}
-/* 📷 scan button in the main menu (raised, middle of the bottom bar) */
-.mob-scan{overflow:visible;}
-.mob-scan b{width:52px;height:52px;margin-top:-26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.45rem;
-  background:radial-gradient(circle at 35% 30%,var(--gold2),var(--gold));box-shadow:0 4px 14px rgba(230,180,34,.45),0 0 0 4px var(--sur);}
-.mob-scan span{color:var(--gold);}
-.mob-scan:active b{transform:scale(.94);}
-.ni-scan{background:linear-gradient(135deg,rgba(230,180,34,.22),rgba(230,180,34,.08));color:var(--gold);font-weight:700;margin-bottom:6px;}
 /* hive card actions: when the card is narrow, the main button gets its own row */
 .hv-act{flex-wrap:wrap;justify-content:flex-end;}
 .hv-act-main{flex:1 1 110px;}
@@ -1200,3 +1193,8 @@ select[onchange*="_hrHiveFilter"],select[onchange*="_hrMonthFilter"]{width:auto!
 .vc-full{margin-top:4px;font-size:.72rem;color:var(--mut);}
 .vc-full summary{cursor:pointer;}
 .vc-full div{margin-top:4px;white-space:pre-wrap;max-height:220px;overflow:auto;}
+.vc-kbl{text-align:center;margin-top:10px;}
+.vc-kbl .lnk,.vc-tips .lnk{background:none;border:none;color:var(--info);text-decoration:underline;padding:0;font-size:.8rem;cursor:pointer;min-height:auto;box-shadow:none;}
+.vc-tips{margin:8px 0 6px;padding-left:18px;font-size:.78rem;line-height:1.5;display:flex;flex-direction:column;gap:6px;}
+.vc-diag{margin-top:8px;font-size:.78rem;display:flex;flex-direction:column;gap:3px;}
+.vc-diag:empty{display:none;}

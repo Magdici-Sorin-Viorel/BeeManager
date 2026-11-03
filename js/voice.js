@@ -164,13 +164,15 @@ window.vcOpen=function(hid){
     +'<div id="vcChips" class="vc-chips"></div>'
     +'<div class="br" style="margin-top:12px;"><button class="btn" onclick="vcFill()">✅ Completează formularul</button>'
     +'<button class="btn gh" onclick="vcStopAll();inspM(\''+hid+'\')">✍️ Manual</button></div>'
+    +'<div class="vc-kbl"><button class="lnk" onclick="vcKbToggle()" id="vcKbB"></button></div>'
     +'<details class="vc-det"><summary>❔ Ce cuvinte înțelege aplicația</summary>'+vcHelpHTML()+'</details>'
+    +'<details class="vc-det"><summary>🔧 Nu mă înțelege bine? Test și sfaturi</summary>'+vcTipsHTML()+'<div id="vcDiag" class="vc-diag"></div></details>'
     +'<details class="vc-det" id="vcAudD"><summary>🎧 Fără semnal: înregistrare audio <span id="vcAudN"></span></summary>'
     +'<p class="hv-ts" style="margin:6px 0 8px;">Înregistrarea se păstrează pe telefon ca să o asculți mai târziu (de ex. acasă, apoi apeși 🎙️ și repeți pe scurt). În timp ce înregistrează audio, dictarea nu merge — microfonul e ocupat.</p>'
     +'<button class="btn sm gh" id="vcRecB" onclick="vcRecToggle()">⏺ Înregistrează audio</button>'
     +'<div id="vcAudL" class="vc-audl"></div></details>');
-  try{_vc.local=localStorage.getItem("vcLocal")==="available";}catch(e){}
-  vcStatus();vcAudList();
+  try{_vc.local=localStorage.getItem("vcLocal")==="available";_vc.kb=localStorage.getItem("vcKb")==="1";}catch(e){}
+  vcStatus();vcAudList();vcKbApply();
   // what you said earlier for this hive and did not save yet (app closed, phone locked…) comes back
   var dr=vcDraftGet(hid);
   if(dr&&dr.txt){var tx=document.getElementById("vcTx");tx.value=dr.txt;vcPrev();
@@ -188,10 +190,32 @@ function vcStatus(msg){
   var el=document.getElementById("vcStat");if(!el)return;
   var SR=vcSR(),on=navigator.onLine;
   if(msg){el.innerHTML=msg;return;}
+  if(_vc.kb){vcKbApply();return;}
   if(!SR){el.innerHTML='⌨️ Telefonul nu are recunoaștere vocală în aplicație. Apasă în casetă și folosește <b>🎤 de pe tastatură</b>.';el.className="vc-stat w";vcMicShow(false);return;}
   var locB=typeof SR.available==="function"&&!_vc.local?' <button class="lnk" onclick="vcLocalCheck()">Verifică dictarea offline Chrome</button>':'';
   if(!on&&!_vc.local){el.innerHTML='📴 <b>Fără semnal.</b> Apasă în casetă și vorbește cu <b>🎤 de pe tastatură</b> (Gboard merge și offline dacă ai descărcat româna: Setări Gboard → Dictare vocală → Recunoaștere offline).'+locB+'<span id="vcLoc"></span>';el.className="vc-stat w";vcMicShow(false);return;}
   el.innerHTML=(on?'🟢 Apasă 🎙️, vorbește cât vrei, apoi apasă din nou ca să oprești.':'🟢 Recunoaștere offline (Chrome). Apasă 🎙️ și vorbește.')+'<span id="vcLoc"></span>';el.className="vc-stat";vcMicShow(true);
+}
+// ⌨️ keyboard mode: dictate with Gboard's microphone instead of the app's (often recognises better)
+window.vcKbToggle=function(){_vc.kb=!_vc.kb;try{localStorage.setItem("vcKb",_vc.kb?"1":"");}catch(e){}if(_vc.kb)vcStop();vcStatus();vcKbApply();};
+function vcKbApply(){
+  var b=document.getElementById("vcKbB");if(b)b.textContent=_vc.kb?"🎙️ Folosesc microfonul aplicației":"⌨️ Prefer să dictez cu tastatura (Gboard)";
+  if(_vc.kb){vcMicShow(false);var st=document.getElementById("vcStat");if(st){st.className="vc-stat w";st.innerHTML='⌨️ <b>Dictare cu tastatura:</b> atinge caseta de mai jos, apoi apasă <b>🎤</b> pe tastatură și vorbește. Gboard merge și fără semnal dacă ai descărcat româna.';}
+    var tx=document.getElementById("vcTx");if(tx)setTimeout(function(){tx.focus();},150);}
+}
+function vcTipsHTML(){
+  return'<ol class="vc-tips">'
+    +'<li><b>Fă proba în casă, în liniște:</b> apasă 🎙️ și spune rar „matca văzută, puiet pe șase rame”. Dacă și aici scrie prostii, problema e la setările telefonului (pașii 2–3), nu la stupină.</li>'
+    +'<li><b>Limba recunoașterii vocale:</b> deschide aplicația <b>Google</b> → poza ta (sus, dreapta) → <b>Setări → Voce → Limbi</b> → bifează <b>Română (România)</b> și pune-o prima. Tot acolo, la <b>Recunoaștere vocală offline</b>, descarcă <b>Română</b>.</li>'
+    +'<li><b>Gboard:</b> Setări telefon → Sistem → Tastatură → Gboard → <b>Limbi</b>: să fie Română. Apoi încearcă butonul <b>⌨️ Prefer să dictez cu tastatura</b> de mai sus — pe multe telefoane Gboard înțelege mai bine.</li>'
+    +'<li><b>La stupină:</b> vântul, zumzetul și masca/voalul strică mult. Ține telefonul la 10–20 cm de gură, cu microfonul (jos) spre tine, și spune fraze scurte cu o mică pauză. O cască cu microfon (cu fir sau bluetooth, oricare veche) aproape de gură ajută cel mai mult.</li>'
+    +'<li><b>Verifică textul</b> din casetă: ce e greșit poți corecta cu tastatura înainte de „Completează formularul”.</li></ol>'
+    +'<div class="hv-ts">Mai jos apar, după ce vorbești, variantele pe care le-a auzit telefonul (cu cât de sigur e). Dacă îmi trimiți ce scrie aici, pot potrivi aplicația pe vocea ta.</div>';
+}
+function vcDiagShow(){
+  var el=document.getElementById("vcDiag");if(!el||!_vc.diagL)return;
+  el.innerHTML='<b>Ultima frază auzită:</b>'+_vc.diagL.map(function(a,i){return'<div>'+(i+1)+'. „'+esc(a.t)+'” <span class="hv-ts">'+(a.c?Math.round(a.c*100)+"% sigur":"")+'</span></div>';}).join("")
+    +'<div class="hv-ts">Limba: română (ro-RO) · '+(navigator.onLine?"cu semnal":"fără semnal")+'</div>';
 }
 function vcMicShow(v){var w=document.querySelector(".vc-micw");if(w)w.style.display=v?"flex":"none";}
 window.addEventListener("online",function(){if(document.getElementById("vcTx")&&!_vc.on)vcStatus();});
@@ -225,14 +249,19 @@ window.vcToggle=function(){if(_vc.on)vcStop();else vcStart();};
 function vcStart(){
   var SR=vcSR();if(!SR)return;
   if(_vc.mr){toast("Oprește întâi înregistrarea audio.","⚠️");return;}
-  var r=new SR();r.lang="ro-RO";r.continuous=true;r.interimResults=true;r.maxAlternatives=1;
+  var r=new SR();r.lang="ro-RO";r.continuous=true;r.interimResults=true;r.maxAlternatives=5;
   if(!navigator.onLine&&_vc.local){try{r.processLocally=true;}catch(e){}}
   r.onresult=function(e){
     var tx=document.getElementById("vcTx");if(!tx){vcStop();return;}
     var interim="";
     for(var i=e.resultIndex;i<e.results.length;i++){
-      var s=e.results[i][0].transcript.trim();if(!s)continue;
-      if(e.results[i].isFinal)vcAppend(tx,s);else interim+=" "+s;
+      var res=e.results[i],s=res[0].transcript.trim();
+      if(res.isFinal&&res.length>1){   // the phone gives a few guesses → pick the one with most beekeeping words
+        var best=null;for(var a=0;a<res.length;a++){var tt=res[a].transcript.trim(),sc=(res[a].confidence||0)+0.2*vcKwHits(tt);if(tt&&(!best||sc>best.sc))best={t:tt,sc:sc};}
+        if(best)s=best.t;}
+      if(res.isFinal){_vc.diagL=[].map.call(res,function(a){return{t:a.transcript.trim(),c:a.confidence};});vcDiagShow();}
+      if(!s)continue;
+      if(res.isFinal)vcAppend(tx,s);else interim+=" "+s;
     }
     var iv=document.getElementById("vcInt");if(iv)iv.textContent=interim.trim();
     vcPrev();
@@ -368,8 +397,22 @@ function vcDigits(s){
 }
 // Speech recognition gives almost no punctuation → cut the text into short clauses at connector words,
 // so a „nu” or a number only applies to its own clause.
+// beekeeping words the phone often mishears („potcă”, „puiat”, „varoa”…) → closest real word
+var VC_LEX=["botca","botci","botcile","varroa","puiet","magazie","magazii","magazia","larve","capacit","capacite","capacita","fundatie","pastura","matca","matcuta","albine","albinele","provizii","intervale","urdinis","zumzet","sirop","turta","ghemul","inspectia"];
+function vcLev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var d=[],i,j;for(i=0;i<=a.length;i++){d[i]=[i];}for(j=0;j<=b.length;j++)d[0][j]=j;
+  for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
+var VC_FIX={potca:"botca",potci:"botci",botce:"botci",botcii:"botci",bortca:"botca",varoa:"varroa",varo:"varroa",barroa:"varroa",varola:"varroa",puiat:"puiet",puieti:"puiet",puietul:"puiet",
+  magazine:"magazie",magazin:"magazie",larva:"larve",larvele:"larve",fundati:"fundatie",pastur:"pastura",matc:"matca"};
+function vcFuzzy(x){
+  return x.replace(/\b[a-z]{4,}\b/g,function(w){
+    if(VC_FIX[w])return VC_FIX[w];
+    if(w.length<5||VC_LEX.indexOf(w)>=0)return w;
+    var best=null,bd=9;VC_LEX.forEach(function(l){var d=vcLev(w,l);if(d<bd){bd=d;best=l;}});
+    return bd<=(w.length>=8?2:1)?best:w;});
+}
+function vcKwHits(t){var n=0,x=vcFuzzy(vcNorm(t));x.split(" ").forEach(function(w){if(VC_KW.test(w))n++;});return n;}
 function vcClauses(raw){
-  var x=" "+vcDigits(vcNorm(String(raw||"").replace(/[,.;:!?\n]+/g," qqsep "))).replace(/\bqqsep\b/g,",")+" ";
+  var x=" "+vcDigits(vcFuzzy(vcNorm(String(raw||"").replace(/[,.;:!?\n]+/g," qqsep ")))).replace(/\bqqsep\b/g,",")+" ";
   x=x.replace(/ (si|iar|dar|apoi|deci|plus|insa|totusi|dupa aceea|pe urma|in rest|mai departe|acum) (?!(pe )?(rama|ramele|\d)\b)/g," , $1 ");
   x=x.replace(/ (la) (?=(matca|regina|botc|potc|magazi|cat|caturi|varro|varoa|puiet|oua|hrana|mancare|spatiu|albine|familie|familia|temperament|boli|sanatate|cantar|vreme))/g," , $1 ");
   // „am pus / am adăugat / am văzut …” starts a new clause (not after a „nu”)

@@ -140,7 +140,7 @@ function menuOrderListHTML(){
       +'<span class="mno-n">'+(i+1)+'</span>'
       +'<i class="fas '+p.i+'" style="color:var(--gold);width:18px;text-align:center;"></i>'
       +'<span class="mno-l">'+t(p.lk)
-      +(i===0?' <span class="bg gg mno-b">🏠 '+t("mno_start")+'</span>':'')
+      +(p.id===HOME?' <span class="bg gg mno-b">🏠 '+t("mno_start")+'</span>':'')
       +(i<4?' <span class="bg gb mno-b">📱 '+t("mno_bar")+'</span>':'')
       +'</span>'
       +'<button type="button" class="btn sm gh mno-a" onclick="mnoMove(\''+p.id+'\',-1)"'+(i===0?' disabled':'')+'>▲</button>'
