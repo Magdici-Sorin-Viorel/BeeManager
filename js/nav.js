@@ -91,7 +91,7 @@ function buildNav(){
   var html=PGS.map(function(p){
     return'<div class="ni'+(p.id===curP?" on":"")+'" title="'+t(p.lk)+'" onclick="go(\''+p.id+'\')"><i class="fas '+p.i+'"></i><span>'+t(p.lk)+'</span></div>';
   }).join("");
-  document.getElementById("nav").innerHTML=html;
+  document.getElementById("nav").innerHTML='<div class="ni ni-scan" title="Scanează codul QR al unui stup" onclick="qrScan()"><i class="fas fa-qrcode"></i><span>Scanează QR</span></div>'+html;
 
   // ── Mobile bottom nav ────────────────────────────────────────
   var mobNav=document.getElementById("mobNav");
@@ -101,10 +101,11 @@ function buildNav(){
   var moreActive=morePgs.some(function(p){return p.id===curP;});
 
   // Bottom bar: 4 items + More button
-  mobNav.innerHTML=primaryPgs.map(function(p){
-    return'<button class="mob-ni'+(curP===p.id?" active":"")+'" onclick="go(\''+p.id+'\')">'
+  var scanB='<button class="mob-ni mob-scan" onclick="qrScan()" aria-label="Scanează codul QR al unui stup"><b>📷</b><span>Scanează</span></button>';
+  mobNav.innerHTML=primaryPgs.map(function(p,i){
+    return(i===2?scanB:'')+'<button class="mob-ni'+(curP===p.id?" active":"")+'" onclick="go(\''+p.id+'\')">'
       +'<i class="fas '+p.i+'"></i><span>'+t(p.lk)+'</span></button>';
-  }).join("")
+  }).join("")+(primaryPgs.length<3?scanB:'')
   +'<button class="mob-ni'+(_moreOpen||moreActive?" active":"")+'" id="moreBtnNav" onclick="_moreOpen?closeMoreDrw():openMoreDrw()">'
     +'<i class="fas fa-ellipsis"></i><span>'+(D.settings.lang==="en"?"More":"Mai mult")+'</span></button>';
 
@@ -195,6 +196,8 @@ function mHistPop(owner,after){
 window.addEventListener("popstate",function(){
   if(_popIgnore>0){_popIgnore--;var f=_popAfter.shift();if(f)f();mFlushPending();return;}
   _mHist=null;
+  // 0. the QR scanner (voice.js)
+  if(document.getElementById("qrScan")){qrStop(true);return;}
   // 1. „ieși fără să salvezi?” confirm dialog → stay in the form
   var conf=document.getElementById("MB_CONF");
   if(conf){var no=document.getElementById("confNo");if(no)no.click();else conf.remove();if(document.getElementById("MB"))mHistPush("modal");return;}

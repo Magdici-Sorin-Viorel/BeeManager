@@ -22,6 +22,7 @@ function init(){
   }
   buildNav();
   go(pageFromHash());
+  if(typeof qrFromUrl==="function")qrFromUrl();   // opened from a hive QR code (…/?stup=ID)
   // Desktop: hamburger button toggles sidebar
   var bgr=document.getElementById("bgr");
   if(bgr)bgr.addEventListener("click",function(){if(window.innerWidth>650)toggleSB();});

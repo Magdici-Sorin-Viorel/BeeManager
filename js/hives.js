@@ -315,6 +315,7 @@ function hvCardHTML(h,opt){
     // 6. actions: one main button + small round ones
     +'<div class="hv-sec hv-act">'
     +'<button class="btn hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
+    +'<button class="hv-ib" onclick="vcOpen(\''+h.id+'\')" title="Inspecție vocală" aria-label="Inspecție vocală">🎙️</button>'
     +'<button class="hv-ib" onclick="hiveM(\''+h.id+'\')" title="'+t("hv_edit")+'" aria-label="'+t("hv_edit")+'">✏️</button>'
     +'<button class="hv-ib" onclick="nucM(\'\',\''+h.id+'\')" title="Fă roi din acest stup" aria-label="Fă roi din acest stup">🐝</button>'
     +'<button class="hv-ib hv-del" onclick="delH(\''+h.id+'\')" title="'+t("h_del_c")+'" aria-label="Șterge stupul">🗑️</button>'
