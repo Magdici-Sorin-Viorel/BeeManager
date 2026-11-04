@@ -398,10 +398,10 @@ function vcDigits(s){
 // Speech recognition gives almost no punctuation → cut the text into short clauses at connector words,
 // so a „nu” or a number only applies to its own clause.
 // beekeeping words the phone often mishears („potcă”, „puiat”, „varoa”…) → closest real word
-var VC_LEX=["botca","botci","botcile","varroa","puiet","magazie","magazii","magazia","larve","capacit","capacite","capacita","fundatie","pastura","matca","matcuta","albine","albinele","provizii","intervale","urdinis","zumzet","sirop","turta","ghemul","inspectia"];
+var VC_LEX=["vazut","vazuta","botca","botci","botcile","varroa","puiet","magazie","magazii","magazia","larve","capacit","capacite","capacita","fundatie","pastura","matca","matcuta","albine","albinele","provizii","intervale","urdinis","zumzet","sirop","turta","ghemul","inspectia"];
 function vcLev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var d=[],i,j;for(i=0;i<=a.length;i++){d[i]=[i];}for(j=0;j<=b.length;j++)d[0][j]=j;
   for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
-var VC_FIX={potca:"botca",potci:"botci",botce:"botci",botcii:"botci",bortca:"botca",varoa:"varroa",varo:"varroa",barroa:"varroa",varola:"varroa",puiat:"puiet",puieti:"puiet",puietul:"puiet",
+var VC_FIX={zacut:"vazut",vazu:"vazut",vazt:"vazut",ramel:"ramele",ramle:"ramele",potca:"botca",potci:"botci",botce:"botci",botcii:"botci",bortca:"botca",varoa:"varroa",varo:"varroa",barroa:"varroa",varola:"varroa",puiat:"puiet",puieti:"puiet",puietul:"puiet",
   magazine:"magazie",magazin:"magazie",larva:"larve",larvele:"larve",fundati:"fundatie",pastur:"pastura",matc:"matca"};
 function vcFuzzy(x){
   return x.replace(/\b[a-z]{4,}\b/g,function(w){
@@ -413,6 +413,7 @@ function vcFuzzy(x){
 function vcKwHits(t){var n=0,x=vcFuzzy(vcNorm(t));x.split(" ").forEach(function(w){if(VC_KW.test(w))n++;});return n;}
 function vcClauses(raw){
   var x=" "+vcDigits(vcFuzzy(vcNorm(String(raw||"").replace(/[,.;:!?\n]+/g," qqsep ")))).replace(/\bqqsep\b/g,",")+" ";
+  x=x.replace(/\b(\d+)\s*,\s*(?=\d+\b)/g,"$1 si ").replace(/\b(\d+) si (\d+)\s*,\s*(?=\d+\b)/g,"$1 si $2 si ");
   x=x.replace(/ (si|iar|dar|apoi|deci|plus|insa|totusi|dupa aceea|pe urma|in rest|mai departe|acum) (?!(pe )?(rama|ramele|\d)\b)/g," , $1 ");
   x=x.replace(/ (la) (?=(matca|regina|botc|potc|magazi|cat|caturi|varro|varoa|puiet|oua|hrana|mancare|spatiu|albine|familie|familia|temperament|boli|sanatate|cantar|vreme))/g," , $1 ");
   // „am pus / am adăugat / am văzut …” starts a new clause (not after a „nu”)
@@ -447,11 +448,13 @@ function vcParse(raw,hid){
   if(lc)chk("iLv",!NEG.test(lc),NEG.test(lc)?"🐛 Fără larve":"🐛 Larve");
   m=find(/\b(puiet capacit|capacit\w*)/);
   if(m&&!/botc\w*\s*$/.test(s.slice(Math.max(0,m.index-14),m.index))&&!/botc/.test(s.slice(Math.max(0,m.index-14),m.index)))chk("iCap",!neg(m.index),neg(m.index)?"🟤 Fără puiet căpăcit":"🟤 Puiet căpăcit");
+  if(!("iCap" in R.c)){var pc=lastC(/\b(vazut|vad|am|are|e|este|exista|gasit)\b[^,]{0,10}\bpuiet\b/);if(pc&&!/\d/.test(pc))chk("iCap",!NEG.test(pc),NEG.test(pc)?"🟤 Fără puiet":"🟤 Puiet");}
+  if(/\b(restul|celelalte|ce a ramas)\b[^,]*\b(mancare|miere|hrana|provizii)\b/.test(s)&&!/\broi\b/.test((lastC(/\b(restul|celelalte)\b/)||""))){R.extra.restFood=true;R.chips.push("🍯 Restul — mâncare");}
   // 📊 frames
-  m=find(/\bpuiet\b[^,]{0,14}?\b(\d+)\s*(?:de )?rame?\b/)||find(/\b(\d+)\s*(?:de )?rame?\s*(?:cu |de )?puiet\b/)||find(/\brame (?:cu |de )?puiet\s*(\d+)\b/);
-  if(m)set("iFB",m[1],"🥚 "+m[1]+" rame puiet");
-  m=find(/\b(?:miere|hrana|mancare|provizii|rezerve|rezerva)\b[^,]{0,14}?\b(\d+)\s*(?:de )?rame?\b/)||find(/\b(\d+)\s*(?:de )?rame?\s*(?:cu |de )?(?:miere|hrana|mancare|provizii|rezerv\w*|pastura)\b/);
-  if(m)set("iFH",m[1],"🍯 "+m[1]+" rame mâncare");
+  m=find(/\bpuiet\b[^,]{0,14}?\b(\d+)\s*(?:de )?ram(?:a|e|ele)\b/)||find(/\b(\d+)\s*(?:de )?ram(?:a|e|ele)\s*(?:cu |de )?puiet\b/)||find(/\brame (?:cu |de )?puiet\s*(\d+)\b/);
+  if(m)set("iFB",m[1],"🥚 "+m[1]+(m[1]==="1"?" ramă puiet":" rame puiet"));
+  m=find(/\b(?:miere|hrana|mancare|provizii|rezerve|rezerva)\b[^,]{0,14}?\b(\d+)\s*(?:de )?ram(?:a|e|ele)\b/)||find(/\b(\d+)\s*(?:de )?ram(?:a|e|ele)\s*(?:cu |de )?(?:miere|hrana|mancare|provizii|rezerv\w*|pastura)\b/);
+  if(m)set("iFH",m[1],"🍯 "+m[1]+(m[1]==="1"?" ramă mâncare":" rame mâncare"));
   // 😊 temperament
   var bh=null;
   if(/\b(foarte (blande|calme|linistite)|deloc agresive|ca (niste )?miei)\b/.test(s))bh=1;
@@ -475,14 +478,18 @@ function vcParse(raw,hid){
     if(bC.every(function(c){return NEG.test(c);}))chk("iBtc",false,"👑 Fără botci");
     else{
       chk("iBtc",true);var bn=0,bMax=0,pos=[];
+      var posN=0;
       bC.forEach(function(c){if(NEG.test(c))return;
-        var q=/\b(\d+)\s*(?:de )?(?:botc|potc)\w*/.exec(c)||/\b(?:botc|potc)\w*\s*(?:\w+ )?(\d+)\b(?! ?rame?)/.exec(c);
+        var rr=c.match(/\b(?:pe )?ram(?:a|e|ele)? (?:nr |numarul )?(\d+(?: si \d+)*)/g);
+        if(rr)rr.forEach(function(r){var nums=r.match(/\d+/g)||[];posN+=nums.length;pos.push((nums.length>1?"ramele ":"rama ")+nums.join(", "));});
+        var c2=c.replace(/\b(?:pe )?ram(?:a|e|ele)? (?:nr |numarul )?\d+(?: si \d+)*/g," ");
+        var q=/\b(\d+)\s*(?:de )?(?:botc|potc)\w*/.exec(c2)||/\b(?:botc|potc)\w*\s*(?:\w+ )?(\d+)\b(?! ?ram(?:a|e|ele))/.exec(c2);
         var k=q?parseInt(q[1]):/\b(botca|potca|botce)\b/.test(c)?1:0;
         if(q&&k>1)bMax=k;
-        var rr=c.match(/\b(?:pe )?ram(?:a|ele)? (?:nr |numarul )?(\d+(?: si \d+)*)/g);
-        if(rr)rr.forEach(function(r){pos.push(r.replace(/^pe /,"").replace(/^ram\w*/,"rama"));});
         if(!(q&&k>1))bn+=k;});
-      bn=Math.max(bMax,bn);
+      bn=Math.max(bMax,bn,posN);
+      var pe=/\b(\d+)(?: sau (\d+))? (?:botc\w* )?pe fiecare\b/.exec(s);   // „3 sau 4 pe fiecare (ramă)”
+      if(pe&&posN){var per2=Math.max(parseInt(pe[1]),parseInt(pe[2]||0));bn=per2*posN;R.extra.btcPer=per2;}
       if(bn){set("iBtcN",String(bn),"👑 "+bn+(bn===1?" botcă":" botci"));}else R.chips.push("👑 Botci");
       if(pos.length){R.extra.btcF=pos.join(", ");R.chips.push("📍 "+R.extra.btcF);}
     }
@@ -491,8 +498,9 @@ function vcParse(raw,hid){
     if(/\baproape capacit/.test(s))set("iBtcS","aproape_cap","· aproape căpăcite");
     else if(/\bbotc\w*\s*(?:\w+ )?(capacit\w*|inchise)/.test(s))set("iBtcS","capacite","· căpăcite");
     else if(/\bbotc\w*\s*(?:\w+ )?(noi|incipiente|deschise|la inceput|cu larv\w*|mici|tinere)/.test(s))set("iBtcS","incipient","· incipiente");
-    if(/\b(taiat\w*|eliminat\w*|distrus\w*|rupt\w*|sters\w*|scos)\b[^,]{0,18}botc|\bbotc\w*[^,]{0,18}\b(taiat\w*|eliminat\w*|distrus\w*|rupt\w*|sters\w*|scoase)\b|\b(le am|am) (taiat|eliminat|distrus|rupt)\b/.test(s))R.extra.btcAct="removed";
-    else if(/\b(le las|las botc\w*|las sa (iasa|se matureze|eclozeze)|pastrez botc\w*)\b/.test(s))R.extra.btcAct="keep";
+    var bcS=C.filter(function(c,i){return BT.test(c)||(i>0&&BT.test(C[i-1])&&/^\s*(si |iar )?(le|pe ele)\b/.test(c));}).join(" , ");
+    if(/\b(taiat\w*|eliminat\w*|distrus\w*|rupt\w*|sters\w*|scos|scoase)\b/.test(bcS)&&!/\b(le tin|le las|le pastrez)\b/.test(bcS))R.extra.btcAct="removed";
+    else if(/\b(le las|le tin|las botc\w*|tin botc\w*|las sa (iasa|se matureze|eclozeze)|pastrez botc\w*|le pastrez|pentru (a face )?regin\w*|pentru matc\w*)\b/.test(bcS))R.extra.btcAct="keep";
     if(R.extra.btcAct)R.chips.push(R.extra.btcAct==="removed"?"✂️ Botci eliminate":"👑 Botci lăsate");
   }
   // 🐝 population
@@ -538,7 +546,7 @@ function vcParse(raw,hid){
   var vN=null,vNeg=false,vPos=false;
   C.forEach(function(c,i){if(!VR.test(c))return;
     var q=/\b(?:varro\w*|varo\w*|capus\w*|acarian\w*)\s*(?:cazute |gasite |numarate |pe fund |e |sunt )?(\d+)\b/.exec(c)||/\b(\d+)\s*(?:de )?(?:varro\w*|varo\w*|capus\w*|acarian\w*)/.exec(c);
-    if(q==null&&C[i+1]&&/^\s*(deci|adica|e|sunt|am numarat|cazute|au cazut)\b/.test(C[i+1])&&!/\b(puiet|rame?|botc|matca|magazi|miere|hrana)\b/.test(C[i+1]))q=/\b(\d+)\b/.exec(C[i+1]);
+    if(q==null&&C[i+1]&&/^\s*(deci|adica|e|sunt|am numarat|cazute|au cazut)\b/.test(C[i+1])&&!/\b(puiet|ram(?:a|e|ele)|botc|matca|magazi|miere|hrana)\b/.test(C[i+1]))q=/\b(\d+)\b/.exec(C[i+1]);
     if(q)vN=parseInt(q[1]);
     if(NEG.test(c))vNeg=true;else vPos=true;});
   if(vN===0)vNeg=true,vPos=false;
@@ -564,14 +572,43 @@ function vcParse(raw,hid){
   }else if(/\b(hrana putina|putina hrana|fara hrana|nu (mai )?are hrana|de hranit|trebuie hranit\w*|trebuie sa hranesc|nu are mancare|putina mancare)\b/.test(s)){R.extra.fdPlan=true;R.chips.push("🗓️ De hrănit — planific");}
   // 📦 supers
   var MG=/\b(magazi\w*|cat|caturi|catul|etaj\w*|corp de magazie)\b/;
-  C.forEach(function(c){if(!MG.test(c)||NEG.test(c))return;
-    var cnt=function(){var q=/\b(\d+)\s*(?:de )?(?:magazi|caturi|cat|etaj)/.exec(c);return q&&parseInt(q[1])<5?parseInt(q[1]):(/\b(a doua|inca o|inca un|un|o|1)\b/.test(c)?1:1);};
-    var fr=/\b(\d+)\s*(?:de )?rame?\b/.exec(c);
-    if(/\b(adaug\w*|pus|pun|dat|montat|ridicat cu|marit)\b/.test(c)&&!/\b(scos|luat|scot)\b/.test(c)){R.extra.magAdd=(R.extra.magAdd||0)+cnt();if(fr)R.extra.magF=parseInt(fr[1]);}
-    else if(/\b(scos|luat|scot|ridicat|recoltat)\b/.test(c)){R.extra.magRm=(R.extra.magRm||0)+cnt();}
+  // „am pus o magazie … în magazie am pus 8 rame noi” = ONE super with 8 frames (a clause that gives frames is not another super)
+  var magLast=false;
+  C.forEach(function(c,i){
+    var fr=/\b(\d+)\s*(?:de )?ram(?:a|e|ele)\b/.exec(c);
+    if(!MG.test(c)||NEG.test(c)){
+      if((magLast||(R.extra.magAdd&&i>0&&MG.test(C[i-1])))&&fr&&!/\b(puiet|cuib|stup\w*|roi\w*|miere|hrana)\b/.test(c)&&!R.extra.magF)R.extra.magF=parseInt(fr[1]);   // „… are 8 rame” right after
+      if(!/^\s*(si|cu|are|rame|ramele|de)?\b/.test(c)||/\b(am|matca|puiet|botc|varro)\b/.test(c))magLast=false;
+      return;}
+    var q=/\b(\d+)\s*(?:de )?(?:magazi\w*|caturi|cat|etaje?)\b/.exec(c),explicit=q&&parseInt(q[1])<5?parseInt(q[1]):0;
+    var said=explicit||(/\b(1|un|o|a doua|inca o|inca un)\s*(?:de )?(?:magazi\w*|cat|etaj)/.test(c)?1:0);
+    if(fr&&!said&&(R.extra.magAdd||R.extra.magRm)){R.extra.magF=parseInt(fr[1]);magLast=true;return;}   // only the frames of the super
+    if(/\b(adaug\w*|pus|pun|dat|montat|ridicat cu|marit)\b/.test(c)&&!/\b(scos|luat|scot)\b/.test(c)){R.extra.magAdd=(R.extra.magAdd||0)+(said||1);if(fr)R.extra.magF=parseInt(fr[1]);magLast=true;}
+    else if(/\b(scos|luat|scot|ridicat|recoltat)\b/.test(c)){R.extra.magRm=(R.extra.magRm||0)+(said||1);magLast=false;}
+    else if(fr&&R.extra.magAdd){R.extra.magF=parseInt(fr[1]);magLast=true;}
   });
-  if(R.extra.magAdd)R.chips.push("📦 +"+R.extra.magAdd+" magazie"+(R.extra.magF?" cu "+R.extra.magF+" rame":""));
+  if(R.extra.magAdd)R.chips.push("📦 +"+R.extra.magAdd+(R.extra.magAdd>1?" magazii":" magazie")+(R.extra.magF?" cu "+R.extra.magF+" rame":""));
   if(R.extra.magRm)R.chips.push("📦 −"+R.extra.magRm+" magazie");
+  // 🪹 empty frames said as a count („3 rame goale”, „rame goale 2”, „2 rame clădite în cuib”) — not „am pus …” (that is a movement)
+  if((m=find(/\b(\d+)\s*(?:de )?ram(?:a|e|ele)\s*(?:goale|goala|cladite|cladita|cu fundatie|fundatie|libere)\b/)||find(/\bram(?:a|e|ele)\s*(?:goale|cladite|libere)\s*(\d+)\b/)))set("iFE",m[1],"🪹 "+m[1]+(m[1]==="1"?" ramă goală":" rame goale"));
+  // 🏠 brood boxes: „am pus al doilea cuib”, „are două cuiburi”, „am scos cuibul de sus”
+  var nc=lastC(/\b(al doilea cuib|al 2 lea cuib|cuib nou|inca un cuib|inca 1 cuib|am (pus|adaugat|ridicat pe) (un |1 )?(alt )?cuib)\b/);
+  if(nc&&!NEG.test(nc)){
+    var ni=C.indexOf(nc),nz=/\bcuib\w*(?: nou)? de (\d+) ram/.exec(nc),nfr=null,nt="n";
+    [nc,C[ni+1]||"",C[ni+2]||""].some(function(c,k){if(k&&/\b(magazi|puiet|botc|matc|regin)\w*/.test(c))return true;
+      var q=/\b(?:am pus|pus|bagat|cu|am pus doar|am pus numai)\b[^,]*?\b(?:numai |doar )?(\d+)\b(?!\s*ram\w* (?:in|de) magazi)/.exec(c.replace(/\bcuib\w*(?: nou)? de \d+ ram\w*/," "));
+      if(q){nfr=parseInt(q[1]);var tt=vcFrameType(c);if(tt==="b"||tt==="ba")nt="b";else if(tt==="h"||tt==="p")nt="f";else if(tt==="e"||tt==="old")nt="e";return true;}return false;});
+    R.extra.nestAdd={size:nz?parseInt(nz[1]):null,fr:nfr,t:nt};
+    R.chips.push("🏠 +1 cuib"+(nz?" de "+nz[1]+" rame":"")+(nfr!=null?" · "+nfr+" rame puse":""));
+  }
+  else if(/\b(2 cuiburi|doua cuiburi)\b/.test(s)){set("iNst","2","🏠 2 cuiburi");}
+  else if(/\b(am (scos|eliminat|luat|ridicat|desfiintat) (cuibul|al doilea cuib|un cuib|1 cuib|cuibul de sus)|un singur cuib|1 singur cuib|doar (un|1) cuib)\b/.test(s)){R.extra.nestRm=1;R.chips.push("🏠 −1 cuib");}
+  if(/\b(celelalte|restul|ramele ramase|ce a ramas|le am folosit|am folosit)\b[^,]*\broi\b/.test(s)||(R.extra.nestRm&&/\b(am )?(facut|fac) (un )?roi\b/.test(s)&&!MVS.some(function(r){return r.dest==="nuc";}))){R.extra.nucRest=true;R.chips.push("🐝 Ramele rămase → roi nou");}
+  // 📊 total nest frames: „acum sunt în total 10 rame” / „are 10 rame în total” (brood + the rest)
+  var tc=lastC(/\b(in total|total|cu totul|in total sunt)\b[^,]*\b\d+\s*ram(?:a|e|ele)\b|\b\d+\s*ram(?:a|e|ele)\b[^,]*\b(in total|total|cu totul)\b/);
+  if(!tc)tc=lastC(/\b(stupul |cuibul )?(are|au|sunt|avem|a ramas cu|ramane cu|am lasat)( acum\w*| in cuib)? \d+ ram(?:a|e|ele)\b/);
+  if(tc&&(/\b(puiet|miere|hrana|mancare|roi|goale|cladite|fundatie|noi)\b/.test(tc)&&!/\b(total|cu totul)\b/.test(tc)))tc=null;
+  if(tc&&!MG.test(tc)){var tn=/\b(\d+)\s*ram(?:a|e|ele)\b/.exec(tc);if(tn&&parseInt(tn[1])<=30){R.extra.total=parseInt(tn[1]);R.chips.push("📊 Total "+tn[1]+" rame în cuib");}}
   // ⚖️ weight
   if((m=find(/\b(?:cantar\w*|greutate\w*|cantarit\w*|cantareste)\b[^,]{0,12}?\b(\d+(?: virgula \d)?)\s*(?:kg|kile|kilograme)?\b/))){R.extra.kg=m[1].replace(" virgula ",".");R.chips.push("⚖️ "+R.extra.kg+" kg");}
   // 🔄 frames moved between hives / to a new nuc
@@ -581,8 +618,8 @@ function vcParse(raw,hid){
   var lastT=null;
   C.forEach(function(c){
     var num=/\b(\d+)\b/.exec(c);
-    if(/\bpuiet\b/.test(c)&&/\brame?\b/.test(c))lastT="iFB";
-    else if(/\b(miere|hrana|mancare|provizii|rezerv\w*)\b/.test(c)&&/\brame?\b/.test(c))lastT="iFH";
+    if(/\bpuiet\b/.test(c)&&/\bram(?:a|e|ele)\b/.test(c))lastT="iFB";
+    else if(/\b(miere|hrana|mancare|provizii|rezerv\w*)\b/.test(c)&&/\bram(?:a|e|ele)\b/.test(c))lastT="iFH";
     else if(/\b(magazi\w*|cat|caturi)\b/.test(c))lastT="mag";
     else if(/\b(botc\w*|potc\w*)\b/.test(c))lastT="btc";
     else if(/\bvarro\w*|\bvaro\w*/.test(c))lastT="var";
@@ -624,13 +661,15 @@ function vcHiveRef(c,self){
 }
 function vcFrameType(c){
   return /\bpuiet\w* cu albin\w*|\bcu albine\b/.test(c)?"ba":/\bpuiet\w*\b/.test(c)?"b":/\b(miere|mancare|hrana|provizii)\b/.test(c)?"h":/\b(pastura|polen)\b/.test(c)?"p":
-    /\b(fundati\w*|artificial\w*|faguri artificiali)\b/.test(c)?"f":/\b(vech\w*|negr\w*)\b/.test(c)?"old":/\b(cladit\w*|goal\w*|gol|faguri)\b/.test(c)?"e":null;
+    /\b(fundati\w*|artificial\w*|faguri artificiali|foit\w*|ceara)\b/.test(c)?"f":/\b(vech\w*|negr\w*)\b/.test(c)?"old":/\b(cladit\w*|goal\w*|gol|faguri)\b/.test(c)?"e":null;
 }
 function vcMoves(C,self){
   var out=[];
-  var MOVE=/\b(luat|scos|pus|adaugat|dat|mutat|transferat|bagat|introdus|trecut|primit|facut|fac|format)\b/;
+  var MOVE=/\b(luat|scos|pus|adaugat|dat|mutat|transferat|bagat|introdus|trecut|primit|facut|fac|format|iau|scot|dau|pun|mut)\b/;
   C.forEach(function(c,i){
     if(!/\bram(a|e|ele|ei)\b/.test(c)||!MOVE.test(c)||/\b(magazi\w*|cat|caturi)\b/.test(c)||/\bnu\b/.test(c))return;
+    // frames put right after talking about a super („… în magazie, am pus 8 rame noi”) belong to the super
+    if(i>0&&/\b(magazi\w*|cat|caturi)\b/.test(C[i-1]+" "+(C[i-2]||""))&&!/\b(cuib|stup\w*|roi\w*|puiet)\b/.test(c))return;
     var nm=/\b(\d+)\s*(?:de )?ram(?:a|e|ele)\b/.exec(c),n=nm?parseInt(nm[1]):(/\bram(a|ei)\b/.test(c)?1:0);
     if(!n||n>12)return;
     var t=vcFrameType(c)||(C[i+1]&&!/\bram(a|e|ele)\b/.test(C[i+1])&&vcFrameType(C[i+1]))||"b";
@@ -639,14 +678,18 @@ function vcMoves(C,self){
     var next=(C[i+1]||"")+" "+(C[i+2]||"");
     var c2=c.replace(/\bde la\b/g,"dela"),fromW=/\b(dela|din|de pe)\b/.test(c2),toW=/\b(in|la|pentru|spre|catre)\s+(stup|roi)|\b(stupului|roiului)\b/.test(c2)||/\b(dat|mutat|transferat|trecut)\b[^,]*\b(stup\w*|roi\w*) \d/.test(c);
     var r=null;
-    if(nuc||(!other&&/\b(facut|fac|format)\b[^,]*\broi\b/.test(next)&&/\b(luat|scos)\b/.test(c))){r={k:"out",n:n,t:t,dest:"nuc"};
+    if(nuc||(!other&&/\b(facut|fac|format)\b[^,]*\broi\b/.test(next)&&/\b(luat|scos|iau|scot)\b/.test(c))){r={k:"out",n:n,t:t,dest:"nuc"};
       var z=c+" "+next;r.nf={eg:/\b(oua|ou|ponta)\b/.test(z),lv:/\blarv/.test(z),cp:/\bcapacit/.test(z)&&!/\bbotc\w* capacit/.test(z),bc:/\b(botc\w*|potc\w*)\b/.test(z)};}
-    else if(other&&fromW&&!toW&&/\b(luat|adus|pus|adaugat|bagat|primit|introdus|mutat|transferat|trecut)\b/.test(c))r={k:"in",n:n,t:t,src:"hive",from:other};
+    else if(other&&fromW&&!toW&&/\b(luat|adus|pus|adaugat|bagat|primit|introdus|mutat|transferat|trecut|iau|pun|mut)\b/.test(c))r={k:"in",n:n,t:t,src:"hive",from:other};
     else if(other)r={k:"out",n:n,t:t,dest:"hive",to:other};
     else if(/\b(extractie|extractor|centrifug\w*|recoltat)\b/.test(c))r={k:"out",n:n,t:t==="b"?"h":t,dest:"extract"};
     else if(/\b(scos|luat)\b/.test(c)&&/\b(depozit|magazie de rame|lada)\b/.test(c))r={k:"out",n:n,t:t,dest:"store"};
     else if(/\b(pus|adaugat|bagat|introdus)\b/.test(c)&&/\b(fundati\w*|artificial\w*|noi|noua|goale|goala|cladit\w*|faguri)\b/.test(c))r={k:"in",n:n,t:vcFrameType(c)||"f",src:/\bdepozit\b/.test(c)?"store":"new"};
-    if(r){r.i=i;out.push(r);}
+    if(r){r.i=i;
+      // 📍 which brood box: „în cuibul de sus / al doilea cuib” → box 2, „cuibul de jos” → box 1
+      if(/\b(cuib\w* (de sus|2|al doilea|nou|de deasupra)|al doilea cuib|al 2 lea cuib)\b/.test(c))r.box="n2";
+      else if(/\bcuib\w* (de jos|1|vechi|de dedesubt|din jos)\b/.test(c))r.box="n1";
+      out.push(r);}
   });
   return out;
 }
@@ -658,11 +701,15 @@ function vcMoveTxt(r){
 // the nuc form opened after saving (frames.js mvNucAfterSave): tick what you said is on its frames
 function vcNucFill(){
   var f=_vc.nucF;_vc.nucF=null;if(!f)return;
+  // said by voice → the nuc is saved right away (you can edit it later from 🐝 Roiuri)
+  setTimeout(function(){var nm=$q("nNm");if(!nm||typeof nucSave!=="function")return;
+    var name=nm.value||"Roi nou";try{nucSave("");}catch(e){return;}
+    if(!document.getElementById("nNm"))setTimeout(function(){toast("Roi nou creat: "+name+" — îl găsești la 🐝 Roiuri","🐝");},500);},700);
   [["nEg","eg"],["nLv","lv"],["nCp","cp"],["nBc","bc"]].forEach(function(x){var el=$q(x[0]);if(el&&f[x[1]]&&!el.checked){el.checked=true;try{el.dispatchEvent(new Event("change",{bubbles:true}));}catch(e){}var c=el.closest("label")||el;c.classList.add("vc-hit");}});
   if(typeof nucPrev==="function")nucPrev();
 }
 // phrases that mention something about the hive (keywords) — the rest is small talk
-var VC_KW=/\b(matc\w*|regin\w*|oua|ou|ponta|larv\w*|puiet\w*|capacit\w*|rame?|ramele|miere|hrana|mancare|provizii|rezerv\w*|pastura|polen|botc\w*|potc\w*|albin\w*|familia|familie|populati\w*|blande|calme|agresiv\w*|agitate|intep\w*|spatiu|loc|plin|roi\w*|magazi\w*|cat|caturi|varro\w*|varo\w*|capus\w*|nosem\w*|diaree|loca|varos|boal\w*|bolnav\w*|sanatos\w*|tratament\w*|sirop|turt\w*|candy|fondant|hranit\w*|fum|grade|ploaie|soare|vant\w*|noros|stup\w*|capac\w*|fund\w*|cantar\w*|kg|kile|litri|ghem\w*|zumzet\w*|moarte|umezeal\w*|mucegai|soarec\w*|urdinis\w*)\b/;
+var VC_KW=/\b(matc\w*|regin\w*|oua|ou|ponta|larv\w*|puiet\w*|capacit\w*|ram(?:a|e|ele)|ramele|miere|hrana|mancare|provizii|rezerv\w*|pastura|polen|botc\w*|potc\w*|albin\w*|familia|familie|populati\w*|blande|calme|agresiv\w*|agitate|intep\w*|spatiu|loc|plin|roi\w*|magazi\w*|cat|caturi|varro\w*|varo\w*|capus\w*|nosem\w*|diaree|loca|varos|boal\w*|bolnav\w*|sanatos\w*|tratament\w*|sirop|turt\w*|candy|fondant|hranit\w*|fum|grade|ploaie|soare|vant\w*|noros|stup\w*|capac\w*|fund\w*|cantar\w*|kg|kile|litri|ghem\w*|zumzet\w*|moarte|umezeal\w*|mucegai|soarec\w*|urdinis\w*)\b/;
 function vcRelevant(txt){
   return String(txt).split(/\s*[,.;\n]\s*/).filter(function(p){return p&&VC_KW.test(vcDigits(vcNorm(p)));})
     .map(function(p){return p.charAt(0).toUpperCase()+p.slice(1);}).join(". ");
@@ -681,6 +728,7 @@ function vcHelpHTML(){
     ["🐝 Familia","familie puternică / medie / slabă · populație 70%"],
     ["👑 Botci","două botci · botci căpăcite · le-am tăiat · le las · fără botci"],
     ["🔄 Rame","am luat o ramă de puiet de la stupul 2 · am dat o ramă cu miere stupului 3 · am scos 2 rame cu albine și am făcut un roi nou (cu ouă și o botcă) · am pus 2 rame cu fundație"],
+    ["🪹 Cuib","3 rame goale · am pus o ramă goală / clădită / cu fundație · acum sunt 8 rame în total · am pus al doilea cuib"],
     ["📦 Spațiu","are loc · aproape plin · lipsă spațiu · am pus magazie · am scos magazia"],
     ["🩺 Sănătate","sănătoasă · varroa · 3 varroa căzute · nosema · puiet văros · locă"],
     ["🌤️ Vremea","soare · noros · vânt · ploaie · 22 de grade · fum puțin / fără fum"],
@@ -699,16 +747,50 @@ window.vcFill=function(){
   var hit=function(el){if(!el)return;var c=el.closest(".ck")||el.closest(".tr-fin")||el;c.classList.add("vc-hit");};
   var fire=function(el){try{el.dispatchEvent(new Event("change",{bubbles:true}));el.dispatchEvent(new Event("input",{bubbles:true}));}catch(e){}};
   var n=0;
+  // frames moved between hives / into a nuc → „Rame mutate”; new / built frames put in or taken out → straight into the box (after the moves)
+  var own=[];
+  if(R.extra.mv&&R.extra.mv.length&&typeof _nst!=="undefined"&&typeof bxCommit==="function"&&document.getElementById("bxEd")){
+    own=R.extra.mv.filter(function(r){return r.k==="in"?r.src!=="hive":(r.dest!=="hive"&&r.dest!=="nuc");});
+    R.extra.mv=R.extra.mv.filter(function(r){return own.indexOf(r)<0;});
+  }
   if(R.extra.mv&&R.extra.mv.length&&typeof mvAdd==="function"){
-    R.extra.mv.forEach(function(r){var pre={n:r.n,t:r.t};if(r.k==="out"){pre.dest=r.dest;if(r.to)pre.to=r.to;}else{pre.src=r.src;if(r.from)pre.from=r.from;}mvAdd(r.k,pre);n++;});
+    R.extra.mv.forEach(function(r){var pre={n:r.n,t:r.t};if(r.box)pre.box=r.box;if(r.k==="out"){pre.dest=r.dest;if(r.to)pre.to=r.to;}else{pre.src=r.src;if(r.from)pre.from=r.from;}mvAdd(r.k,pre);n++;});
+    var vo=R.extra.mv.filter(function(r){return r.k==="out";}),vi=R.extra.mv.filter(function(r){return r.k==="in";});
+    var sb=function(L,ty){return L.reduce(function(a,r){return a+((ty==="b"?(r.t==="b"||r.t==="ba"):(r.t==="h"||r.t==="p"))?r.n:0);},0);};
+    R.extra.mvVoice={b:sb(vo,"b")-sb(vi,"b"),f:sb(vo,"f")-sb(vi,"f")};
     hit(document.getElementById("iRxW"));
   }
-  var SUM=["iQS","iEg","iLv","iCap","iFB","iFH","iBhv","iQQ","iBtc","iBtcN","iPop","iBP","iSp"];
-  var summer=SUM.some(function(k){return k in R.v||k in R.c;})||R.extra.magAdd||R.extra.magRm||(R.extra.mv&&R.extra.mv.length);
+  if(own.length){
+    own.forEach(function(r){var bi=r.box?Math.min(_nst.n,parseInt(r.box.slice(1)))-1:(r.k==="in"?_nst.n-1:0),F=_nst.F[bi];if(!F)return;
+      var k=r.t==="b"||r.t==="ba"?"b":r.t==="h"||r.t==="p"?"f":r.t==="f"||r.t==="pl"?"n":"e",old=F[k]||0;
+      F[k]=Math.max(0,old+(r.k==="in"?r.n:-r.n));n++;
+      if(typeof bxNote==="function")bxNote(k,F[k]-old);});   // said → explained (no „Erau … → acum …” question)
+    bxCommit();hit(document.getElementById("bxEd"));
+  }
+  // 🏠 „am eliminat un cuib” → one box less (its frames go to the box below) · „celelalte rame → roi nou” → the frames over
+  // the total you said (or all the frames of that box) go out to a new nuc
+  var nucMade=false;
+  if(R.extra.nestRm&&typeof nstSet==="function"&&$q("iNst0")&&_nst.n>1){
+    var topF=JSON.parse(JSON.stringify(_nst.F[_nst.n-1])),before=nstSum();
+    nstSet(_nst.n-1);hit(document.getElementById("bxEd")||document.getElementById("nstBox"));n++;
+    if(R.extra.nucRest&&typeof mvAdd==="function"){
+      var left=R.extra.total!=null?Math.max(0,before-R.extra.total):(topF.b+topF.f+(topF.e||0)+(topF.n||0));
+      var rest=JSON.parse(JSON.stringify(_nst.F[_nst.n-1]));
+      [["b","b"],["f","h"],["e","e"],["n","f"]].forEach(function(x){   // from the removed box first, then from what is left
+        var take=Math.min(left,topF[x[0]]||0);left-=take;topF[x[0]]=(topF[x[0]]||0)-take;rest[x[0]]=(rest[x[0]]||0)-take;
+        if(take)mvAdd("out",{n:take,t:x[1],dest:"nuc"});});
+      if(left>0)[["b","b"],["f","h"],["e","e"],["n","f"]].forEach(function(x){var take=Math.min(left,Math.max(0,rest[x[0]]||0));left-=take;if(take)mvAdd("out",{n:take,t:x[1],dest:"nuc"});});
+      hit(document.getElementById("iRxW"));nucMade=true;n++;
+    }
+  }
+  var SUM=["iQS","iEg","iLv","iCap","iFB","iFH","iFE","iNst","iBhv","iQQ","iBtc","iBtcN","iPop","iBP","iSp"];
+  var summer=SUM.some(function(k){return k in R.v||k in R.c;})||R.extra.magAdd||R.extra.magRm||(R.extra.mv&&R.extra.mv.length)
+    ||own.length||R.extra.nestAdd||R.extra.nestRm;   // frames / boxes put in or taken out are full-inspection things too
   var wm=$q("iWM"),wasW=wm&&wm.checked;
   if(wasW&&summer){wm.checked=false;inspWinterApply();}
   Object.keys(R.v).forEach(function(id){var el=$q(id);if(!el)return;
     if(el.tagName==="SELECT"&&![].some.call(el.options,function(o){return o.value===R.v[id]||o.text===R.v[id];}))return;
+    if(id==="iNst"&&typeof nstSet==="function"){nstSet(R.v[id]);hit(document.getElementById("nstBox"));n++;return;}
     el.value=R.v[id];fire(el);hit(el);n++;});
   var dis=false;
   Object.keys(R.c).forEach(function(id){var el=$q(id);if(!el)return;
@@ -729,11 +811,26 @@ window.vcFill=function(){
   if(E.fdFin){var fn=document.querySelector("#MB .iFdFin");if(fn&&!fn.checked){fn.checked=true;fire(fn);hit(fn);n++;}}
   if(E.fdPlan&&!E.fd){var pl=$q("iFdPl");if(pl&&!pl.checked){pl.checked=true;fire(pl);hit(pl);n++;}}
   if(typeof _magSt!=="undefined"&&_magSt&&document.querySelector("#MB .mg2")){
-    for(var a=0;a<(E.magAdd||0);a++){magAdd();if(E.magF){_magSt.cur[_magSt.cur.length-1].f=Math.min(12,E.magF);}}
+    for(var a=0;a<(E.magAdd||0);a++){magAdd();if(E.magF){var lm=_magSt.cur[_magSt.cur.length-1];lm.f=Math.min(30,E.magF);lm.h=0;lm.e=0;lm.n=0;magNorm(lm,_magSt.per,true);lm.size=Math.max(lm.size||10,lm.f);}}
     if(E.magF)magRedraw();
     for(var b=0;b<(E.magRm||0)&&_magSt.cur.length;b++)magDel(_magSt.cur.length-1);
     if(E.magAdd||E.magRm){hit(document.getElementById("magBlock"));n++;}
   }
+  // total said: what is not brood or food is empty frames (if it does not fit, the food is adjusted)
+  if(E.restFood&&$q("iFB")&&$q("iFH")){   // „restul sunt cu mâncare”: what was in the hive before, minus brood and empty frames
+    var bf0=parseInt(($q("mvBefore")||{}).value)||0,b1=parseInt($q("iFB").value)||0,e1=parseInt(($q("iFE")||{}).value)||0;
+    var room=Math.max(bf0,typeof nstCap==="function"&&$q("iNst0")?nstCap():bf0);
+    $q("iFH").value=Math.max(0,room-b1-e1);fire($q("iFH"));hit($q("iFH"));n++;}
+  if((("iFB" in R.v)||("iFH" in R.v)||E.restFood)&&R.extra.mvVoice){
+    var on=R.extra.mvVoice;
+    if(("iFB" in R.v)&&$q("iFB")){$q("iFB").value=Math.max(0,(parseInt($q("iFB").value)||0)-on.b);}
+    if((("iFH" in R.v)||E.restFood)&&$q("iFH")){$q("iFH").value=Math.max(0,(parseInt($q("iFH").value)||0)-on.f);}
+    if(typeof mvBal==="function")mvBal();
+  }
+  if(E.total&&$q("iFB")&&$q("iFH")){var b=parseInt($q("iFB").value)||0,fh=parseInt($q("iFH").value)||0,fe=$q("iFE");
+    if(fe&&!("iFE" in R.v)&&E.total>=b+fh){fe.value=E.total-b-fh;fire(fe);hit(fe);}
+    else{$q("iFH").value=Math.max(0,E.total-b-(fe?parseInt(fe.value)||0:0));fire($q("iFH"));hit($q("iFH"));}
+    n++;}
   if(E.kg&&$q("iWgOn")){var wg=$q("iWgOn");if(!wg.checked){wg.checked=true;fire(wg);}if($q("iWgK")){$q("iWgK").value=E.kg;fire($q("iWgK"));}hit(wg);n++;}
   // Observații: only the phrases that talk about the hive (the chatting in between is left out);
   // everything said is kept with the inspection („🎙️ Tot ce ai spus”)
@@ -743,7 +840,8 @@ window.vcFill=function(){
     var hv=document.createElement("input");hv.type="hidden";hv.id="iVoiceTx";hv.value=txt;nt.parentNode.appendChild(hv);
   }
   _vc.pend=hid;
-  _vc.nucF=null;(R.extra.mv||[]).forEach(function(r){if(r.nf)_vc.nucF=r.nf;});
+  _vc.nucF=null;(R.extra.mv||[]).forEach(function(r){if(r.dest==="nuc")_vc.nucF=r.nf||{};});
+  if(nucMade&&!_vc.nucF)_vc.nucF={};
   // banner on top of the form
   var mt=document.querySelector("#MB .mt");
   if(mt){var bn=document.createElement("div");bn.className="vc-ban";
@@ -752,4 +850,20 @@ window.vcFill=function(){
       :'🎙️ Nu ai spus nimic — completează manual.';
     mt.parentNode.insertBefore(bn,mt.nextSibling);}
   _mDirty=true;
+  if(typeof nstFromTotals==="function"&&$q("iNst0")){
+    if(E.nestAdd&&_nst.n<3){   // the old boxes take brood / food / empty said; the new box gets its size and the frames put in it
+      var g=function(id){return Math.max(0,parseInt(($q(id)||{}).value)||0);},szs=_nst.F.map(function(x){return x.size;});
+      _nst.F=nstSplitSz(g("iFB"),g("iFH"),g("iFE"),szs,_nst.per);
+      var nbx={b:0,f:0,e:0,n:0};if(E.nestAdd.size)nbx.size=E.nestAdd.size;
+      var put=E.nestAdd.fr!=null?E.nestAdd.fr:0;nbx[E.nestAdd.t]=Math.min(put,E.nestAdd.size||_nst.per);
+      _nst.F.push(nbx);_nst.n=_nst.F.length;var ni2=$q("iNst");if(ni2)ni2.value=_nst.n;
+      if(typeof bxNote==="function")["b","f","e","n"].forEach(function(k){if(nbx[k])bxNote(k,nbx[k]);});   // frames said put in the new box
+      ["b","f"].forEach(function(k){if(nbx[k]){$q(k==="b"?"iFB":"iFH").value=g(k==="b"?"iFB":"iFH")+nbx[k];}});
+      $q("iFE").value=g("iFE")+(nbx.e||0)+(nbx.n||0);
+      if(typeof mvBoxRefresh==="function")mvBoxRefresh();
+      if(typeof bxCommit==="function"&&document.getElementById("bxEd"))bxCommit();
+      hit(document.getElementById("bxEd")||document.getElementById("nstBox"));n++;
+    }else nstFromTotals();
+    var nb=document.getElementById("nstBox");if(nb)nb.innerHTML=nstBodyHTML();nstVis();}
+  if(typeof inspCardsRefresh==="function")inspCardsRefresh();
 };

@@ -264,7 +264,7 @@ function nucCardHTML(h){
   return'<div class="c hv-card nuc-card">'
     +'<div class="hv-sec hv-hd">'
     +'<span class="hv-num nuc-num">'+(h.num||"🐝")+'</span>'
-    +'<div class="hv-hd-t"><div class="hv-name">'+esc(h.name)+' <span class="bg gy nuc-b">🐝 '+L2("Roi","Nuc")+'</span></div>'
+    +'<div class="hv-hd-t"><div class="hv-name hv-name-e" role="button" onclick="nucM(\''+h.id+'\')" title="Editează">'+esc(h.name)+'<span class="hv-edit" aria-label="Editează">✏️</span> <span class="bg gy nuc-b">🐝 '+L2("Roi","Nuc")+'</span></div>'
     +'<div class="hv-meta">'+origin+'</div>'
     +'<div class="hv-q">'+qLine+'</div></div>'
     +'<div class="hv-hd-r">'+nucIconHTML(h)+'<span class="hv-ts">'+(b+f)+' / '+max+' '+L2("rame","frames")+'</span>'+(typeof hvPlBadge==="function"?hvPlBadge(h):'')+'</div>'
@@ -277,7 +277,7 @@ function nucCardHTML(h){
     +'<div class="hv-sec hv-act">'
     +'<button class="btn hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
     +'<button class="hv-ib" onclick="nucPromoteM(\''+h.id+'\')" title="Devine stup" aria-label="Devine stup">⬆️</button>'
-    +'<button class="hv-ib" onclick="nucM(\''+h.id+'\')" title="Editează" aria-label="Editează">✏️</button>'
+    +'<button class="hv-ib" onclick="vcOpen(\''+h.id+'\')" title="Inspecție vocală" aria-label="Inspecție vocală">🎙️</button>'
     +'<button class="hv-ib hv-del" onclick="nucFailM(\''+h.id+'\')" title="Roi eșuat / unit" aria-label="Roi eșuat / unit">❌</button>'
     +'</div></div>';
 }

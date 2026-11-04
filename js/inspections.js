@@ -260,8 +260,12 @@ window.delInsp=function(id){showConfirm(t("insp_del_c"),function(){
   save();render();
 });};
 
-function inspM(hiveId,editId){
+function inspM(hiveId,editId,pick){
   hiveId=hiveId||null;editId=editId||null;
+  // opened without a hive („Inspecție nouă” on the Inspections page): show the hive picker and build the
+  // whole form for the hive selected in it (prefill, brood boxes, supers…); changing it rebuilds the form (inspPick)
+  if(!hiveId&&!editId){pick=true;hiveId=(D.hives[0]||{}).id||null;}
+  if(typeof _bx!=="undefined"){_bx.on=false;_bx.put=0;_bx.take=0;_bx.adj={b:0,f:0,e:0};}   // box-editor taps belong to one form (boxes.js)
   var ex=editId?D.inspections.find(function(i){return i.id===editId;}):null;
   var effHid=ex?ex.hiveId:hiveId;
   var hive=effHid?D.hives.find(function(h){return h.id===effHid;}):null;
@@ -290,7 +294,7 @@ function inspM(hiveId,editId){
   var tempDefault=xv(ex,"temp",autoT);
   var wo=t("wo"),sm=t("sm"),stc=t("stc"),bh=t("bh"),qq=t("qq"),bt=t("bt"),bp=t("bp"),sp=t("sp"),dis=t("dis");
 
-  var hiveSelHTML=!hive?L(t("insp_hive"))+'<select id="iHive" onchange="updMag(this.value);inspTrRefresh();inspFdRefresh()">'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(effHid===h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+  var hiveSelHTML=(pick||!hive)&&!ex?'<div class="isc-pick">'+L(t("insp_hive"))+'<select id="iHive" data-cur="'+(effHid||"")+'" oninput="event.stopPropagation()" onchange="inspPick(this)">'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(effHid===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
     :'<input type="hidden" id="iHive" value="'+effHid+'">';
 
   var magHTML=(hive&&hive.kind==="roi")?'':magBlockHTML(hive,ex);   // a swarm has no supers
@@ -340,20 +344,27 @@ function inspM(hiveId,editId){
     +'</div>'
     +'<div id="devQueen" class="dev-box"></div></div>'
     +'<div class="dv"><div class="stt">'+t("insp_frames_t")+'</div></div>'
-    +'<div class="r2"><div>'+L(t("insp_brood"))+'<input type="number" inputmode="numeric" id="iFB" oninput="mvBal()" value="'+(esc(xv(ex,"fB",hive?hive.fB||0:0)))+'"></div>'
-    +'<div>'+L(t("insp_honey"))+'<input type="number" inputmode="numeric" id="iFH" oninput="mvBal()" value="'+(ex?inspFood(ex):(hive?parseInt(hive.fH)||0:0))+'"><span class="hint">'+t("insp_food_h")+'</span></div></div>'
+    +'<div class="r2"><div>'+L(t("insp_brood"))+'<input type="number" inputmode="numeric" id="iFB" oninput="mvBal();inspNestTip()" value="'+(esc(xv(ex,"fB",hive?hive.fB||0:0)))+'"></div>'
+    +'<div>'+L(t("insp_honey"))+'<input type="number" inputmode="numeric" id="iFH" oninput="mvBal();inspNestTip()" value="'+(ex?inspFood(ex):(hive?parseInt(hive.fH)||0:0))+'"><span class="hint">'+t("insp_food_h")+'</span></div></div>'
+    // 🪹 empty frames (built comb / foundation) added for the queen
+    +'<div class="r2"><div>'+L("🪹 Rame goale")+'<input type="number" inputmode="numeric" min="0" id="iFE" oninput="mvBal();inspNestTip()" value="'+esc(ex?(ex.fE!=null?ex.fE:0):(hive?parseInt(hive.fE)||0:0))+'"><span class="hint">clădite / cu fundație</span></div>'
+    +'<div>'+L("📏 În cuib")+'<div id="iNestTot" class="nst-tot"></div></div></div>'
+    // 🏠 brood boxes: shown like the supers — „➕ Adaugă cuib” only when you need it
+    +(hive&&hive.kind==="roi"?'<input type="hidden" id="iNst" value="1">':nstBlockHTML(hive,ex))
+    +'<div id="iNestTip"></div>'
     +'<div class="r2"><div>'+L(t("insp_pop"))+'<select id="iPop">'
     +[30,50,70,90,100].map(function(v){return'<option value="'+v+'"'+(xv(exP,"popPct",90)===v?" selected":"")+'>'+v+'%</option>';}).join("")
     +'</select></div>'
     +'<div>'+L(t("insp_bp"))+'<select id="iBP">'+bp.map(function(a){return'<option value="'+a[0]+'"'+(xv(exP,"bp","compact")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select></div></div>'
-    // 🔄 Frames taken out / put in (frames.js) — shown only when ticked
-    +mvSecHTML(effHid,ex,hive)
     +L(t("insp_space"))+'<select id="iSp">'+sp.map(function(a){return'<option value="'+a[0]+'"'+(xv(exP,"space","suficient")=== a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+'</select>'
     // ❄️ Wintering: how many frames the colony goes into winter with (feeds the queen score in Genealogie)
     +(function(){var w=ex&&ex.winter;
       return'<div class="ck" style="margin-top:8px;"><input type="checkbox" id="iWn"'+(w?" checked":"")+' onchange="document.getElementById(\'iWnW\').style.display=this.checked?\'grid\':\'none\'"><label for="iWn">❄️ '+L2("Evaluare de iernare (intră pe iarnă)","Wintering check (going into winter)")+'</label></div>'
       +'<div class="r2" id="iWnW" style="display:'+(w?"grid":"none")+'"><div>'+L(L2("🐝 Rame ocupate de albine","🐝 Frames covered by bees"))+'<input type="number" inputmode="numeric" min="0" id="iWnF" value="'+esc(w?w.frames:(hive?hvTotal(hive):""))+'"></div>'
       +'<div>'+L(L2("🍯 Rame cu hrană","🍯 Frames of stores"))+'<input type="number" inputmode="numeric" min="0" id="iWnH" value="'+esc(w?w.food||"":(hive?hive.fH||"":""))+'"></div></div>';})()
+    // 🔄 Frames taken out / put in (frames.js) — its own section (card)
+    +'<div class="dv"><div class="stt">🔀 '+L2("Rame mutate între stupi","Frames moved between hives")+'</div></div>'
+    +mvSecHTML(effHid,ex,hive)
     +'</div>'
     +'<div class="dv iw-h"></div>'
     +'<div id="magBlock" class="iw-h">'+magHTML+'</div>'
@@ -397,8 +408,10 @@ function inspM(hiveId,editId){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveInsp(\''+(editId||"")+'\',\''+(effHid||"")+'\')">'+t("insp_save")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
   if(ex){var mbI=document.getElementById("MB");if(mbI)mbI.dataset.inspId=ex.id;}
   inspWinterApply();
-  _mvNet=null;mvBal();
+  _mvNet=null;mvBal();inspNestTip();if(typeof mvSumAll==="function")mvSumAll();
   inspDisUpd();devUpd();
+  if(typeof inspCardify==="function")inspCardify();   // 🃏 cards layout (inspui.js)
+  if($q("iNst0"))nstVis();
   // opened without a hive (hive picker): build the hive-dependent blocks for the hive shown in the picker
   if(!hive&&!ex){var hs=$q("iHive");if(hs&&hs.value){updMag(hs.value);inspTrRefresh();inspFdRefresh();hlNowUpd();}}
 }
@@ -430,10 +443,22 @@ function magInit(hive,ex){
   var per=(hive&&parseInt(hive.magF))||10;
   var before=ex?magFromInsp(ex,true):hvMags(hive);
   var cur=ex?magFromInsp(ex,false):before;
-  var k=0,bk=before.map(function(m){return{k:k++,f:parseInt(m.f)||0,cap:parseInt(m.cap)||0};});
+  var cp=function(m){return magNorm({f:parseInt(m.f)||0,cap:parseInt(m.cap)||0,h:m.h,e:m.e,n:m.n,size:m.size},per);};
+  var k=0,bk=before.map(function(m){var x=cp(m);x.k=k++;return x;});
   // when editing, match "after" supers to "before" ones by position (as far as they exist)
-  var ck=cur.map(function(m,i){return{k:i<bk.length?bk[i].k:k++,f:parseInt(m.f)||0,cap:parseInt(m.cap)||0};});
+  var ck=cur.map(function(m,i){var x=cp(m);x.k=i<bk.length?bk[i].k:k++;return x;});
   _magSt={before:bk,cur:ck,per:per,next:k};
+}
+// a super's frames by kind: h honey · e built comb (empty) · n new (foundation); f = their sum; size = frames that fit
+function magNorm(m,per,isNew){
+  var has=m.h!=null||m.e!=null||m.n!=null;
+  m.h=parseInt(m.h)||0;m.e=parseInt(m.e)||0;m.n=parseInt(m.n)||0;m.f=parseInt(m.f)||0;
+  if(!has){if(m.cap>0)m.h=m.f;else if(isNew)m.n=m.f;else m.e=m.f;}   // older data: only a frame count
+  var s=m.h+m.e+m.n,d=m.f-s;
+  if(d>0){if(isNew)m.n+=d;else m.h+=d;}
+  else if(d<0){d=-d;["n","e","h"].forEach(function(k){var x=Math.min(d,m[k]);m[k]-=x;d-=x;});}
+  m.f=m.h+m.e+m.n;m.size=Math.max(parseInt(m.size)||per||10,m.f);
+  return m;
 }
 function magPctCol(p){   // light yellow (barely capped) → dark amber (100%)
   p=Math.max(0,Math.min(100,parseInt(p)||0))/100;
@@ -497,16 +522,18 @@ function magBodyHTML(){
   return h;
 }
 function magRedraw(){var el=document.getElementById("mgBody");if(el)el.innerHTML=magBodyHTML();
+  if(typeof mvBoxRefresh==="function")mvBoxRefresh();   // 📍 „Magazie” appears among the boxes of the frame moves
+  if(typeof bxDrawMag==="function")bxDrawMag();
   var fw=document.getElementById("mgFullW");if(fw)fw.style.display=_magSt.cur.length?"block":"none";
   if(typeof _mDirty!=="undefined")_mDirty=true;}
-window.magAdd=function(){if(!_magSt||_magSt.cur.length>=8)return;_magSt.cur.push({k:_magSt.next++,f:_magSt.per,cap:0});magRedraw();};
+window.magAdd=function(f0){if(!_magSt||_magSt.cur.length>=8)return;_magSt.cur.push(magNorm({k:_magSt.next++,f:f0!=null?f0:_magSt.per,cap:0,size:_magSt.per},_magSt.per,true));magRedraw();};
 window.magDel=function(i){if(!_magSt)return;_magSt.cur.splice(i,1);magRedraw();};
 window.magBack=function(k){if(!_magSt)return;var b=_magSt.before.filter(function(x){return x.k===k;})[0];if(!b)return;
   var bi=_magSt.before.indexOf(b),pos=_magSt.cur.length;
   for(var j=0;j<_magSt.cur.length;j++){var cb=_magSt.before.filter(function(x){return x.k===_magSt.cur[j].k;})[0];if(cb&&_magSt.before.indexOf(cb)>bi){pos=j;break;}}
-  _magSt.cur.splice(pos,0,{k:b.k,f:b.f,cap:b.cap});magRedraw();};
+  _magSt.cur.splice(pos,0,{k:b.k,f:b.f,cap:b.cap,h:b.h,e:b.e,n:b.n,size:b.size});magRedraw();};
 window.magMove=function(i,d){if(!_magSt)return;var c=_magSt.cur,j=i+d;if(j<0||j>=c.length)return;var x=c[i];c[i]=c[j];c[j]=x;magRedraw();};
-window.magFr=function(i,d){if(!_magSt)return;var m=_magSt.cur[i];if(!m)return;m.f=Math.max(0,Math.min(12,m.f+d));magRedraw();};
+window.magFr=function(i,d){if(!_magSt)return;var m=_magSt.cur[i];if(!m)return;m.f=Math.max(0,Math.min(30,m.f+d));magNorm(m,_magSt.per,!_magSt.before.some(function(x){return x.k===m.k;}));magRedraw();};
 window.magCap=function(i,v){if(!_magSt)return;var m=_magSt.cur[i];if(!m)return;m.cap=parseInt(v)||0;magRedraw();};
 
 
@@ -520,6 +547,16 @@ window.updMag=function(hid){
   var box=document.getElementById("magBlock");if(!box)return;
   var hive=D.hives.find(function(h){return h.id===hid;});
   box.innerHTML=magBlockHTML(hive,null);
+};
+// hive picker of a new inspection: the form is rebuilt for the chosen hive (its boxes, supers, last inspection).
+// What was already filled in would be lost → ask first; „Anulează” puts the previous hive back.
+window.inspPick=function(sel){
+  var hid=sel.value,prev=sel.getAttribute("data-cur")||"",dirty=_mDirty;
+  if(!hid||hid===prev)return;
+  // rebuild after the change event has finished (it would mark the new form as changed)
+  var rebuild=function(){setTimeout(function(){inspM(hid,null,true);},0);};
+  if(dirty)showConfirm(L2("Schimbi stupul? Ce ai completat până acum nu se păstrează.","Change the hive? What you filled in so far is not kept."),rebuild,function(){sel.value=prev;},L2("Da, schimbă","Yes, change"));
+  else rebuild();
 };
 
 // ❄️ WINTER MODE — the inspection shows only what is usually done in winter: hive condition,
@@ -545,7 +582,8 @@ function inspWinterTopHTML(ex,hive,pf){
     +'</div>';
 }
 function inspWinterOn(){var c=$q("iWM");return !!(c&&c.checked);}
-window.inspWinterApply=function(){var mb=document.getElementById("MB");if(mb)mb.classList.toggle("iw-on",inspWinterOn());};
+window.inspWinterApply=function(){var mb=document.getElementById("MB");if(mb)mb.classList.toggle("iw-on",inspWinterOn());
+  if(typeof mvBal==="function"&&document.getElementById("mvBal"))mvBal();};   // the frame check is off in winter mode → redo it
 function winterRead(){
   var v=($q("iWiB")||{}).value,fr=v===""||v==null?null:parseInt(v);
   return{frames:isNaN(fr)?null:fr,wch:{food:($q("iWiF")||{}).value||"ok",buzz:($q("iWiZ")||{}).value||"ok",dead:($q("iWiD")||{}).value||"few",
@@ -620,6 +658,13 @@ window.saveInsp=function(editId,hiveId){
   var dnW=document.getElementById("iDNw");
   var dn=(dnW&&dnW.style.display==="none")?"":(($q("iDN")||{}).value||"");if(dn)dis.push(dn);
   var brood=parseInt(($q("iFB")||{}).value)||0;
+  // editing an older inspection saved with more frames than fit (allowed before brood boxes existed) without touching
+  // its frames (e.g. only the notes are fixed) → it may be saved as it was
+  var ex0=editId?D.inspections.find(function(i){return i.id===editId;}):null,iv=function(id){return parseInt(($q(id)||{}).value)||0;};
+  var frSame=!!ex0&&(parseInt(ex0.fB)||0)===iv("iFB")&&(parseInt(ex0.fH)||0)===iv("iFH")&&(parseInt(ex0.fE)||0)===iv("iFE")&&(parseInt(ex0.nests)||1)===(iv("iNst")||1);
+  if(!frSame&&!(typeof inspWinterOn==="function"&&inspWinterOn())&&(inspNestOver(hid)>0||(typeof nstOver==="function"&&$q("iNst0")&&nstOver()))){
+    toast(L2("Ai trecut mai multe rame decât încap în cuib — adaugă un cuib sau corectează.","More frames than fit — add a brood box or fix the numbers."),"⚠️");
+    var tp=document.getElementById("iNestTip");if(tp)tp.scrollIntoView({behavior:"smooth",block:"center"});return;}
   var o={
     id:editId||uid(),hiveId:hid,
     date:($q("iDt")||{}).value||"",weather:($q("iWt")||{}).value||"",
@@ -634,6 +679,9 @@ window.saveInsp=function(editId,hiveId){
     botci:($q("iBtc")||{}).checked||false,botciN:parseInt(($q("iBtcN")||{}).value)||0,
     botciS:($q("iBtcS")||{}).value||"",botciF:($q("iBtcF")||{}).value||"",
     fB:brood,fH:parseInt(($q("iFH")||{}).value)||0,fP:0,
+    fE:parseInt(($q("iFE")||{}).value)||0,nests:parseInt(($q("iNst")||{}).value)||1,nestsBefore:parseInt(($q("iNst0")||{}).value)||null,
+    nestF:(typeof nstRead==="function"&&$q("iNst0"))?nstRead():null,
+    plAdd:!!($q("iPlA")&&$q("iPlA").checked),   // ⬢ plastic-foundation frames put in (one tick, boxes.js)
     popPct:parseInt(($q("iPop")||{}).value)||90,bp:($q("iBP")||{}).value||"compact",
     mv:mvRead(),
     nFramesB:(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.nFramesB||0:0;})(),   // old field (no longer in the form) — kept on edit
@@ -653,18 +701,21 @@ window.saveInsp=function(editId,hiveId){
   // 🔄 frames: final count vs before − out + in; an unexplained difference asks before saving
   var exO=editId?D.inspections.find(function(i){return i.id===editId;}):null;
   var bfV=($q("mvBefore")||{}).value;o.frBefore=bfV===""||bfV==null?(exO?exO.frBefore:null):parseInt(bfV);
-  var bbV=($q("mvBefB")||{}).value,bhV=($q("mvBefF")||{}).value;
+  var bbV=($q("mvBefB")||{}).value,bhV=($q("mvBefF")||{}).value,bgV=($q("mvBefG")||{}).value;
+  o.frBeforeG=bgV===""||bgV==null?(exO?exO.frBeforeG:null):parseInt(bgV);
   o.frBeforeB=bbV===""||bbV==null?(exO?exO.frBeforeB:null):parseInt(bbV);o.frBeforeF=bhV===""||bhV==null?(exO?exO.frBeforeF:null):parseInt(bhV);
   if(o.winterMode)o.mv=exO?exO.mv||null:null;
   var mc=o.winterMode?null:mvCheck();
   if(mc&&mc.diff!==0&&!window._mvForce){
     showConfirm("Ai scris <b>"+mc.fin+"</b> rame în cuib, dar înainte erau <b>"+mc.before+"</b>"+(mc.out?", scoase "+mc.out:"")+(mc.inn?", puse "+mc.inn:"")+".<br>"
-      +(mc.diff<0?"Lipsesc <b>"+(-mc.diff)+"</b> rame":"Sunt <b>"+mc.diff+"</b> rame în plus")+" fără motiv notat.<br><br>Poți apăsa „Anulează” și le treci la „🔄 Am scos sau am pus rame”, sau salvezi așa (se notează „fără motiv”).",
+      +(mc.diff<0?"Lipsesc <b>"+(-mc.diff)+"</b> rame":"Sunt <b>"+mc.diff+"</b> rame în plus")+" fără motiv notat.<br><br>Poți apăsa „Anulează” și le treci la „🔀 Rame mutate între stupi”, sau salvezi așa (se notează „fără motiv”).",
       function(){window._mvForce=true;saveInsp(editId,hiveId);},null,"💾 Salvez așa");
     return;
   }
   window._mvForce=false;
   o.frDiff=mc&&mc.diff?mc.diff:0;
+  // frames put in / taken out straight in the boxes (boxes.js) — kept, so editing this inspection later does not ask again
+  o.frDir=(typeof _bx!=="undefined"&&_bx.on&&!o.winterMode&&(_bx.put||_bx.take||_bx.adj.b||_bx.adj.f||_bx.adj.e))?{put:_bx.put,take:_bx.take,adj:{b:_bx.adj.b,f:_bx.adj.f,e:_bx.adj.e}}:(o.winterMode&&exO?exO.frDir||null:null);
   if(o.mv){var ms=mvSums(o.mv);o.fIn=ms.fIn;o.fOut=ms.fOut;}else{o.fIn=null;o.fOut=null;}
   o.wch=null;
   if(o.winterMode){
@@ -676,8 +727,8 @@ window.saveInsp=function(editId,hiveId){
   }
   if(!o.winterMode&&_magSt&&document.querySelector("#MB .mg2")){   // supers: post-inspection state, per super
     var md=magDiff();
-    o.mags=_magSt.cur.map(function(m){return{f:m.f,cap:m.cap};});
-    o.magsBefore=_magSt.before.map(function(m){return{f:m.f,cap:m.cap};});
+    o.mags=_magSt.cur.map(function(m){magNorm(m,_magSt.per);return{f:m.f,cap:m.cap,h:m.h,e:m.e,n:m.n,size:m.size};});
+    o.magsBefore=_magSt.before.map(function(m){return{f:m.f,cap:m.cap,h:m.h,e:m.e,n:m.n,size:m.size};});
     o.magCount=o.mags.length;o.hasMag=o.magCount>0;o.magT=magSum(o.mags);
     o.magCap=Math.round(o.mags.reduce(function(t,m){return t+m.f*m.cap/100;},0));
     o.magAddS=md.addS;o.magRmS=md.rmS;o.magAddF=md.addF;o.magRmF=md.rmF;
@@ -701,7 +752,7 @@ window.saveInsp=function(editId,hiveId){
   // (an edited old inspection does not overwrite the current state)
   var isLatest=!D.inspections.some(function(i){return i.hiveId===hid&&i.id!==o.id&&i.date&&o.date&&i.date>o.date;});
   if(hive&&isLatest){
-    hive.fB=brood;hive.fH=o.fH;hive.fT=brood+o.fH;   // total = brood + food
+    hive.fB=brood;hive.fH=o.fH;hive.fE=o.fE;hive.nests=o.nests;hive.nestF=o.nestF||null;if(o.plAdd)hive.plAny=true;hive.fT=brood+o.fH+o.fE;   // total = brood + food + empty
     hive.str=strCalc(brood,o.fH,o.winter?o.winter.frames:null,o.date);if(o.space==="urgent")hive.sc="red";
     if(o.winter&&o.winter.frames!=null){hive.bees=o.winter.frames;hive.beesDate=o.date;}
     // Supers: the hive takes the count from the inspection (0 = no super)
@@ -717,3 +768,117 @@ window.saveInsp=function(editId,hiveId){
   if(hive&&hive.kind==="roi"&&o.qMated)setTimeout(function(){nucPromoteM(hid,true);},450);
   mvNucAfterSave(o);   // „🐝 Fac un roi nou” → open the nuc form with these frames
 };
+
+// 🏠 BROOD BOXES in the inspection (like the supers): 1 by default, „➕ Adaugă cuib” adds one, „➖ Scoate” on the top one.
+// With 2+ boxes every box has its own frames (puiet / mâncare / goale) — edited right in its row; the totals
+// (iFB / iFH / iFE, used everywhere else) are their sum. o.nestF = [{b,f,e}, …] (bottom → top), only when 2+ boxes.
+var _nst={n0:1,n:1,per:10,F:[{b:0,f:0,e:0,n:0}]};
+var _bxDrawing=false;
+function nstSplit(b,f,e,n,per){   // totals → boxes, filling from the bottom box up (brood first, then food, then empty)
+  var F=[];for(var i=0;i<n;i++)F.push({b:0,f:0,e:0,n:0});
+  var put=function(k,v){for(var i=0;i<n&&v>0;i++){var room=per-(F[i].b+F[i].f+F[i].e+F[i].n);if(i===n-1)room=v;var x=Math.min(room,v);F[i][k]+=x;v-=x;}};
+  put("b",b);put("f",f);put("e",e);return F;
+}
+// same as nstSplit, but every box keeps its own size
+function nstSplitSz(b,f,e,sizes,per){
+  var n=sizes.length,F=[];for(var i=0;i<n;i++){F.push({b:0,f:0,e:0,n:0});if(sizes[i])F[i].size=sizes[i];}
+  var put=function(k,v){for(var i=0;i<n&&v>0;i++){var room=(sizes[i]||per)-(F[i].b+F[i].f+F[i].e+F[i].n);if(i===n-1)room=v;var x=Math.min(Math.max(0,room),v);F[i][k]+=x;v-=x;}};
+  put("b",b);put("f",f);put("e",e);return F;
+}
+function nstBlockHTML(hive,ex){
+  var n0=parseInt(ex?(ex.nestsBefore!=null?ex.nestsBefore:ex.nests):(hive&&hive.nests))||1,n=parseInt(ex?ex.nests:(hive&&hive.nests))||1;
+  var per=hvCap1(hive),src=ex?ex.nestF:(hive&&hive.nestF);
+  var b=parseInt(ex?ex.fB:(hive&&hive.fB))||0,f=parseInt(ex?inspFood(ex):(hive&&hive.fH))||0,e=parseInt(ex?ex.fE:(hive&&hive.fE))||0;
+  var F=(Array.isArray(src)&&src.length===n)?src.map(function(x){var o={b:parseInt(x.b)||0,f:parseInt(x.f)||0,e:parseInt(x.e)||0,n:parseInt(x.n)||0};if(parseInt(x.size))o.size=parseInt(x.size);return o;}):nstSplit(b,f,e,n,per);
+  _nst={n0:n0,n:n,per:per,F:F};
+  return'<input type="hidden" id="iNst" value="'+n+'"><input type="hidden" id="iNst0" value="'+n0+'"><div class="mag-box mg2 nst-box" id="nstBox">'+nstBodyHTML()+'</div>';
+}
+function nstSz(i){var F=_nst.F[i];return(F&&parseInt(F.size))||_nst.per;}           // frames that fit in box i
+function nstCap(){var c=0;for(var i=0;i<_nst.n;i++)c+=nstSz(i);return c;}
+function nstSum(k){return _nst.F.reduce(function(a,x){return a+(k==="e"?(x.e||0)+(x.n||0):k?(x[k]||0):x.b+x.f+(x.e||0)+(x.n||0));},0);}
+function nstBodyHTML(){
+  var s=_nst,tot=nstSum(),cap=nstCap();
+  var h='<div class="mag-h">🏠 '+L2("Cuiburi","Brood boxes")+' <span class="hv-ts">· '+L2("la deschidere","at start")+': '+s.n0+' '+(s.n0===1?"cuib":"cuiburi")
+    +(s.n>1?' · <b>'+tot+'</b> / '+cap+' '+L2("rame","frames"):' · '+L2("încap","fit")+' '+cap+' '+L2("rame","frames"))+'</span></div>';
+  if(s.n>1){
+    h+='<div class="mg-hint">'+L2("Fiecare cuib cu ramele lui — sus e cuibul de deasupra.","Each box with its own frames — the top one is the upper box.")+'</div>';
+    for(var i=s.n;i>=1;i--){var F=s.F[i-1],t=F.b+F.f+(F.e||0)+(F.n||0),sl="",SZ=nstSz(i-1);
+      for(var k=0;k<Math.max(SZ,t);k++){var c=k<F.b?"b":k<F.b+F.f?"f":k<t?"e":"";sl+='<i class="'+c+(k>=SZ?" over":"")+'"></i>';}
+      var st=function(key,ic,lbl){return'<div class="nst-st"><span>'+ic+' '+lbl+'</span><span class="mv-step"><button type="button" onclick="nstFr('+(i-1)+',\''+key+'\',-1)">−</button><b>'+F[key]+'</b><button type="button" onclick="nstFr('+(i-1)+',\''+key+'\',1)">+</button></span></div>';};
+      h+='<div class="mg-row nst-row'+(i>s.n0?' nst-new':'')+'"><div class="mg-top"><b>'+L2("Cuibul","Box")+' '+i+'</b><span class="hv-ts">· '+(i===1?L2("jos","bottom"):i===s.n?L2("sus","top"):"")+' · '+t+'/'+SZ+'</span>'
+        +(i>s.n0?'<span class="bg gg">'+L2("nou","new")+'</span>':'')
+        +(i===s.n?'<span class="mg-mv"><button type="button" class="mg-ib mg-x" onclick="nstSet('+(s.n-1)+')">➖ '+L2("Scoate","Remove")+'</button></span>':'')+'</div>'
+        +'<div class="isc-sl nst-sl" style="grid-template-columns:repeat('+Math.min(Math.max(SZ,t),12)+',1fr)">'+sl+'</div>'
+        +(i>s.n0&&!t?'<div class="hv-ts" style="margin:6px 0 2px;">'+L2("Ce rame ai pus în cuibul nou?","Which frames did you put in the new box?")+'</div>':'')
+        +st("b","🟤",L2("Puiet","Brood"))+st("f","🍯",L2("Mâncare","Food"))+st("e","🪹",L2("Goale / fundație","Empty / foundation"))
+        +(t>SZ?'<div class="hv-tip bad">⚠️ '+L2("În cuib încap doar","Only")+' '+SZ+' '+L2("rame","frames fit")+'</div>':'')
+        +'</div>';}
+  }
+  if(s.n<3)h+='<button type="button" class="mg-add" onclick="nstSet('+(s.n+1)+')">➕ '+L2("Adaugă cuib","Add brood box")+'</button>';
+  if(s.n!==s.n0)h+='<div class="mag-res">'+L2("Azi","Today")+': <b class="mg-ch">'+(s.n>s.n0?'➕ '+(s.n-s.n0)+' cuib':'➖ '+(s.n0-s.n)+' cuib')+'</b> → '+s.n+' '+(s.n===1?"cuib":"cuiburi")+'</div>';
+  return h;
+}
+// boxes → totals (iFB / iFH / iFE); with one box the totals are edited directly
+function nstSync(){
+  if(_nst.n>1){var fb=$q("iFB"),fh=$q("iFH"),fe=$q("iFE");
+    if(fb)fb.value=nstSum("b");if(fh)fh.value=nstSum("f");if(fe)fe.value=nstSum("e");
+    if(typeof mvBal==="function")mvBal();}
+  nstVis();inspNestTip();
+  if(typeof inspCardsRefresh==="function")inspCardsRefresh();
+}
+// totals changed from outside (voice, a frame-move row with one box…) → split them over the boxes again
+function nstFromTotals(){
+  var g=function(id){return Math.max(0,parseInt(($q(id)||{}).value)||0);};
+  if(nstSum("b")!==g("iFB")||nstSum("f")!==g("iFH")||nstSum("e")!==g("iFE")){
+    if(_nst.n>1){var sz=_nst.F.map(function(x){return x.size;});_nst.F=nstSplitSz(g("iFB"),g("iFH"),g("iFE"),sz,_nst.per);}
+    else{var o=_nst.F[0]||{},nn=Math.min(o.n||0,g("iFE"));_nst.F=[{b:g("iFB"),f:g("iFH"),e:g("iFE")-nn,n:nn}];}}
+}
+// 2+ boxes: the per-box rows replace the total steppers
+function nstVis(){
+  var multi=_nst.n>1;
+  ["iFB","iFE"].forEach(function(id){var el=$q(id),r=el&&el.closest(".r2");if(r)r.style.display=multi?"none":"";});
+  var sl=document.getElementById("iscSlots");if(sl)sl.style.display=multi?"none":"";
+}
+window.nstFr=function(i,k,d){
+  var F=_nst.F[i];if(!F)return;F[k]=Math.max(0,F[k]+d);
+  var b=document.getElementById("nstBox");if(b)b.innerHTML=nstBodyHTML();
+  if(typeof _mDirty!=="undefined")_mDirty=true;nstSync();
+};
+window.nstSet=function(n,size){
+  n=Math.max(1,Math.min(3,parseInt(n)||1));
+  nstFromTotals();
+  while(_nst.F.length<n){var nb={b:0,f:0,e:0,n:0};if(parseInt(size))nb.size=parseInt(size);_nst.F.push(nb);}
+  while(_nst.F.length>n){var x=_nst.F.pop(),y=_nst.F[_nst.F.length-1];y.b+=x.b;y.f+=x.f;y.e+=x.e;y.n=(y.n||0)+(x.n||0);}   // a removed box: its frames go to the box below
+  _nst.n=n;
+  var el=$q("iNst");if(el)el.value=n;
+  var b=document.getElementById("nstBox");if(b)b.innerHTML=nstBodyHTML();
+  if(typeof _mDirty!=="undefined")_mDirty=true;
+  if(typeof mvBoxRefresh==="function")mvBoxRefresh();
+  nstSync();
+};
+function nstOver(){return _nst.F.some(function(x,i){return x.b+x.f+(x.e||0)+(x.n||0)>nstSz(i);});}
+function nstRead(){nstFromTotals();return _nst.F.map(function(x){var o={b:x.b,f:x.f,e:x.e||0,n:x.n||0};if(x.size)o.size=x.size;return o;});}
+
+// ➕ live tip under the nest frames (brood filled the nest → add an empty frame; nest full → 2nd box / super)
+function inspNestTip(){
+  if(typeof inspSlotsUpd==="function")inspSlotsUpd();
+  if(typeof bxDraw==="function"&&!_bxDrawing){_bxDrawing=true;try{bxDraw();}finally{_bxDrawing=false;}}
+  var el=document.getElementById("iNestTip");if(!el)return;
+  var hid=($q("iHive")||{}).value||_mvSelf,h=D.hives.find(function(x){return x.id===hid;})||{};
+  var b=parseInt(($q("iFB")||{}).value)||0,f=parseInt(($q("iFH")||{}).value)||0,e=parseInt(($q("iFE")||{}).value)||0,ns=parseInt(($q("iNst")||{}).value)||1;
+  var cap=$q("iNst0")&&typeof nstCap==="function"?nstCap():hvCap(h,ns),tot=b+f+e,tt=document.getElementById("iNestTot");
+  if(tt)tt.innerHTML='<b>'+tot+'</b> / '+cap+' '+L2("rame","frames")+(cap>tot&&h.kind!=="roi"?' <span class="hv-ts">· '+(cap-tot)+' '+L2("libere","free")+'</span>':'');
+  // more frames than fit in the boxes → not allowed (add a box or fix the numbers)
+  if(h.kind!=="roi"&&tot>cap){
+    el.innerHTML='<div class="hv-tip bad">⚠️ '+(ns===1?L2("În cuib încap doar ","Only ")+cap:L2("În cele "+ns+" cuiburi încap doar ","Only ")+cap)+' '+L2("rame — ai trecut ","frames fit — you entered ")+tot+'. '
+      +(ns<3?'<button type="button" class="btn sm" onclick="nstSet('+(ns+1)+')">➕ '+L2("Adaug un cuib","Add a box")+'</button> '+L2("sau corectează numerele.","or fix the numbers."):L2("Corectează numerele.","Fix the numbers."))+'</div>';
+    return;}
+  var tp=h.kind==="roi"?null:hvNestTip(h,b,f,e,ns);
+  el.innerHTML=tp?'<div class="hv-tip '+tp.c+'">'+tp.t+'</div>':'';
+}
+// frames vs room in the boxes (used when saving)
+function inspNestOver(hid){
+  var h=D.hives.find(function(x){return x.id===hid;})||{};if(h.kind==="roi")return 0;
+  var tot=(parseInt(($q("iFB")||{}).value)||0)+(parseInt(($q("iFH")||{}).value)||0)+(parseInt(($q("iFE")||{}).value)||0);
+  return Math.max(0,tot-($q("iNst0")?nstCap():hvCap(h,parseInt(($q("iNst")||{}).value)||1)));
+}

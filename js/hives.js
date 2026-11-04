@@ -103,7 +103,7 @@ function hvWinterState(h){
   return{since:since,food:w.food||"",frames:l[0].winter&&l[0].winter.frames!=null?l[0].winter.frames:null,last:l[0].date};
 }
 // ⬢ plastic-foundation frames in the hive (badge on the card)
-function hvPlBadge(h){var n=parseInt(h&&h.plastic)||0;return n?'<span class="bg hv-pl" title="Rame cu fundație de plastic">⬢ '+n+' plastic</span>':'';}
+function hvPlBadge(h){var n=parseInt(h&&h.plastic)||0;return n?'<span class="bg hv-pl" title="Rame cu fundație de plastic">⬢ '+n+' plastic</span>':(h&&h.plAny?'<span class="bg hv-pl" title="Are rame cu fundație de plastic">⬢ plastic</span>':'');}
 function hvWinterBanner(h){
   var w=hvWinterState(h);if(!w)return"";
   var fd={ok:["ok","provizii suficiente"],limit:["lim","provizii la limită"],low:["low","provizii insuficiente — de hrănit"]}[w.food]||null;
@@ -221,18 +221,36 @@ function hvStatusHTML(h){
   return rows.length?'<div class="hv-sec hv-sts">'+rows.join("")+'</div>':'';
 }
 
+// frames of each brood box: the saved ones if they still add up to the totals, otherwise spread from the totals
+// (older inspections / hives edited by hand) — so every hive with 2+ boxes shows its boxes the same way
+function hvNestF(h){
+  var ns=parseInt(h.nests)||1,nf=h.nestF,b=parseInt(h.fB)||0,f=parseInt(h.fH)||0,e=parseInt(h.fE)||0;
+  var sum=function(k){return(nf||[]).reduce(function(t,x){return t+(k==="e"?(parseInt(x.e)||0)+(parseInt(x.n)||0):(parseInt(x[k])||0));},0);};
+  if(Array.isArray(nf)&&nf.length===ns&&sum("b")===b&&sum("f")===f&&sum("e")===e)return nf;
+  return typeof nstSplit==="function"?nstSplit(b,f,e,ns,hvCap1(h)):[];
+}
 // Brood-box frames: total + brood / food bar
 function hvFramesHTML(h,withMags){
-  var b=parseInt(h.fB)||0,f=parseInt(h.fH)||0,tot=b+f,pb=tot?Math.round(b/tot*100):0;
+  var b=parseInt(h.fB)||0,f=parseInt(h.fH)||0,e=parseInt(h.fE)||0,tot=b+f+e,ns=parseInt(h.nests)||1,cap=hvCap(h),W=Math.max(cap,tot)||1;
+  var pc=function(n){return(n/W*100).toFixed(1);},tip=h.kind==="roi"?null:hvNestTip(h,b,f,e,ns);
   return'<div class="hv-sec hv-fr">'
-    +'<div class="hv-fr-top"><span class="hv-tl">📊 '+t("hv_nest")+'</span>'
-    +'<span class="hv-fr-tot"><b>'+tot+'</b> '+t("hv_frames")+'</span>'
+    +'<div class="hv-fr-top"><span class="hv-tl">📊 '+t("hv_nest")+(ns>1?' <span class="bg gb">2 cuiburi</span>':'')+'</span>'
+    +'<span class="hv-fr-tot"><b>'+tot+'</b>/'+cap+' '+t("hv_frames")+'</span>'
     +'</div>'
-    +'<div class="hv-bar">'+(tot?'<i class="b" style="width:'+pb+'%"></i><i class="f" style="width:'+(100-pb)+'%"></i>':'')+'</div>'
+    // bar = the box capacity: brood · food · empty frames · free space
+    +'<div class="hv-bar">'+(tot?'<i class="b" style="width:'+pc(b)+'%"></i><i class="f" style="width:'+pc(f)+'%"></i>'+(e?'<i class="e" style="width:'+pc(e)+'%"></i>':''):'')+'</div>'
     +'<div class="hv-leg"><span><i class="dot b"></i><b>'+b+'</b> '+t("hv_brood_l")+'</span><span><i class="dot f"></i><b>'+f+'</b> '+t("hv_food_l")+'</span>'
+    +(e?'<span><i class="dot e"></i><b>'+e+'</b> goale</span>':'')+(cap>tot?'<span class="hv-ts">'+(cap-tot)+' loc liber</span>':'')
     // ❄️ cold season: the cluster size (frames with bees) is what the strength is based on
     +(h.bees!=null&&h.beesDate&&(function(){var m=parseInt(todayISO().slice(5,7));return m>=10||m<=3;})()&&hvDaysSince(h.beesDate)<120?'<span title="Rame cu albine la inspecția din '+devFmt(h.beesDate)+'">🐝 <b>'+h.bees+'</b> cu albine</span>':'')
     +'</div>'
+    // 🏠 2+ brood boxes: frames of each box (top box first)
+    +(ns>1?'<div class="hv-nests">'+hvNestF(h).map(function(x,i){
+        var nb=parseInt(x.b)||0,nf=parseInt(x.f)||0,ne=(parseInt(x.e)||0)+(parseInt(x.n)||0),nt=nb+nf+ne,c1=parseInt(x.size)||hvCap1(h),w=Math.max(c1,nt)||1,q=function(n){return(n/w*100).toFixed(1);};
+        return'<div class="hv-nest"><div class="hv-nest-t"><b>Cuibul '+(i+1)+'</b><span class="hv-ts">'+(i===0?"jos":i===ns-1?"sus":"")+'</span><span class="hv-nest-n"><b>'+nt+'</b>/'+c1+'</span></div>'
+          +'<div class="hv-bar hv-bar-s"><i class="b" style="width:'+q(nb)+'%"></i><i class="f" style="width:'+q(nf)+'%"></i>'+(ne?'<i class="e" style="width:'+q(ne)+'%"></i>':'')+'</div>'
+          +'<div class="hv-nest-l">'+nb+' puiet · '+nf+' mâncare'+(parseInt(x.e)?' · '+x.e+' clădite':'')+(parseInt(x.n)?' · '+x.n+' noi':'')+(c1>nt?' · '+(c1-nt)+' libere':'')+'</div></div>';}).reverse().join("")+'</div>':'')
+    +(tip?'<div class="hv-tip '+tip.c+'">'+tip.t+'</div>':'')
     +(withMags?hvMagsHTML(h):'')   // ★ capping-percentage module — in Pastorare
     +'</div>';
 }
@@ -297,7 +315,8 @@ function hvCardHTML(h,opt){
     // 1. header
     +'<div class="hv-sec hv-hd">'
     +'<span class="hv-num">'+(h.num||"·")+'</span>'
-    +'<div class="hv-hd-t"><div class="hv-name">'+esc(h.name)+'</div>'
+    // name (or the small ✏️ next to it) opens the hive's edit form — kept away from the inspection buttons
+    +'<div class="hv-hd-t"><div class="hv-name hv-name-e" role="button" onclick="hiveM(\''+h.id+'\')" title="'+t("hv_edit")+'">'+esc(h.name)+'<span class="hv-edit" aria-label="'+t("hv_edit")+'">✏️</span></div>'
     +'<div class="hv-meta">'+meta+'</div></div>'
     +'<div class="hv-hd-r">'+hvHiveIcon(h)+'</div>'
     +'</div>'
@@ -316,7 +335,6 @@ function hvCardHTML(h,opt){
     +'<div class="hv-sec hv-act">'
     +'<button class="btn hv-act-main" onclick="inspM(\''+h.id+'\')">🔍 '+t("hv_new_insp")+'</button>'
     +'<button class="hv-ib" onclick="vcOpen(\''+h.id+'\')" title="Inspecție vocală" aria-label="Inspecție vocală">🎙️</button>'
-    +'<button class="hv-ib" onclick="hiveM(\''+h.id+'\')" title="'+t("hv_edit")+'" aria-label="'+t("hv_edit")+'">✏️</button>'
     +'<button class="hv-ib" onclick="nucM(\'\',\''+h.id+'\')" title="Fă roi din acest stup" aria-label="Fă roi din acest stup">🐝</button>'
     +'<button class="hv-ib hv-del" onclick="delH(\''+h.id+'\')" title="'+t("h_del_c")+'" aria-label="Șterge stupul">🗑️</button>'
     +'</div>'
@@ -380,15 +398,21 @@ function hvMags(h){
   var n=hvMagCount(h),per=parseInt(h.magF)||10;
   var a=Array.isArray(h.mags)?h.mags.slice(0,n):[];
   while(a.length<n)a.push({f:per,cap:0});
-  return a.map(function(m){return{f:parseInt(m.f)||0,cap:parseInt(m.cap)||0};});
+  return a.map(function(m){return{f:parseInt(m.f)||0,cap:parseInt(m.cap)||0,h:m.h,e:m.e,n:m.n,size:m.size};});
 }
 // Small drawing: roof + one super each (colored by % capped) + body (brood box)
 function hvHiveIcon(h){
-  var ms=hvMags(h),n=ms.length,shown=Math.min(n,6),sup="";
+  var ms=hvMags(h),n=ms.length,shown=Math.min(n,6),sup="",ns=Math.max(1,Math.min(3,parseInt(h&&h.nests)||1)),bx="";
+  for(var j=0;j<ns;j++)bx+='<i class="b'+(j<ns-1?' b2':'')+'"></i>';
   for(var i=shown-1;i>=0;i--)sup+='<i class="s" style="'+magBarStyle(ms[i].cap)+'"></i>';
   var lbl=n?n+' '+(n===1?L2("magazie","super"):L2("magazii","supers"))+' — '+ms.map(function(m,i){return'M'+(i+1)+': '+m.cap+'%';}).reverse().join(', '):L2("fără magazie","no super");
-  return'<div class="hv-ico" title="'+lbl+'"><i class="r"></i>'+(n>6?'<i class="more">+'+(n-6)+'</i>':'')+sup+'<i class="b"></i><i class="ft"></i>'
-    +(n?'<span class="hv-ico-n">'+n+' '+L2("mag.","sup.")+'</span>':'')+'</div>';
+  lbl=(ns>1?ns+" cuiburi · ":"")+lbl;
+  // non-standard hive (boxes of more than 12 frames) → drawn wide, with the frames per box under it
+  var big=Math.max(hvCap1(h),(Array.isArray(h&&h.nestF)?h.nestF:[]).reduce(function(a,x){return Math.max(a,parseInt(x.size)||0);},0));
+  if(big>12){return'<div class="hv-ico wide" title="Stup nestandard · '+big+' rame / cuib · '+lbl+'"><i class="r"></i>'+(n>6?'<i class="more">+'+(n-6)+'</i>':'')+sup+bx+'<i class="ft"></i>'
+    +'<span class="hv-ico-n">'+big+' rame'+(ns>1?' · '+ns+' cuib.':'')+(n?' · '+n+' mag.':'')+'</span></div>';}
+  return'<div class="hv-ico" title="'+lbl+'"><i class="r"></i>'+(n>6?'<i class="more">+'+(n-6)+'</i>':'')+sup+bx+'<i class="ft"></i>'
+    +(n||ns>1?'<span class="hv-ico-n">'+[ns>1?ns+' '+L2("cuib.","boxes"):'',n?n+' '+L2("mag.","sup."):''].filter(Boolean).join(' · ')+'</span>':'')+'</div>';
 }
 // ★ „CAPPING-PERCENTAGE MODULE” (kept for Pastorare — currently unused on the card, at your request, 26.10.2026)
 // Stack of supers (top → bottom), each with a bar colored by % capped frames + frame count.
@@ -405,8 +429,24 @@ function hvMagsHTML(h){
 }
 
 // Brood-box frames: total = brood frames + food frames (fH = food frames: honey + bee bread)
-function hvTotal(h){return(parseInt(h.fB)||0)+(parseInt(h.fH)||0);}
-window.hvUpdTotal=function(){var b=parseInt(($q("hFB")||{}).value)||0,f=parseInt(($q("hFH")||{}).value)||0;var el=$q("hFT");if(el)el.value=b+f;var tx=$q("hFTt");if(tx)tx.textContent=b+f;};
+function hvTotal(h){return(parseInt(h.fB)||0)+(parseInt(h.fH)||0)+(parseInt(h.fE)||0);}   // brood + food + empty (built comb / foundation)
+// how many frames fit: from the model („Dadant 12 rame” → 12, default 10) × brood boxes (1 or 2)
+function hvCap1(h){if(h&&parseInt(h.nestSize))return parseInt(h.nestSize);var m=String((h&&h.mod)||"").match(/(\d+)\s*rame/);return m?parseInt(m[1]):10;}
+function hvCap(h,nests){var n=parseInt(nests!=null?nests:(h&&h.nests))||1;
+  if(h&&Array.isArray(h.nestF)&&h.nestF.length===n)return h.nestF.reduce(function(t,x){return t+(parseInt(x.size)||hvCap1(h));},0);
+  return hvCap1(h)*n;}
+// spring tip: brood filled the nest and no empty frame left → add one; nest full → 2nd box / super
+function hvNestTip(h,b,f,e,nests){
+  b=parseInt(b)||0;f=parseInt(f)||0;e=parseInt(e)||0;nests=parseInt(nests)||1;
+  var cap=hvCap(h,nests),tot=b+f+e,m=parseInt(todayISO().slice(5,7));
+  if(m<3||m>7||!tot)return null;   // only in the building season (March–July)
+  if(tot>=cap){
+    if(b>=Math.round(cap*0.6))return{c:"full",t:nests<2?"📦 Cuibul e plin ("+tot+"/"+cap+") — e timpul pentru al doilea cuib sau o magazie.":"📦 Cuiburile sunt pline ("+tot+"/"+cap+") — e timpul pentru o magazie."};
+    return null;}
+  if(e===0&&b>0&&b>=tot-1)return{c:"add",t:"➕ Puietul a umplut ramele — pune o ramă goală, ca matca să aibă unde oua ("+tot+"/"+cap+")."};
+  return null;
+}
+window.hvUpdTotal=function(){var b=parseInt(($q("hFB")||{}).value)||0,f=parseInt(($q("hFH")||{}).value)||0,e=parseInt(($q("hFE")||{}).value)||0;var el=$q("hFT");if(el)el.value=b+f+e;var tx=$q("hFTt");if(tx)tx.textContent=b+f+e;};
 
 // ── Hive list ───────────────────────────────────────────────
 var _hvQ="";   // search text (kept across redraws)
@@ -517,6 +557,9 @@ function hiveM(id){
     +fgHTML("🐝 Colonia acum",
       '<div class="r2"><div>'+L("🟤 Rame puiet")+'<input id="hFB" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fB",4)))+'" oninput="aStr();hvUpdTotal()"></div>'
       +'<div>'+L("🍯 Rame mâncare")+'<input id="hFH" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fH",3)))+'" oninput="aStr();hvUpdTotal()"><span class="hint">miere + păstură</span></div></div>'
+      +'<div class="r2"><div>'+L("🪹 Rame goale")+'<input id="hFE" type="number" inputmode="numeric" min="0" value="'+(esc(xv(h,"fE",0)))+'" oninput="hvUpdTotal()"><span class="hint">clădite / cu fundație, puse pentru matcă</span></div>'
+      +'<div>'+L("🏠 Cuiburi")+'<select id="hNst"><option value="1"'+(xv(h,"nests",1)==2?'':' selected')+'>1 cuib</option><option value="2"'+(xv(h,"nests",1)==2?' selected':'')+'>2 cuiburi</option></select></div></div>'
+      +'<div class="r2"><div>'+L("📏 Rame într-un cuib")+'<input id="hNsz" type="number" inputmode="numeric" min="4" max="30" value="'+esc(h&&h.nestSize?h.nestSize:"")+'" placeholder="'+hvCap1(h&&!h.nestSize?h:{mod:(h&&h.mod)||"Dadant 10 rame"})+' (din model)"><span class="hint">doar dacă stupul e altfel decât modelul (de ex. 20 de rame)</span></div><div></div></div>'
       +'<div class="fg-tot">În cuib: <b id="hFTt">'+(h?hvTotal(h):7)+'</b> rame<input type="hidden" id="hFT" value="'+(h?hvTotal(h):7)+'"></div>'
       +L("💪 Forță")+segHTML("hSt",[["slab","⚠️ Slab"],["mediu","⚡ Mediu"],["puternic","💪 Puternic"]],xv(h,"str","mediu"))
       +'<div class="hint">Se calculează singură din rame (vara după puiet, iarna după ramele cu albine); o poți schimba.</div>'
@@ -542,14 +585,19 @@ window.saveH=function(id){
     if(el){el.classList.add("err");el.focus();setTimeout(function(){el.classList.remove("err");},2500);}
     toast("⚠️ "+(t("h_name_l")));return;
   }
-  var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,str:($q("hSt")||{}).value||"mediu",magCount:parseInt(($q("hMgN")||{}).value)||0,hasMag:(parseInt(($q("hMgN")||{}).value)||0)>0,magF:parseInt(($q("hMgF")||{}).value)||0,sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
+  var o={id:id||uid(),num:parseInt(($q("hNum")||{}).value)||null,name:nm,loc:($q("hLc")||{}).value||"",mat:($q("hMt")||{}).value||"Lemn",mod:($q("hMd")||{}).value||"Dadant 10 rame",fB:parseInt(($q("hFB")||{}).value)||0,fH:parseInt(($q("hFH")||{}).value)||0,fE:parseInt(($q("hFE")||{}).value)||0,nests:parseInt(($q("hNst")||{}).value)||1,nestSize:parseInt(($q("hNsz")||{}).value)||null,str:($q("hSt")||{}).value||"mediu",magCount:parseInt(($q("hMgN")||{}).value)||0,hasMag:(parseInt(($q("hMgN")||{}).value)||0)>0,magF:parseInt(($q("hMgF")||{}).value)||0,sc:($q("hSc")||{}).value||"green",notes:($q("hNt")||{}).value||""};
 
-  o.fT=o.fB+o.fH;                        // total frames = brood + food
+  o.fT=o.fB+o.fH+o.fE;                   // total frames = brood + food + empty
   o.plastic=Math.max(0,parseInt(($q("hPl")||{}).value)||0);   // ⬢ frames with plastic foundation
   // Supers keep their frames and capped percentage; only the changed count is added / removed
   (function(){var old=id?D.hives.find(function(x){return x.id===id;}):null;
     var a=(old&&Array.isArray(old.mags))?old.mags.slice(0,o.magCount):[];
     while(a.length<o.magCount)a.push({f:o.magF||10,cap:0});o.mags=a;})();
+  // 🏠 frames of each brood box: kept if they still add up to the totals, otherwise spread again (bottom box first)
+  (function(){var old=id?D.hives.find(function(x){return x.id===id;}):null,nf=old&&old.nestF;
+    if(o.nests>1){var ok=Array.isArray(nf)&&nf.length===o.nests&&["b","f","e"].every(function(k){return nf.reduce(function(t,x){return t+(parseInt(x[k])||0);},0)===(k==="b"?o.fB:k==="f"?o.fH:o.fE);});
+      o.nestF=ok?nf:(typeof nstSplit==="function"?nstSplit(o.fB,o.fH,o.fE,o.nests,hvCap1(o)):null);}
+    else o.nestF=null;})();
 
   // ── Queen ──
   if(!D.queens)D.queens=[];

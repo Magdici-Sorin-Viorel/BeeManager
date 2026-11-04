@@ -7,7 +7,7 @@
 // or anywhere when the address ends with ?demo. The file can be deleted anytime
 // (plus its line in index.html and the call in app.js / settings.js).
 
-var DEMO_V=7;   // bump to reload the demo data once more in the preview
+var DEMO_V=8;   // bump to reload the demo data once more in the preview
 
 function demoHost(){
   var h=location.hostname||"",q=location.search||"";
@@ -97,11 +97,11 @@ function demoBuild(){
   // ── Stupul 1 — strong colony, acacia + sunflower pastorage ──
   I("d1","2026-03-18",{weather:W.part,temp:14,fB:4,fH:5,qSeen:false,capped:true,notes:"Prima revizie, iernare bună"});
   I("d1","2026-04-08",{temp:18,fB:6,fH:4,behav:2,fIn:{n:2,h:0,b:0},notes:"Am lărgit cuibul cu 2 faguri"});
-  I("d1","2026-04-25",{temp:21,fB:8,fH:3,mags:M([[10,10]]),notes:"Pus magazia pentru rapiță"});
-  I("d1","2026-05-10",{temp:24,fB:9,fH:2,mags:M([[10,40],[10,0]]),botci:true,botciN:4,botciS:"incipient",botciAction:"removed",
+  I("d1","2026-04-25",{temp:21,fB:7,fH:3,mags:M([[10,10]]),notes:"Pus magazia pentru rapiță"});
+  I("d1","2026-05-10",{temp:24,fB:8,fH:2,mags:M([[10,40],[10,0]]),botci:true,botciN:4,botciS:"incipient",botciAction:"removed",
     fOut:{n:0,h:0,p:0,b:2,a:2},mv:{out:[{n:2,t:"ba",dest:"nuc",nucId:"d3"}],in:[]},notes:"Botci de roire — am scos 2 rame cu puiet și albine pentru roiul nou (Stupul 3)"});
-  I("d1","2026-05-24",{temp:26,fB:8,fH:3,mags:M([[10,90],[10,60],[10,10]]),notes:"La salcâm, cules foarte bun"});
-  I("d1","2026-06-10",{temp:27,fB:8,fH:3,mags:M([[10,20]]),magRmS:2,magRmF:20,fOut:{n:0,h:20,p:0,b:0,a:0},notes:"Extras 2 magazii de salcâm"});
+  I("d1","2026-05-24",{temp:26,fB:7,fH:3,mags:M([[10,90],[10,60],[10,10]]),notes:"La salcâm, cules foarte bun"});
+  I("d1","2026-06-10",{temp:27,fB:7,fH:3,mags:M([[10,20]]),magRmS:2,magRmF:20,fOut:{n:0,h:20,p:0,b:0,a:0},notes:"Extras 2 magazii de salcâm"});
   I("d1","2026-06-28",{temp:30,fB:7,fH:3,mags:M([[10,70],[10,20]]),notes:"Tei, cules mediu"});
   I("d1","2026-07-20",{temp:31,fB:6,fH:4,mags:M([[10,100],[10,80],[10,40]]),behav:3,notes:"La floarea-soarelui, ceva mai agitate"});
   I("d1","2026-08-25",{temp:27,fB:4,fH:5,mags:M([]),magRmS:3,magRmF:30,fOut:{n:0,h:28,p:2,b:0,a:0},diseases:["Varroa"],
@@ -115,10 +115,10 @@ function demoBuild(){
   I("d2","2026-04-25",{temp:20,fB:3,fH:3,qSeen:false,eggs:false,larvae:true,behav:3,notes:"Introdus matca Buckfast în cușcă"});
   I("d2","2026-05-12",{temp:23,fB:5,fH:3,behav:2,mags:M([[10,30]]),fIn:{n:2,h:0,b:0},notes:"Matca nouă depune frumos"});
   I("d2","2026-05-26",{temp:25,fB:7,fH:3,behav:1,mags:M([[10,80],[10,30]]),notes:"La salcâm, foarte blânde"});
-  I("d2","2026-06-12",{temp:28,fB:8,fH:3,behav:1,mags:M([[10,20]]),magRmS:2,magRmF:20,botci:true,botciN:2,botciS:"incipient",botciAction:"removed",
+  I("d2","2026-06-12",{temp:28,fB:7,fH:3,behav:1,mags:M([[10,20]]),magRmS:2,magRmF:20,botci:true,botciN:2,botciS:"incipient",botciAction:"removed",
     fOut:{n:0,h:18,p:0,b:0,a:0},notes:"Extras salcâm, 2 botci eliminate"});
-  I("d2","2026-07-01",{temp:30,fB:8,fH:3,behav:1,mags:M([[10,60],[10,20]]),notes:"Tei"});
-  I("d2","2026-07-22",{temp:32,fB:7,fH:4,behav:1,mags:M([[10,90],[10,50]]),notes:"Cules de vară"});
+  I("d2","2026-07-01",{temp:30,fB:7,fH:3,behav:1,mags:M([[10,60],[10,20]]),notes:"Tei"});
+  I("d2","2026-07-22",{temp:32,fB:6,fH:4,behav:1,mags:M([[10,90],[10,50]]),notes:"Cules de vară"});
   I("d2","2026-08-27",{temp:26,fB:5,fH:5,behav:1,mags:M([]),magRmS:2,magRmF:20,fOut:{n:0,h:14,p:0,b:0,a:0},
     diseases:["Varroa"],notes:"Extras, pus Apivar"});
   I("d2","2026-10-10",{weather:W.cloud,temp:12,fB:2,fH:6,eggs:false,larvae:false,behav:1,winter:{frames:7,food:6},weight:{kg:19.4,raw:19.4,method:"back"},notes:"Bun de iernare"});
@@ -151,7 +151,7 @@ function demoBuild(){
   // current hive state = last inspection
   R.hives.forEach(function(h){
     var last=R.inspections.filter(function(i){return i.hiveId===h.id;}).sort(function(a,b){return a.date<b.date?-1:1;}).pop();
-    if(!last)return;h.fB=last.fB;h.fH=last.fH;h.fT=h.fB+h.fH;h.str=strCalc(h.fB,h.fH,last.winter?last.winter.frames:null,last.date);
+    if(!last)return;h.fB=last.fB;h.fH=last.fH;h.fE=parseInt(last.fE)||0;h.nests=parseInt(last.nests)||1;h.fT=h.fB+h.fH+h.fE;h.str=strCalc(h.fB,h.fH,last.winter?last.winter.frames:null,last.date);
     if(last.winter){h.bees=last.winter.frames;h.beesDate=last.date;}
     h.mags=last.mags.slice();h.magCount=h.mags.length;h.hasMag=h.mags.length>0;
     // ⬜ plastic frames = the ones on the rows (Stupul 3 started with 4 plastic frames when moved into the Dadant box)
