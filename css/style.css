@@ -1386,3 +1386,9 @@ select[onchange*="_hrHiveFilter"],select[onchange*="_hrMonthFilter"]{width:auto!
 .isc-pick{background:rgba(230,180,34,.08);border:1px solid rgba(230,180,34,.35);border-radius:var(--rs);padding:8px 10px 10px;margin:0 0 10px;}
 .isc-pick label{margin-top:0;}
 .isc-pick select{margin-bottom:0;font-weight:700;}
+
+/* 📲 Deschide pe alt telefon — QR on a white rounded box (scannable in dark mode too) + copyable link */
+.ash-qr{background:#fff;border-radius:14px;padding:16px;max-width:240px;margin:4px auto 12px;box-sizing:border-box;border:1px solid var(--bdr);}
+.ash-qr svg{display:block;width:100%;height:auto;}
+.ash-url{width:100%;box-sizing:border-box;margin:0 0 10px;font-size:.82rem;cursor:text;}
+.bk-btns.one{grid-template-columns:1fr;}

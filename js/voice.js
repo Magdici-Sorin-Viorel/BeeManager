@@ -21,6 +21,36 @@ function qrSvg(txt){
   var q=qrcode(0,"M");q.addData(txt);q.make();
   return q.createSvgTag({cellSize:4,margin:0,scalable:true});
 }
+// ── 📲 „Deschide pe alt telefon” (Settings): QR + copyable link + share to install the app on another phone ──
+// Link = where the app runs when that is GitHub Pages; elsewhere (preview, localhost) the real GitHub Pages address.
+function appUrl(){
+  var base=/github\.io$/.test(location.hostname)?location.origin+location.pathname:QR_BASE;
+  return base.replace(/index\.html$/,"");
+}
+var _appQr={url:"",svg:""};   // QR made once per address, not on every render
+function appQrSvg(u){if(_appQr.url!==u||!_appQr.svg){_appQr.url=u;_appQr.svg=qrSvg(u);}return _appQr.svg;}
+function appShareHTML(){
+  var u=appUrl();
+  return'<div class="c" style="margin-bottom:14px;"><div class="ct">📲 Deschide pe alt telefon</div>'
+    +'<p class="bk-p">Scanează codul cu camera telefonului ca să deschizi aplicația, sau trimite linkul. Fiecare telefon are datele lui; ale tale nu se trimit.</p>'
+    +'<div class="ash-qr">'+appQrSvg(u)+'</div>'
+    +'<input type="text" id="ashUrl" class="ash-url" readonly value="'+esc(u)+'" onclick="this.select()" onfocus="this.select()">'
+    +'<div class="bk-btns'+(navigator.share?'':' one')+'"><button type="button" class="btn" onclick="appCopy()">📋 Copiază linkul</button>'
+    +(navigator.share?'<button type="button" class="btn gh" onclick="appShare()">📤 Trimite</button>':'')+'</div>'
+    +'</div>';
+}
+window.appCopy=function(){
+  var u=appUrl(),inp=$q("ashUrl");
+  var old=function(){if(inp){inp.focus();inp.select();try{inp.setSelectionRange(0,u.length);}catch(e){}}
+    var ok=false;try{ok=document.execCommand("copy");}catch(e){}
+    toast(ok?"Link copiat.":"Linkul e selectat — apasă lung și alege Copiază.",ok?"📋":"👆");};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(function(){toast("Link copiat.","📋");},old);
+  else old();
+};
+window.appShare=function(){
+  if(!navigator.share)return;
+  navigator.share({title:"BeeManager Pro",text:"Aplicația de apicultură BeeManager Pro — deschide linkul și instaleaz-o pe telefon.",url:appUrl()}).catch(function(){});
+};
 function qrHives(){return D.hives.slice().sort(function(a,b){return((a.kind==="roi")-(b.kind==="roi"))||(a.num||9999)-(b.num||9999)||String(a.name).localeCompare(String(b.name));});}
 // Settings card
 function qrCardHTML(){
