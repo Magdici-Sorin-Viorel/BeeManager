@@ -253,7 +253,7 @@ function inspTrSecHTML(hid,ex){
     +'<option value="varroa"'+(!pl||pl.target!=="other"?" selected":"")+'>🕷️ Varroa</option>'
     +'<option value="other"'+(pl&&pl.target==="other"?" selected":"")+'>🩺 '+L2("Alt scop","Other purpose")+'</option></select></div>'
     +'<div>'+L(L2("🦠 Afecțiune","🦠 Condition"))+'<input id="iTrPlN" value="'+esc(pl?pl.disease||"":"")+'" placeholder="'+L2("ex. Nosemoză","e.g. Nosema")+'"></div></div>'
-    +L(t("tr_product"))+'<select id="iTrPlP">'+prods.map(function(p){var sep=p.indexOf("──")===0;return'<option'+(sep?' disabled':'')+((pl&&pl.product===p)?" selected":"")+'>'+p+'</option>';}).join("")+'</select>'
+    +L(t("tr_product"))+trProdPickHTML("iTrPlP",pl?pl.product||"":"")
     +'<div class="r2"><div>'+L(t("tr_date"))+'<input type="date" id="iTrPlD" value="'+(pl?pl.date:devAdd(date,7))+'"></div>'
     +'<div>'+L(t("tr_end"))+'<input type="date" id="iTrPlE" value="'+(pl?esc(pl.endDate||""):"")+'"><span class="hint">'+t("tr_end_h")+'</span></div></div>'
     +'<div class="dev-act tr-sc" style="display:flex;margin-left:0;">'

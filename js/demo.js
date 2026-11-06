@@ -200,3 +200,25 @@ function demoBuild(){
     .map(function(x,i){return{id:"dbo"+i,plant:x[0],phase:x[1],date:x[2],lat:null,lon:null};});
   return R;
 }
+
+// ── 📱 „Vezi ca pe telefon” — preview only (never on GitHub Pages / localhost without ?demo) ──
+// On a wide screen the app is shown inside a phone-sized frame (390×844, like an Android phone),
+// loaded in an iframe of the same page (?frame=1 = the inside, no frame again). A floating button switches.
+function demoPhoneFrame(){
+  if(!demoHost()||/[?&]frame\b/.test(location.search)||window.innerWidth<700)return false;
+  var on=false;try{on=localStorage.getItem("bmpPhone")==="1";}catch(e){}
+  var b=document.createElement("button");b.type="button";b.id="demoPhoneBtn";
+  b.style.cssText="position:fixed;right:14px;bottom:14px;z-index:5000;background:#e6b422;color:#1f1b13;border:none;border-radius:999px;padding:10px 16px;font:700 .85rem system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.4);cursor:pointer;";
+  b.textContent=on?"🖥️ Ecran mare":"📱 Vezi ca pe telefon";
+  b.onclick=function(){try{localStorage.setItem("bmpPhone",on?"":"1");}catch(e){}location.reload();};
+  if(!on){document.body.appendChild(b);return false;}
+  var src=location.pathname+(location.search?location.search+"&":"?")+"frame=1"+location.hash;
+  document.documentElement.style.cssText="height:100%;background:#0b0a0a;";
+  document.body.style.cssText="margin:0;height:100%;display:flex;align-items:center;justify-content:center;background:#0b0a0a;overflow:auto;";
+  document.body.innerHTML='<div style="position:relative;width:390px;height:844px;flex:none;border-radius:44px;background:#000;box-shadow:0 0 0 11px #1c1c1c,0 0 0 13px #3a3a3a,0 30px 70px rgba(0,0,0,.7);overflow:hidden;">'
+    +'<div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:14px;z-index:2;"></div>'
+    +'<iframe src="'+src+'" style="width:390px;height:844px;border:0;display:block;background:#0f0e0e;" title="BeeManager Pro"></iframe>'
+    +'<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:120px;height:4px;border-radius:2px;background:rgba(255,255,255,.55);z-index:2;"></div></div>';
+  document.body.appendChild(b);
+  return true;
+}

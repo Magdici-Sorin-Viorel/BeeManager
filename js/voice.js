@@ -433,10 +433,20 @@ function vcLev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var d=[],i,j;for(i
   for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
 var VC_FIX={oxalik:"oxalic",oxalit:"oxalic",oxali:"oxalic",formik:"formic",apiguar:"apiguard",apivar:"apivar",bayvarol:"bayvarol",timol:"timol",tymol:"timol",plasic:"plastic",plastik:"plastic",hranirea:"hranire",tratamentu:"tratamentul",siropu:"siropul",zacut:"vazut",vazu:"vazut",vazt:"vazut",ramel:"ramele",ramle:"ramele",potca:"botca",potci:"botci",botce:"botci",botcii:"botci",bortca:"botca",varoa:"varroa",varo:"varroa",barroa:"varroa",varola:"varroa",puiat:"puiet",puieti:"puiet",puietul:"puiet",
   magazine:"magazie",magazin:"magazie",larva:"larve",larvele:"larve",fundati:"fundatie",pastur:"pastura",matc:"matca"};
+// 🎓 what the app learned from you (Setări → Antrenează vocea, vctrain.js): „what the phone writes” → „what you said”
+function vcLearned(){return(D&&D.settings&&D.settings.vcLearn)||[];}
+function vcLearnApply(x){
+  var L=vcLearned();if(!L.length)return x;
+  L.slice().sort(function(a,b){return b.h.length-a.h.length;}).forEach(function(r){   // longer phrases first
+    if(!r.h||!r.s)return;x=x.replace(new RegExp("\\b"+r.h.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","g"),r.s);});
+  return x;
+}
 function vcFuzzy(x){
+  x=vcLearnApply(x);
+  var known=VC_LEX.concat([]);vcLearned().forEach(function(r){String(r.s||"").split(" ").forEach(function(w){if(w&&known.indexOf(w)<0)known.push(w);});});
   return x.replace(/\b[a-z]{4,}\b/g,function(w){
     if(VC_FIX[w])return VC_FIX[w];
-    if(w.length<5||VC_LEX.indexOf(w)>=0)return w;
+    if(w.length<5||known.indexOf(w)>=0)return w;
     var best=null,bd=9;VC_LEX.forEach(function(l){var d=vcLev(w,l);if(d<bd){bd=d;best=l;}});
     return bd<=(w.length>=8?2:1)?best:w;});
 }
@@ -858,7 +868,8 @@ window.vcFill=function(){
     var tp=$q("iTrPl");
     if(tp){if(!tp.checked){tp.checked=true;fire(tp);}
       var ps=$q("iTrPlP");if(ps&&E.tr.product)ps.value=E.tr.product;
-      else if(ps&&E.tr.disease){for(var pi=0;pi<ps.options.length;pi++)if(/Alt produs|Other product/i.test(ps.options[pi].text)){ps.selectedIndex=pi;break;}}
+      else if(ps&&E.tr.disease)ps.value=(t("tr_products")||[]).filter(function(x){return /Alt produs|Other product/i.test(x);})[0]||"";
+      if(ps&&typeof trProdSync==="function")trProdSync("iTrPlP");
       var tg=$q("iTrPlTg");if(tg){tg.value=E.tr.disease?"other":"varroa";}
       if(E.tr.disease&&$q("iTrPlN"))$q("iTrPlN").value=E.tr.disease.charAt(0).toUpperCase()+E.tr.disease.slice(1);
       var pd=$q("iTrPlD");if(pd)pd.value=($q("iDt")||{}).value||vrToday();

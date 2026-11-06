@@ -18,7 +18,7 @@ function treatM(id){
   // keep it as an option so editing doesn't change it by mistake
   if(ex&&ex.product&&prods.indexOf(ex.product)<0)prods.unshift(ex.product);
   openM('<div class="mt">'+(ex?t("tr_edit_t"):t("tr_new_t"))+'</div>'
-    +L(t("tr_product"))+'<select id="tPr">'+prods.map(function(p){var isSep=p.startsWith("──");return'<option'+(isSep?' disabled style="color:var(--gold);font-weight:700;font-size:.8rem;"':'')+((xv(ex,"product","")=== p&&!isSep)?" selected":"")+'>'+p+'</option>';}).join("")+'</select>'
+    +L(t("tr_product"))+trProdPickHTML("tPr",xv(ex,"product",""))
     +L(L2("🎯 Scop","🎯 Purpose"))+'<select id="tTg">'
     +'<option value="varroa"'+(!ex||trIsVarroa(ex)?" selected":"")+'>🕷️ Varroa</option>'
     +'<option value="other"'+(ex&&!trIsVarroa(ex)?" selected":"")+'>🩺 '+L2("Alt scop (ex. nosemoză, locă)","Other (e.g. nosema, foulbrood)")+'</option></select>'
@@ -54,3 +54,56 @@ function isLowStock(i){
   }
   return i.qty<=i.min;
 }
+
+// ═══════════════════════════════════════════
+// 🧪 Product picker — phone friendly (the native <select> showed the long names cut off)
+// A button with the chosen product opens a sheet: groups, big rows (emoji · name · how it is applied),
+// a search box and „Alt produs” with its own text. The value lives in a hidden input (same id as before:
+// tPr / iTrPlP), so saving, the voice inspection and old data work unchanged.
+// ═══════════════════════════════════════════
+function trProdParts(p){
+  var m=/^(\S+)\s+(.*)$/.exec(p||""),ico=m&&!/[A-Za-z0-9]/.test(m[1])?m[1]:"",rest=ico?m[2]:(p||"");
+  var i=rest.indexOf(" — ");
+  return{ico:ico,name:i>=0?rest.slice(0,i):rest,det:i>=0?rest.slice(i+3):""};
+}
+function trProdIsOther(p){return /Alt produs|Other product/i.test(p||"");}
+function trProdLabel(p){
+  if(!p)return'<span class="tp-ph">'+L2("Alege produsul…","Pick the product…")+'</span>';
+  var x=trProdParts(p);return(x.ico?'<i>'+x.ico+'</i>':'')+'<b>'+esc(x.name)+'</b>'+(x.det?'<small>'+esc(x.det)+'</small>':'');
+}
+// value = product text saved in the treatment; a product typed by hand is kept as it is
+function trProdPickHTML(id,cur){
+  var list=(t("tr_products")||[]),known=list.indexOf(cur)>=0,other=cur&&!known;
+  return'<input type="hidden" id="'+id+'" value="'+esc(cur||"")+'">'
+    +'<button type="button" class="tp-btn" id="'+id+'_b" onclick="trProdOpen(\''+id+'\')">'+trProdLabel(cur)+'<span class="hv-arr">›</span></button>'
+    +'<input id="'+id+'_o" class="tp-other" style="display:'+(other||trProdIsOther(cur)?"block":"none")+';" value="'+esc(other?cur:"")+'" placeholder="'+L2("Numele produsului (ex. Apivar, Thymovar…)","Product name (e.g. Apivar, Thymovar…)")+'" oninput="trProdOther(\''+id+'\',this.value)">';
+}
+window.trProdSync=function(id){var h=$q(id),b=$q(id+"_b"),o=$q(id+"_o");if(!h||!b)return;
+  b.innerHTML=trProdLabel(h.value)+'<span class="hv-arr">›</span>';
+  if(o){var known=(t("tr_products")||[]).indexOf(h.value)>=0;o.style.display=trProdIsOther(h.value)||(h.value&&!known)?"block":"none";if(h.value&&!known)o.value=h.value;}
+};
+window.trProdSet=function(id,val){var h=$q(id);if(!h)return;h.value=val;trProdSync(id);if(typeof _mDirty!=="undefined")_mDirty=true;trProdClose();
+  var o=$q(id+"_o");if(o&&trProdIsOther(val)){o.value="";setTimeout(function(){o.focus();},80);}};
+window.trProdOther=function(id,v){var h=$q(id);if(!h)return;v=(v||"").trim();h.value=v||(t("tr_products")||[]).filter(trProdIsOther)[0]||"";var b=$q(id+"_b");if(b)b.innerHTML=trProdLabel(v?"📦 "+v:h.value)+'<span class="hv-arr">›</span>';if(typeof _mDirty!=="undefined")_mDirty=true;};
+window.trProdOpen=function(id){
+  trProdClose();var cur=($q(id)||{}).value||"",list=(t("tr_products")||[]),h="";
+  list.forEach(function(p){
+    if(p.indexOf("──")===0){h+='<div class="tp-g">'+esc(p.replace(/─/g,"").trim())+'</div>';return;}
+    var x=trProdParts(p),on=p===cur;
+    h+='<button type="button" class="tp-it'+(on?" on":"")+'" data-s="'+esc((x.name+" "+x.det).toLowerCase())+'" onclick="trProdSet(\''+id+'\',this.getAttribute(\'data-v\'))" data-v="'+esc(p)+'">'
+      +'<i>'+(x.ico||"🧪")+'</i><span><b>'+esc(x.name)+'</b>'+(x.det?'<small>'+esc(x.det)+'</small>':'')+'</span>'+(on?'<em>✓</em>':'')+'</button>';
+  });
+  var sh=document.createElement("div");sh.id="tpSheet";sh.className="tp-wrap";
+  sh.innerHTML='<div class="tp-bg" onclick="trProdClose()"></div><div class="tp-sh" role="dialog">'
+    +'<div class="tp-h"><b>'+t("tr_product")+'</b><button type="button" class="mb-x" onclick="trProdClose()" aria-label="Închide">✕</button></div>'
+    +'<input id="tpQ" class="tp-q" placeholder="🔍 '+L2("Caută (ex. oxalic, benzi, formic)","Search (e.g. oxalic, strips, formic)")+'" oninput="trProdFilter(this.value)">'
+    +'<div class="tp-list">'+h+'</div></div>';
+  (document.getElementById("MB")||document.body).appendChild(sh);
+  requestAnimationFrame(function(){sh.classList.add("in");var on=sh.querySelector(".tp-it.on");if(on)on.scrollIntoView({block:"center"});});
+};
+window.trProdFilter=function(q){
+  q=(q||"").toLowerCase().trim();var sh=$q("tpSheet");if(!sh)return;
+  [].forEach.call(sh.querySelectorAll(".tp-it"),function(b){b.style.display=!q||b.getAttribute("data-s").indexOf(q)>=0?"":"none";});
+  [].forEach.call(sh.querySelectorAll(".tp-g"),function(g){var n=g.nextElementSibling,any=false;while(n&&!n.classList.contains("tp-g")){if(n.style.display!=="none")any=true;n=n.nextElementSibling;}g.style.display=any?"":"none";});
+};
+window.trProdClose=function(){var sh=$q("tpSheet");if(sh)sh.parentNode.removeChild(sh);};

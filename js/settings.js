@@ -79,6 +79,7 @@ function renderSettings(){
     +'<button class="btn gh" onclick="impFrom(\'phone\')">📱 Din telefon</button></div>'
     +'<p style="font-size:.72rem;color:var(--mut);margin:10px 0 0;line-height:1.45;">📱 <b>Telefon:</b> fișierul e de obicei în <b>Descărcări</b> (Downloads).<br>☁️ <b>Drive:</b> în fereastra care se deschide apasă <b>☰</b> (sus, stânga) și alege <b>Drive</b>, apoi fișierul.<br>⚠️ Importul înlocuiește datele actuale din aplicație.</p></div>'},
     {id:"fisa",ico:"📋",t:"Fișa de observație",s:"PDF pe stup, pentru un an",h:fisaCardHTML()},
+    {id:"voice",ico:"🎓",t:"Antrenează vocea",s:(D.settings.vcLearn||[]).length?(D.settings.vcLearn||[]).length+" cuvinte învățate":"Învață aplicația cum vorbești",h:vtCardHTML()},
     {id:"share",ico:"📲",t:"Deschide pe alt telefon",s:"Cod QR și link pentru instalare",h:appShareHTML()},
     {id:"qr",ico:"🏷️",t:"Coduri QR pentru stupi",s:"Etichete de printat · scanezi și pornește inspecția vocală",h:qrCardHTML()},
     {id:"arc",ico:"📁",t:"Arhivă inspecții",s:arcN+" inspecții din lunile trecute",h:'<div class="c"><p style="font-size:.8rem;color:var(--mut);margin:0 0 10px;">Toate inspecțiile din lunile anterioare, organizate pe lună și stup.</p>'+arcInnerHTML+'</div>'},
@@ -127,7 +128,7 @@ function renderSettings(){
         +'<div class="se-it"><b>'+x.t+'</b><div class="hv-ts">'+x.s+'</div></div><span class="hv-arr">›</span></div>';}).join("")+'</div>';};
     setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders" style="color:var(--gold)"></i> '+t("se_title")+'</h2>'
       +grp("Date",["backup","fisa","qr","arc"])
-      +grp("Aplicația",["share","menu","alert","disp","wx"])
+      +grp("Aplicația",["voice","share","menu","alert","disp","wx"])
       +grp("Altele",["snap","demo"]));
   }
   if(_seSec==="menu")mnoInitDrag();

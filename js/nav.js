@@ -268,6 +268,8 @@ function closeM(after){
 // after = what to do after closing; fromBack = Back already pressed
 function requestCloseM(after,fromBack){
   if(!document.getElementById("MB")){if(after)after();return;}
+  // the product picker sheet (treatments.js) is open: Back closes just the sheet, the form stays
+  if(fromBack&&document.getElementById("tpSheet")){trProdClose();mHistPush("modal");return;}
   if(!_mDirty){closeM(after);return;}
   if(fromBack)mHistPush("modal");      // the form stays open until they answer
   var isEN=D.settings.lang==="en";
