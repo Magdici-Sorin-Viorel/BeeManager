@@ -26,7 +26,9 @@ function bxKindChg(a,b){var A=_bx.adj;A[a==="n"?"e":a]--;A[b==="n"?"e":b]++;}
 function bxInit(){
   var fb=$q("iFB");if(!fb||document.getElementById("bxEd"))return;
   var hid=(($q("iHive")||{}).value)||_mvSelf,h=D.hives.find(function(x){return x.id===hid;})||{};
-  _bx.roi=h.kind==="roi";_bx.pl=false;
+  _bx.roi=h.kind==="roi";
+  var mbP=document.getElementById("MB"),exP=mbP&&mbP.dataset.inspId?D.inspections.find(function(i){return i.id===mbP.dataset.inspId;}):null;
+  _bx.pl=!!(exP&&exP.plAdd);   // editing: the plastic tick as saved
   // editing a saved inspection: the frames put in / taken out in the boxes back then still explain its count
   var mbE=document.getElementById("MB"),exE=mbE&&mbE.dataset.inspId?D.inspections.find(function(i){return i.id===mbE.dataset.inspId;}):null,fd=exE&&exE.frDir;
   _bx.put=fd?parseInt(fd.put)||0:0;_bx.take=fd?parseInt(fd.take)||0:0;

@@ -372,7 +372,14 @@ window.inspVrRefresh=function(){
 function inspVarroaSave(insp){
   var el=$q("iVrMites");
   var linked=(D.varroa||[]).find(function(v){return v.inspectionId===insp.id;});
-  if(!el){return;}
+  if(!el){   // no count field (no treatment ongoing) — a count said in the voice inspection is still kept (sticky board, 1 day)
+    var vv=$q("iVoiceVar"),vn=vv&&vv.value!==""?Math.max(0,parseInt(vv.value)||0):null;
+    if(vn==null)return;
+    var tr0=insp.trPlannedId?(D.treatments||[]).find(function(x){return x.id===insp.trPlannedId&&trIsVarroa(x)&&x.date<=insp.date;}):null;
+    var o0={hiveId:insp.hiveId,date:insp.date,method:"sticky",miteCount:vn,beeCount:null,hours:24,infestationPct:null,hasBrood:true,treatmentId:tr0?tr0.id:null,reapplied:false,inspectionId:insp.id};
+    if(!D.varroa)D.varroa=[];
+    if(linked)Object.assign(linked,o0);else D.varroa.push(Object.assign({id:uid(),notes:L2("Din inspecția vocală","From the voice inspection")},o0));
+    return;}
   var raw=(el.value||"").trim();
   if(raw===""){if(linked)D.varroa=D.varroa.filter(function(v){return v!==linked;});return;}
   var meth=($q("iVrMeth")||{}).value||"sticky",isWash=meth==="alcohol"||meth==="sugar";

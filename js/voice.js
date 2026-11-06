@@ -428,10 +428,10 @@ function vcDigits(s){
 // Speech recognition gives almost no punctuation → cut the text into short clauses at connector words,
 // so a „nu” or a number only applies to its own clause.
 // beekeeping words the phone often mishears („potcă”, „puiat”, „varoa”…) → closest real word
-var VC_LEX=["vazut","vazuta","botca","botci","botcile","varroa","puiet","magazie","magazii","magazia","larve","capacit","capacite","capacita","fundatie","pastura","matca","matcuta","albine","albinele","provizii","intervale","urdinis","zumzet","sirop","turta","ghemul","inspectia"];
+var VC_LEX=["oxalic","formic","lactic","apiguard","apivar","bayvarol","timol","plastic","tratament","tratamentul","hranire","hranirea","sirop","siropul","turta","numarat","vazut","vazuta","botca","botci","botcile","varroa","puiet","magazie","magazii","magazia","larve","capacit","capacite","capacita","fundatie","pastura","matca","matcuta","albine","albinele","provizii","intervale","urdinis","zumzet","sirop","turta","ghemul","inspectia"];
 function vcLev(a,b){if(Math.abs(a.length-b.length)>2)return 9;var d=[],i,j;for(i=0;i<=a.length;i++){d[i]=[i];}for(j=0;j<=b.length;j++)d[0][j]=j;
   for(i=1;i<=a.length;i++)for(j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length];}
-var VC_FIX={zacut:"vazut",vazu:"vazut",vazt:"vazut",ramel:"ramele",ramle:"ramele",potca:"botca",potci:"botci",botce:"botci",botcii:"botci",bortca:"botca",varoa:"varroa",varo:"varroa",barroa:"varroa",varola:"varroa",puiat:"puiet",puieti:"puiet",puietul:"puiet",
+var VC_FIX={oxalik:"oxalic",oxalit:"oxalic",oxali:"oxalic",formik:"formic",apiguar:"apiguard",apivar:"apivar",bayvarol:"bayvarol",timol:"timol",tymol:"timol",plasic:"plastic",plastik:"plastic",hranirea:"hranire",tratamentu:"tratamentul",siropu:"siropul",zacut:"vazut",vazu:"vazut",vazt:"vazut",ramel:"ramele",ramle:"ramele",potca:"botca",potci:"botci",botce:"botci",botcii:"botci",bortca:"botca",varoa:"varroa",varo:"varroa",barroa:"varroa",varola:"varroa",puiat:"puiet",puieti:"puiet",puietul:"puiet",
   magazine:"magazie",magazin:"magazie",larva:"larve",larvele:"larve",fundati:"fundatie",pastur:"pastura",matc:"matca"};
 function vcFuzzy(x){
   return x.replace(/\b[a-z]{4,}\b/g,function(w){
@@ -455,7 +455,7 @@ function vcParse(raw,hid){
   var C=s.split(",").map(function(c){return" "+c.trim()+" ";});
   var NEG=/\b(nu|n am|nam|fara|niciun|nicio|nici|lipsa|zero)\b/;
   // frame movements are read first; their clauses are then left out (so „o ramă de puiet” is not taken as the brood count)
-  var MVS=hid?vcMoves(C,hid):[];
+  var MVS=hid?vcMoves(C,hid):[],sAll=s;   // sAll = everything said, moves clauses included
   if(MVS.length){MVS.forEach(function(r){C[r.i]=" ";});s=" "+C.join(",")+" ";}
   var R={v:{},c:{},chips:[],post:[],extra:{}};
   var neg=function(i){return /\b(nu|n am|nam|fara|niciun|nicio|nici)\b[^,]{0,14}$/.test(s.slice(Math.max(0,i-22),i));};
@@ -590,9 +590,30 @@ function vcParse(raw,hid){
   if(dz.length)chk("dOk",false);
   else if(/\b(sanatoas\w*|sanatos|fara boli|nicio boala|nici o boala)\b/.test(s))chk("dOk",true,"✅ Sănătos");
   if(vN)R.chips.push("🕷️ "+vN+" varroa");
+  // ⬢ plastic foundation: „6 rame de plastic”, „am pus rame cu fundație de plastic” — just the tick (what the form has)
+  if(/\bplastic\b/.test(sAll)&&!/\b(nu|n am|nam|fara|nicio|niciun)\b[^,]{0,20}\bplastic\b/.test(sAll)){var pn=/\b(\d+)\s*(?:de )?(?:ram(?:a|e|ele) )?(?:de |cu |din )?(?:fundatie (?:de )?)?plastic\b/.exec(sAll);R.extra.plastic=true;R.chips.push("⬢ Rame cu fundație de plastic"+(pn?" ("+pn[1]+")":""));}
+  // 💊 treatment: started now („am început tratament cu acid oxalic”, „am pus benzi”, „am tratat cu…”) or finished („am terminat tratamentul”)
+  var TRC=lastC(/\btratament\w*\b|\btratat\b|\btratez\b|\bbenzi\b|\bbenzile\b|\boxalic\b|\bformic\b|\bapiguard\b|\bapivar\b|\bbayvarol\b|\btimol\b|\bsublimare\b|\bvaporizare\b|\bpicurare\b/);
+  if(TRC&&!NEG.test(TRC)){
+    if(/\b(am (terminat|incheiat|oprit|scos)|s a terminat|a terminat|gata|am scos benzile)\b/.test(TRC)&&!/\bincep\w*\b/.test(TRC)){R.extra.trFin=true;R.chips.push("✅ Tratament terminat");}
+    else{
+      var prods=(t("tr_products")||[]),pick=null,trT=TRC;
+      var has=function(re){return re.test(trT);};
+      var want=has(/\boxalic\b/)&&has(/\bformic\b/)?/varromed/i:has(/\boxalic\b/)?(has(/\b(benzi|benzile|glicerin\w*|oxipro|oxi strip)\b/)?/oxalic.*benzi/i:has(/\b(sublim\w*|vapor\w*|fum\w*)\b/)?/oxalic.*sublim/i:has(/\bbioxal\b/)?/bioxal/i:/oxalic.*picur/i)
+        :has(/\bformic\b/)?(has(/\bgel\b/)?/formic.*gel/i:/formic/i):has(/\blactic\b/)?/lactic/i:has(/\bapiguard\b/)?/apiguard/i:has(/\bapivar\b/)?/apivar/i:has(/\bbayvarol\b/)?/bayvarol/i:has(/\btimol\b/)?/timol|thymol/i:null;
+      if(want)pick=prods.filter(function(x){return x.indexOf("──")!==0;}).find(function(x){return want.test(x);})||null;
+      // „tratament pentru nosema / locă …” = other purpose, the condition is what was said
+      var oth=/\btratament\w* (?:pentru|contra|de|la) ([a-z ]{3,25}?)(?= cu | ,|$)/.exec(TRC),dis=oth&&!/varro/.test(oth[1])?oth[1].trim():"";
+      var dz2=/\b(nosem\w*|loc\w* (?:american\w*|european\w*)|loca\b|puiet varos|ascosfer\w*|acarioz\w*|diaree\w*)\b/.exec(TRC);if(dz2&&!dis)dis=dz2[1];
+      R.extra.tr={product:pick,disease:dis,said:TRC.trim()};
+      R.chips.push("💊 Tratament început"+(pick?": "+trShort({product:pick}).split(" — ")[0]:dis?" ("+dis+")":""));
+    }
+  }
+  // 🕷️ varroa counted: „am numărat 15 varroa”, „15 varroa căzute”, „varroa 15 pe planșetă” (the count above already read it; this covers „numărat”)
+  if(vN==null&&(m=find(/\b(?:am )?numarat\w*\b[^,]{0,20}?\b(\d+)\b/))&&/\b(varro\w*|acarien\w*|parazit\w*|paduch\w*|cazut\w*)\b/.test(m[0]+" "+(lastC(/\bnumarat/)||""))){vN=parseInt(m[1]);R.extra.varN=String(vN);if(vN)R.chips.push("🕷️ "+vN+" varroa");}
   // 🍬 feeding
   if(/\b(s a terminat|a terminat|au terminat|au mancat tot|gata) (siropul|hrana|mancarea|turta|turtele|candy|fondantul)\b|\bopr\w* hranirea\b/.test(s)){R.extra.fdFin=true;R.chips.push("⏹️ Hrănire oprită");}
-  if((m=find(/\bam (mai )?(pus|dat|completat|turnat)\b[^,]{0,20}\b(sirop|turt\w*|candy|fondant|apifond\w*|serbet|zahar|hrana|mancare|inlocuitor|polen)\b[^,]*|\bam hranit\b[^,]*/))){
+  if((m=find(/\bam (mai )?(pus|dat|completat|turnat)\b[^,]{0,20}\b(sirop|turt\w*|candy|fondant|apifond\w*|serbet|zahar|hrana|mancare|inlocuitor|polen)\b[^,]*|\bam hranit\b[^,]*|\b(am inceput|incep|pornesc|am pornit)\b[^,]{0,12}\b(hranire\w*|sa hranesc|hranitul|stimulare\w*)\b[^,]*|\bhranesc cu\b[^,]*|\bam dat \d+[^,]{0,6}\b(litri|litru|kg|kile|kilograme)\b[^,]*/))){
     var fs=m[0];
     var fdT=/\b(turt\w*|candy|serbet)\b/.test(fs)?"candy":/\b(fondant|apifond\w*)\b/.test(fs)?"apifonda":/\b(inlocuitor|polen)\b/.test(fs)?"inlocuitor":
       /\b(2 la 1|gros|de toamna|rezerve)\b/.test(fs)?"sirop_2_1":/\b(1 la 1|subtire|stimul\w*)\b/.test(fs)?"sirop_1_1":(new Date().getMonth()>=7?"sirop_2_1":"sirop_1_1");
@@ -815,7 +836,7 @@ window.vcFill=function(){
   }
   var SUM=["iQS","iEg","iLv","iCap","iFB","iFH","iFE","iNst","iBhv","iQQ","iBtc","iBtcN","iPop","iBP","iSp"];
   var summer=SUM.some(function(k){return k in R.v||k in R.c;})||R.extra.magAdd||R.extra.magRm||(R.extra.mv&&R.extra.mv.length)
-    ||own.length||R.extra.nestAdd||R.extra.nestRm;   // frames / boxes put in or taken out are full-inspection things too
+    ||own.length||R.extra.nestAdd||R.extra.nestRm||R.extra.total!=null||R.extra.plastic;   // (treatment / feeding / varroa also work in winter mode)   // frames / boxes put in or taken out are full-inspection things too
   var wm=$q("iWM"),wasW=wm&&wm.checked;
   if(wasW&&summer){wm.checked=false;inspWinterApply();}
   Object.keys(R.v).forEach(function(id){var el=$q(id);if(!el)return;
@@ -832,6 +853,26 @@ window.vcFill=function(){
   if(E.btcAct){var rb=document.querySelector("input[name='iBtcAct'][value='"+E.btcAct+"']");if(rb){rb.checked=true;fire(rb);hit(rb.parentNode);n++;}}
   if(E.varN!=null){["iVrMites","iPostTrVarroa"].forEach(function(id){var el=$q(id);if(el){el.value=E.varN;fire(el);hit(el);}});}
   if(E.btcF&&$q("iBtcF")){$q("iBtcF").value=E.btcF.charAt(0).toUpperCase()+E.btcF.slice(1);hit($q("iBtcF"));}
+  if(E.plastic){var pa=$q("iPlA");if(pa){if(!pa.checked){pa.checked=true;fire(pa);}if(typeof _bx!=="undefined")_bx.pl=true;hit(pa.parentNode||pa);n++;}}
+  if(E.tr){   // treatment started now = planned from this inspection with today's date (it is then active on the hive card)
+    var tp=$q("iTrPl");
+    if(tp){if(!tp.checked){tp.checked=true;fire(tp);}
+      var ps=$q("iTrPlP");if(ps&&E.tr.product)ps.value=E.tr.product;
+      else if(ps&&E.tr.disease){for(var pi=0;pi<ps.options.length;pi++)if(/Alt produs|Other product/i.test(ps.options[pi].text)){ps.selectedIndex=pi;break;}}
+      var tg=$q("iTrPlTg");if(tg){tg.value=E.tr.disease?"other":"varroa";}
+      if(E.tr.disease&&$q("iTrPlN"))$q("iTrPlN").value=E.tr.disease.charAt(0).toUpperCase()+E.tr.disease.slice(1);
+      var pd=$q("iTrPlD");if(pd)pd.value=($q("iDt")||{}).value||vrToday();
+      // length: as said („30 de zile”), else the usual one for the product (strips ~6 weeks, Apiguard 4, formic 1–2, oxalic drip/sublimation 1 day)
+      var pe=$q("iTrPlE"),zl=/\b(\d+) (?:de )?zile\b/.exec(E.tr.said),pr=String(E.tr.product||""),days=zl?parseInt(zl[1]):(/benzi|apivar|bayvarol/i.test(pr)?42:/apiguard|timol|thymol/i.test(pr)?28:/formic/i.test(pr)?(/gel/i.test(pr)?10:7):/lactic/i.test(pr)?1:1);
+      if(pe&&!pe.value&&days>1)pe.value=devAdd(pd?pd.value:vrToday(),days-1);
+      var pw=document.getElementById("iTrPlW");if(pw)pw.style.display="block";
+      hit(tp.parentNode||tp);n++;}
+  }
+  if(E.trFin){[].forEach.call(document.querySelectorAll("#MB .iTrFin"),function(cb){if(!cb.checked){cb.checked=true;fire(cb);}hit(cb.parentNode||cb);n++;});}
+  if(E.varN!=null&&!$q("iVrMites")){   // no field (no treatment ongoing yet): the count is saved with the inspection (inspections.js)
+    var hv=$q("iVoiceVar");if(!hv){hv=document.createElement("input");hv.type="hidden";hv.id="iVoiceVar";var mbv=document.getElementById("MB");if(mbv)mbv.appendChild(hv);}
+    hv.value=E.varN;n++;
+  }
   if(E.fd){
     var nw=$q("iFdNw"),rf=document.querySelector("#MB .iFdRf");
     if(nw&&!nw.checked){nw.checked=true;fire(nw);}
