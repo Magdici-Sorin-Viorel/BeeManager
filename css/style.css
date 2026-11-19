@@ -1428,3 +1428,15 @@ select[onchange*="_hrHiveFilter"],select[onchange*="_hrMonthFilter"]{width:auto!
 .vt-list{display:flex;flex-direction:column;gap:6px;}
 .vt-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--rs);font-size:.84rem;}
 .vt-row .btn.sm{min-height:auto;padding:4px 8px;}
+
+/* 🎨 theme chooser (Settings → Afișaj) */
+.th-list{display:flex;flex-direction:column;gap:8px;}
+.th-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rs);background:var(--sur);color:var(--txt);font:inherit;cursor:pointer;}
+.th-opt.on{border-color:var(--gold);background:rgba(230,180,34,.08);}
+.th-sw{display:flex;gap:3px;flex:none;padding:4px;border-radius:8px;border:1px solid rgba(128,128,128,.35);}
+.th-sw i{display:block;width:14px;height:22px;border-radius:4px;}
+.th-dark .th-sw{background:#0f0e0e;}.th-dark .th-sw i:nth-child(1){background:#222121;}.th-dark .th-sw i:nth-child(2){background:#e6b422;}.th-dark .th-sw i:nth-child(3){background:#f5f3ef;}
+.th-light .th-sw{background:#fefaf0;}.th-light .th-sw i:nth-child(1){background:#fff7e8;border:1px solid #f0e3c9;}.th-light .th-sw i:nth-child(2){background:#e6b422;}.th-light .th-sw i:nth-child(3){background:#1f1b13;}
+.th-trk .th-sw{background:#05070c;}.th-trk .th-sw i:nth-child(1){background:#f5a14b;}.th-trk .th-sw i:nth-child(2){background:#a77ac5;}.th-trk .th-sw i:nth-child(3){background:#5bb6c9;}
+.th-t{flex:1;min-width:0;}.th-t b{display:block;font-size:.9rem;}.th-t small{display:block;color:var(--mut);font-size:.74rem;margin-top:2px;}
+body.trk .th-opt.on{border-color:var(--trk-orange);background:var(--trk-selected);}

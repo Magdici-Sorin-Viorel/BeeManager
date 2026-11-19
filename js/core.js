@@ -76,8 +76,14 @@ function saveHiveSnapshot(hiveId){
   localStorage.setItem("bmp5_hive_"+hiveId,JSON.stringify(snap));
 }
 
+// themes: "dark" (default) · "light" · "trk" (console look, css/theme-trk.css). D.settings.dark is kept for older data.
+function themeId(){var t=D.settings.theme;if(t==="light"||t==="trk")return t;return D.settings.dark===false?"light":"dark";}
+window.setTheme=function(id){D.settings.theme=id;D.settings.dark=id!=="light";applyTheme();save(false);if(typeof renderSettings==="function"&&curP==="settings")renderSettings();};
 function applyTheme(){
-  document.body.classList.toggle("light",!D.settings.dark);
+  var th=themeId();
+  document.body.classList.toggle("light",th==="light");
+  document.body.classList.toggle("trk",th==="trk");
+  var mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute("content",th==="light"?"#fefaf0":th==="trk"?"#05070c":"#0f0e0e");
   document.getElementById("htmlRoot").lang=D.settings.lang||"ro";
 }
 var uid=function(){return Date.now().toString(36)+Math.random().toString(36).slice(2);};

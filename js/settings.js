@@ -97,10 +97,11 @@ function renderSettings(){
     +'<input type="number" inputmode="numeric" min="1" max="90" value="'+th+'" style="width:70px;" oninput="D.settings.inspAlertThreshold=parseInt(this.value)||INSP_ALERT_DEFAULT;save(false);">'
     +'</div>'
     +'</div>'},
-    {id:"disp",ico:"🎨",t:"Afișaj",s:D.settings.dark?"Mod întunecat":"Mod luminos",h:''
+    {id:"disp",ico:"🎨",t:"Afișaj",s:({dark:"Temă întunecată",light:"Temă luminoasă",trk:"Temă TRK (consolă)"})[themeId()],h:''
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_display")+'</div>'
-    +'<div class="ck" style="margin-top:8px;"><input type="checkbox" id="dkTg"'+(D.settings.dark?" checked":"")
-    +' onchange="D.settings.dark=this.checked;applyTheme();save();"><label for="dkTg">'+t("se_dark")+'</label></div>'
+    +'<p class="bk-p">Alege cum arată aplicația. Se aplică imediat, pe toate paginile.</p>'
+    +'<div class="th-list">'+[["dark","🌙","Întunecată","galben pe negru — tema de bază"],["light","☀️","Luminoasă","pentru soare puternic, pe teren"],["trk","🛰️","TRK — consolă","albastru-negru, portocaliu, cyan; litere ca pe un panou de comandă"]].map(function(x){
+      return'<button type="button" class="th-opt th-'+x[0]+(themeId()===x[0]?" on":"")+'" onclick="setTheme(\''+x[0]+'\')"><span class="th-sw"><i></i><i></i><i></i></span><span class="th-t"><b>'+x[1]+' '+x[2]+'</b><small>'+x[3]+'</small></span>'+(themeId()===x[0]?'<span class="bg gy">activă</span>':'')+'</button>';}).join("")+'</div>'
     +'</div>'},
     {id:"wx",ico:"🌦️",t:"Vreme",s:D.weather?"Actualizată acum "+Math.round((Date.now()-D.weather.ts)/60000)+" min":"Fără date — pornește locația",h:''
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_weather")+'</div>'

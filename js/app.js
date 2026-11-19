@@ -8,6 +8,7 @@ function init(){
   if(typeof demoPhoneFrame==="function"&&demoPhoneFrame())return;   // preview: the app inside a phone frame (demo.js)
   load();
   if(typeof demoMaybe==="function")demoMaybe();   // demo data — only in the Claude preview (see demo.js)
+  applyTheme();   // chosen theme (dark / light / TRK)
   applyMenuOrder();   // menu order saved in Settings
   curP=HOME;
   updateOfflineBar();

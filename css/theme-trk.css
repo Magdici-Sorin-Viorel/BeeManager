@@ -1,0 +1,137 @@
+/* BeeManager Pro — TRK theme („consolă de navă”), chosen in Setări → Afișaj.
+   Scoped to body.trk. Built from TRK-theme/trk-tokens.css + trk-components.css (see THEME.md):
+   only colours, fonts, borders, radii and the accent bars change — layout, behaviour and text stay.
+   Mapping: app variables → TRK tokens; sidebar/bottom bar → trk-side / trk-nav; cards → trk-panel; .btn → trk-btn;
+   inputs → trk-input / trk-select; badges → trk-badge / trk-st-*; .seg → trk-seg; modal → trk-dialog; toast → trk-toast;
+   alerts → trk-warn / trk-hint; inspection cards (.isc) → trk-entry; tabs (.seg, .hv-tabs) → trk-tab. */
+body.trk{
+  color-scheme:dark;
+  --trk-bg:#05070c;--trk-panel:#0b111b;--trk-panel-2:#0c1420;--trk-raised:#111b29;--trk-header:#121d2b;--trk-hover:#142238;--trk-selected:#17283a;
+  --trk-line:#23364a;--trk-line-2:#253a52;--trk-border:#537494;
+  --trk-ink:#e8d7a6;--trk-ink-soft:#d5c49a;--trk-mute:#82a2c0;--trk-mute-2:#7d9fbe;--trk-on-accent:#11151c;
+  --trk-orange:#f5a14b;--trk-purple:#a77ac5;--trk-cyan:#5bb6c9;
+  --trk-font:'Arial Narrow',Consolas,monospace;--trk-font-display:Impact,'Arial Narrow',sans-serif;
+  --trk-r-sm:12px 4px 12px 12px;--trk-r-md:14px 4px 14px 14px;--trk-r-lg:18px 4px 18px 18px;--trk-r-xl:24px 5px 24px 24px;--trk-bar:7px;
+  /* the app's own variables, mapped to the theme */
+  --bg:var(--trk-bg);--sur:var(--trk-panel);--card:var(--trk-panel);--bdr:var(--trk-line);
+  --txt:var(--trk-ink);--mut:var(--trk-mute);--gold:var(--trk-orange);--gold2:var(--trk-orange);
+  --danger:#ffb3c1;--ok:#a9e5b6;--info:var(--trk-cyan);--sh:none;
+  --rs:var(--trk-r-sm);--rm:var(--trk-r-md);--rl:var(--trk-r-xl);
+  background:var(--trk-bg);color:var(--trk-ink);letter-spacing:.04em;
+  background-image:radial-gradient(ellipse at 65% 0%,#111b2a 0,transparent 55%),
+    linear-gradient(90deg,rgba(91,128,166,.045) 1px,transparent 1px),linear-gradient(rgba(91,128,166,.045) 1px,transparent 1px);
+  background-size:auto,28px 28px,28px 28px;background-attachment:fixed;
+}
+body.trk *{font-family:var(--trk-font);}
+body.trk .fas,body.trk .far,body.trk .fab,body.trk i.fa,body.trk [class*=" fa-"],body.trk [class^="fa-"]{font-family:"Font Awesome 6 Free" !important;}
+body.trk .fab{font-family:"Font Awesome 6 Brands" !important;}
+
+/* ── titles: Impact, uppercase, orange ── */
+body.trk h1,body.trk h2,body.trk .mt,body.trk .sb-logo .nm,body.trk .tb-t,body.trk .ct,body.trk .se-bar-t b{
+  font-family:var(--trk-font-display);font-weight:400;text-transform:uppercase;letter-spacing:1.7px;color:var(--trk-orange);}
+body.trk .sb-logo .nm{background:none;-webkit-background-clip:unset;background-clip:unset;color:var(--trk-orange);font-size:23px;position:relative;padding-left:14px;}
+body.trk .sb-logo .nm::before{content:'';position:absolute;left:0;top:2px;bottom:2px;width:var(--trk-bar);background:var(--trk-purple);border-radius:var(--trk-bar);}
+body.trk .tb-t{font-size:1.15rem;letter-spacing:1.5px;}
+body.trk h2{position:relative;padding-top:12px;font-size:1.5rem;}
+body.trk h2::before{content:'';position:absolute;top:0;left:0;width:min(45%,360px);height:var(--trk-bar);background:var(--trk-purple);border-radius:var(--trk-bar);}
+body.trk .ct{font-size:15px;letter-spacing:.12em;}
+body.trk .cl,body.trk label.L,body.trk .hv-ts,body.trk .se-grp-t,body.trk .isc-h b{text-transform:uppercase;letter-spacing:.1em;}
+body.trk label.L{color:var(--trk-mute-2);font-size:10px;font-weight:600;}
+
+/* ── sidebar (desktop) + top bar + bottom bar (phone) ── */
+body.trk .sb{background:var(--trk-bg);border-right:4px solid var(--trk-purple);}
+body.trk .sb-logo{border-bottom:2px solid #526f96;}
+body.trk .ni{color:#b5c8df;border-radius:0;margin:0;padding:10px 14px;position:relative;text-transform:uppercase;font-size:11px;letter-spacing:.08em;}
+body.trk .ni i{color:var(--trk-cyan);}
+body.trk .ni.on{background:linear-gradient(90deg,#17283a,transparent);color:var(--trk-orange);border-left:none;padding-left:14px;}
+body.trk .ni.on::after{content:'';position:absolute;left:0;top:4px;bottom:4px;width:7px;background:var(--trk-orange);border-radius:0 12px 12px 0;}
+body.trk .ni.on i{color:var(--trk-orange);}
+body.trk .ni:hover:not(.on){background:var(--trk-hover);color:var(--trk-ink);}
+body.trk .tb{background:var(--trk-bg);border-bottom:4px solid var(--trk-cyan);}
+body.trk .mob-nav{background:var(--trk-bg);border-top:4px solid var(--trk-purple);box-shadow:none;}
+body.trk .mob-ni{color:#b5c8df;}
+body.trk .mob-ni i{color:var(--trk-cyan);}
+body.trk .mob-ni.active,body.trk .mob-ni.active i{color:var(--trk-orange);}
+body.trk .mob-ni.active::after{background:var(--trk-orange);width:34px;height:4px;border-radius:0 0 12px 3px;}
+body.trk .mob-ni span{text-transform:uppercase;letter-spacing:.08em;}
+body.trk .more-drw{background:var(--trk-panel);border-top:4px solid var(--trk-purple);border-radius:var(--trk-r-xl) var(--trk-r-xl) 0 0;}
+body.trk .drw-ni{color:#b5c8df;border-radius:var(--trk-r-md);}
+body.trk .drw-ni i{color:var(--trk-cyan);}
+body.trk .drw-ni.active{background:var(--trk-selected);color:var(--trk-orange);}
+body.trk .drw-ni.active i{color:var(--trk-orange);}
+
+/* ── cards and panels ── */
+body.trk .c{background:var(--trk-panel);border:1px solid var(--trk-line);border-radius:var(--trk-r-lg);box-shadow:none;border-left:4px solid var(--trk-cyan);}
+body.trk .c:hover{transform:none;box-shadow:none;}
+body.trk .hv-card{border-left:4px solid var(--trk-cyan);}
+body.trk .isc{background:var(--trk-panel);border:1px solid var(--trk-line);border-left:3px solid var(--trk-cyan);border-radius:var(--trk-r-lg);}
+body.trk .isc.open{border-left-color:var(--trk-orange);}
+body.trk .se-list{border-left:4px solid var(--trk-cyan);}
+body.trk .se-item:active{background:var(--trk-hover);}
+body.trk .se-grp-t{color:#6ea4c8;border-top:2px solid #526f96;padding-top:10px;font-size:10px;letter-spacing:1.8px;}
+
+/* ── buttons: capsule with one squared corner ── */
+body.trk .btn{background:var(--trk-panel-2);border:1px solid var(--trk-border);color:var(--trk-ink-soft);border-radius:var(--trk-r-md);
+  text-transform:uppercase;letter-spacing:.08em;font-size:11px;font-weight:700;box-shadow:none;}
+body.trk .btn:hover{filter:none;background:var(--trk-selected);}
+body.trk .btn:not(.gh):not(.bd):not(.be):not(.sm){background:var(--trk-orange);border-color:var(--trk-orange);color:var(--trk-on-accent);}
+body.trk .btn.sm:not(.gh):not(.bd):not(.be){background:var(--trk-orange);border-color:var(--trk-orange);color:var(--trk-on-accent);}
+body.trk .btn.gh{background:var(--trk-panel-2);color:var(--trk-ink-soft);}
+body.trk .btn.bd{background:var(--trk-panel-2);border-color:#7c3a4a;color:#ed8d8d;}
+body.trk .btn.be{background:var(--trk-panel-2);border-color:var(--trk-border);color:var(--trk-cyan);}
+body.trk .btn:disabled{opacity:.5;}
+body.trk .mv-add,body.trk .bx-mag-on{border-radius:var(--trk-r-lg);border:1px solid var(--trk-border);background:var(--trk-panel-2);}
+
+/* ── inputs ── */
+body.trk input,body.trk select,body.trk textarea{background:var(--trk-panel-2);border:1px solid var(--trk-border);color:var(--trk-ink-soft);border-radius:var(--trk-r-md);}
+body.trk input:focus,body.trk select:focus,body.trk textarea:focus{outline:0;border-color:var(--trk-cyan);background:#162437;box-shadow:none;}
+body.trk select{border-radius:var(--trk-r-sm);background:#172336;color:var(--trk-orange);font-weight:600;}
+body.trk select option{background:#1a2029;color:#e3e8ef;}
+body.trk input[type=checkbox],body.trk input[type=radio]{accent-color:var(--trk-orange);}
+body.trk .tp-btn,body.trk .tp-it,body.trk .tp-sh{background:var(--trk-panel-2);border-color:var(--trk-border);border-radius:var(--trk-r-md);}
+body.trk .tp-sh{background:var(--trk-panel);border:2px solid var(--trk-border);border-radius:var(--trk-r-xl) var(--trk-r-xl) 0 0;}
+body.trk .tp-it.on{border-color:var(--trk-orange);background:var(--trk-selected);}
+
+/* ── badges, chips, states ── */
+body.trk .bg{border-radius:var(--trk-r-sm);text-transform:uppercase;letter-spacing:.08em;font-size:10px;font-weight:600;padding:3px 9px;}
+body.trk .gg{background:#234b37;color:#a9e5b6;}
+body.trk .gy{background:#573d26;color:#ffd09a;}
+body.trk .gr{background:#522d3a;color:#ffb3c1;}
+body.trk .gb{background:#164e63;color:#b4eff3;}
+body.trk .vc-chip,body.trk .bx-p,body.trk .mv-chip,body.trk .hv-tile{border-radius:var(--trk-r-sm);background:var(--trk-hover);border:1px solid #344c67;color:#b4d1e7;}
+body.trk .bx-p.on,body.trk .mv-chip.on{background:var(--trk-orange);color:var(--trk-on-accent);border-color:var(--trk-orange);}
+
+/* ── segmented switch, tabs ── */
+body.trk .seg{background:transparent;border:0;border-bottom:2px solid var(--trk-border);border-radius:0;padding:0;gap:4px;}
+body.trk .seg-b{background:var(--trk-panel-2);color:var(--trk-mute);border-radius:var(--trk-r-sm);text-transform:uppercase;letter-spacing:.08em;font-size:11px;}
+body.trk .seg-b.on{background:var(--trk-orange);color:#10151c;}
+
+/* ── alerts, tips ── */
+body.trk .al{border-radius:var(--trk-r-sm);border-left-width:1px;border:1px solid var(--trk-line);}
+body.trk .alw{background:#3a2912;border-color:#7c4a1a;color:#fdba74;}
+body.trk .ald{background:#522d3a;border-color:#8a4a5c;color:#ffb3c1;}
+body.trk .alo{background:#234b37;border-color:#2f6b4c;color:#a9e5b6;}
+body.trk .ali{background:#164e63;border-color:#2a7a8c;color:#b4eff3;}
+body.trk .hv-tip,body.trk .mv-bal{border-radius:var(--trk-r-sm);}
+
+/* ── modal → dialog, toast ── */
+body.trk .mb{background:rgba(20,28,38,.6);backdrop-filter:none;}
+body.trk .mb-b{background:var(--trk-panel);border:2px solid var(--trk-border);border-top:2px solid var(--trk-border);border-radius:var(--trk-r-xl);box-shadow:0 20px 60px rgba(0,0,0,.6);}
+body.trk .mt{font-size:16px;letter-spacing:.1em;padding-bottom:10px;border-bottom:1px solid var(--trk-border);}
+body.trk .mb-x{background:var(--trk-panel-2);border:1px solid var(--trk-border);color:var(--trk-ink-soft);border-radius:var(--trk-r-sm);}
+body.trk .toast{background:var(--trk-orange);color:var(--trk-bg);border:0;border-radius:var(--trk-r-md);box-shadow:0 6px 24px rgba(0,0,0,.25);font-weight:700;letter-spacing:.06em;}
+
+/* ── progress / capacity bars: cyan data, purple secondary ── */
+body.trk .hv-bar,body.trk .vt-bar,body.trk .isc-prog{background:#263a50;border-radius:8px;}
+body.trk .hv-bar > i,body.trk .vt-bar i,body.trk .isc-prog i{background:var(--trk-cyan);}
+body.trk .ov,body.trk .more-ov{background:rgba(20,28,38,.6);}
+
+/* gold tints used by the dark theme → the console's blue tints */
+body.trk .ni.on,body.trk .se-item:active,body.trk .vt-word,body.trk .ash-url{background-color:var(--trk-selected);}
+body.trk .vt-word{border-color:var(--trk-border);color:var(--trk-orange);font-family:var(--trk-font-display);letter-spacing:1.5px;}
+body.trk .isc-pick{background:var(--trk-selected);border-color:var(--trk-border);}
+body.trk .ash-qr{background:#fff;}
+body.trk .bd-ring,body.trk .cal-box{border-color:var(--trk-line);}
+body.trk .tv-tabs{background:transparent;border:0;border-bottom:2px solid var(--trk-border);border-radius:0;padding:0;gap:4px;}
+body.trk .tv-tab{border-radius:var(--trk-r-lg);background:var(--trk-panel-2);color:var(--trk-mute);text-transform:uppercase;letter-spacing:.1em;font-size:11px;}
+body.trk .tv-tab.on{background:var(--trk-orange);color:var(--trk-on-accent);}

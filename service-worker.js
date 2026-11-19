@@ -11,13 +11,14 @@
 // When you add a new file to the project, add it to the list below too.
 // When you change the list, bump the number in CACHE.
 
-var CACHE = "beemanager-v49";
+var CACHE = "beemanager-v50";
 
 var FILES = [
   "./",
   "index.html",
   "manifest.json",
   "css/style.css",
+  "css/theme-trk.css",
   "js/i18n.js",
   "js/core.js",
   "js/plants.js",
