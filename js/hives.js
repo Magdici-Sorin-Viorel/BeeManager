@@ -516,9 +516,10 @@ function renderHives(q){
     +'</div>';
   setP('<div class="hv-top"><h2><i class="fas fa-house" style="color:var(--gold)"></i> '+t("h_title")+'</h2>'
     +(nucTab?'<button class="btn" onclick="nucM()">🐝 '+L2("Roi nou","New nuc")+'</button>':'<button class="btn" onclick="hiveM()">'+t("h_new")+'</button>')+'</div>'
+    +sfTodoHTML()      // 📋 „De făcut” sits above the Stupi / Roiuri tabs: it is about the whole apiary, not one tab
     +tabs
     +(!nucTab&&st.length?hvSummaryHTML():'')
-    +(!nucTab?sfTodoHTML():'<div class="hv-ts hv-nuc-note">'+L2("Roiurile nu au avertizarea de inspecție săptămânală. Când regina e împerecheată, roiul trece la 🏠 Stupi.","Nucs have no weekly inspection warning. Once the queen is mated, the nuc moves to 🏠 Hives.")+'</div>')
+    +(!nucTab?'':'<div class="hv-ts hv-nuc-note">'+L2("Roiurile nu au avertizarea de inspecție săptămânală. Când regina e împerecheată, roiul trece la 🏠 Stupi.","Nucs have no weekly inspection warning. Once the queen is mated, the nuc moves to 🏠 Hives.")+'</div>')
     +(cur.length>3?'<input id="hvSearch" class="hv-search" type="search" placeholder="'+t("h_search")+'" value="'+esc(_hvQ)+'" oninput="debouncedHiveSearch(this.value)">':'')
     +'<div id="hvGrid">'+hvGridHTML(cur.length>3?_hvQ:"")+'</div>');
 }

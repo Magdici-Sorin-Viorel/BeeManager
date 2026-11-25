@@ -64,7 +64,7 @@ var SFATURI=(function(){
     if(fB<Math.round(cap1*0.5)&&!li.botci)return{nivel:0,puncte:pts,motive:why};
     var nivel=pts>=5?2:pts>=3?1:0;
     return{nivel:nivel,puncte:pts,motive:why,
-      sfat:nivel?(li.botci&&li.botciAction!=="removed"?"decide: lași botcile (schimbi regina) sau faci roi":!(h.mags||[]).length?"pune magazie sau fă un roi":"dă spațiu (rame de clădit) sau fă un roi"):""};
+      sfat:nivel?(li.botci&&li.botciAction!=="removed"?"Decide ce faci cu botcile: le lași (schimbi regina) sau faci roi":!(h.mags||[]).length?"Pune magazie sau fă un roi":"Dă spațiu (rame de clădit) sau fă un roi"):""};
   };
 
   // ── 📦 space before / during a main flow ──
@@ -77,7 +77,7 @@ var SFATURI=(function(){
     var cx=flCtxOfHive(h.id),now=flWith(cx,function(){return FLORA.culesCurent();}),next=flWith(cx,function(){return FLORA.urmeaza().filter(function(x){return x.principal&&x.inZile<=10;})[0];});
     if(!now&&!next)return null;
     return{magazii:mags.length,cules:now?now.n:next.nume,inZile:now?0:next.inZile,
-      text:(mags.length?"Magaziile sunt pline":"Cuibul e plin și nu are magazie")+" — "+(now?"e cules de "+now.n.toLowerCase():next.nume.toLowerCase()+" începe în "+next.inZile+" zile")};
+      text:(mags.length?"magaziile sunt pline":"cuibul e plin și nu are magazie")+" și "+(now?"e cules de "+now.n.toLowerCase():next.nume.toLowerCase()+" începe în "+next.inZile+" zile")};
   };
 
   // ── 🕷️ varroa against the thresholds ──
@@ -93,7 +93,8 @@ var SFATURI=(function(){
     if(BM.tratamente.activePentru(h.id).some(trIsVarroa))return null;
     var L=vrLevelOf(v);
     return{nivel:L.nivel,valoare:L.val,unitate:L.unit,data:v.date,dupaTratament:ph==="after",
-      text:L.nivel==="trateaza"?(ph==="after"?"după tratament tot multă varroa — eficiență slabă, repetă":"peste prag — tratează"):L.nivel==="urmareste"?"aproape de prag — numără din nou în 2 săptămâni":"sub prag"};
+      fa:L.nivel==="trateaza"?(ph==="after"?"Repetă tratamentul":"Tratează împotriva varroa"):L.nivel==="urmareste"?"Numără din nou în 2 săptămâni":"",
+      text:L.nivel==="trateaza"?(ph==="after"?"după tratament a rămas multă varroa (eficiență slabă)":"peste prag"):L.nivel==="urmareste"?"aproape de prag":"sub prag"};
   };
 
   // ── 📉 colony going down ──
@@ -104,10 +105,10 @@ var SFATURI=(function(){
     var ins=normal(h.id).filter(function(i){return dAgo(i.date)<=60;}).slice(0,3);
     var out=null;
     if(ins.length>=3){var a=parseInt(ins[2].fB)||0,b=parseInt(ins[1].fB)||0,c=parseInt(ins[0].fB)||0;
-      if(c<b&&b<a&&a-c>=2)out={tip:"scade",text:"puietul scade de două inspecții: "+a+" → "+b+" → "+c+" rame",de:a,la:c};}
+      if(c<b&&b<a&&a-c>=2)out={tip:"scade",fa:"Verifică regina și puietul",text:"puietul scade de două inspecții: "+a+" → "+b+" → "+c+" rame",de:a,la:c};}
     if(!out&&ins.length>=1){
       var all=BM.stupi.lista().filter(function(x){return !hvWinterState(x);}).map(function(x){return parseInt(x.fB)||0;}),med=median(all),fB=parseInt(h.fB)||0;
-      if(all.length>=4&&med>=4&&fB<=med*0.5)out={tip:"subMedie",text:"mult sub media stupinei: "+fB+" rame cu puiet (mediana "+String(med).replace(".",",")+")",de:med,la:fB};}
+      if(all.length>=4&&med>=4&&fB<=med*0.5)out={tip:"subMedie",fa:"Verifică stupul",text:"mult sub media stupinei: "+fB+" rame cu puiet (mediana "+String(med).replace(".",",")+")",de:med,la:fB};}
     return out;
   };
 
@@ -132,7 +133,7 @@ var SFATURI=(function(){
     var ds=D.weather&&D.weather.days;if(!ds||!ds.length)return[];
     var td=today();
     return ds.filter(function(x){return x.d>=td;}).map(function(x){
-      var why=[];if(x.tmax<14)why.push("rece ("+x.tmax+"°)");if(x.prec>=1)why.push("ploaie");if(x.wind>=30)why.push("vânt "+x.wind+" km/h");
+      var why=[];if(x.tmax<14)why.push("prea rece, "+x.tmax+"°");if(x.prec>=1)why.push("ploaie");if(x.wind>=30)why.push("vânt "+x.wind+" km/h");
       var dt=new Date(x.d+"T12:00:00");
       return{data:x.d,zi:x.d===td?"Azi":DOW[dt.getDay()],tmax:x.tmax,tmin:x.tmin,prec:x.prec,vant:x.wind,ico:wmoI(x.wc).i,buna:!why.length,ideala:!why.length&&x.tmax>=18&&x.wind<20,motiv:why.join(", ")};});
   };
@@ -146,10 +147,11 @@ var SFATURI=(function(){
   var produsVreme=function(prod,zi){
     var p=PROD_T.filter(function(x){return x.re.test(prod||"");})[0];if(!p)return null;
     var ds=(D.weather&&D.weather.days||[]).filter(function(x){return x.d>=(zi||today());}).slice(0,5);
-    if(!ds.length)return{ok:null,text:p.txt,min:p.min,max:p.max};
+    if(!ds.length)return{ok:null,text:cap(p.txt)+" (nu am prognoza ca să verific).",min:p.min,max:p.max};
     var lo=Math.min.apply(null,ds.map(function(x){return x.tmax;})),hi=Math.max.apply(null,ds.map(function(x){return x.tmax;}));
     var ok=hi<=p.max&&lo>=p.min;
-    return{ok:ok,min:p.min,max:p.max,text:p.txt+" — prognoza: maxime "+lo+"…"+hi+" °C"+(ok?" ✓":hi>p.max?" (prea cald)":" (prea rece)")};
+    // the verdict first, the explanation after
+    return{ok:ok,min:p.min,max:p.max,text:(ok?"✓ Vremea e potrivită pentru acest produs":hi>p.max?"⚠️ Prea cald pentru acest produs":"⚠️ Prea rece pentru acest produs")+" — maxime de "+lo+"…"+hi+" °C în zilele următoare; "+p.txt+"."};
   };
 
   // ── 💾 backup ──
@@ -171,55 +173,55 @@ var SFATURI=(function(){
     var hs=BM.stupi.randuri();
     // inspections overdue
     var th=hvThreshold();
-    BM.inspectii.neinspectati(th).forEach(function(x){add({key:"insp:"+x.id,tip:"insp",urg:x.zile==null||x.zile>=th*2?3:2,ico:"🔍",t:x.nume,s:x.zile==null?"niciodată inspectat":"neinspectat de "+x.zile+" zile",hid:x.id,act:"inspM('"+x.id+"')"});});
+    BM.inspectii.neinspectati(th).forEach(function(x){add({key:"insp:"+x.id,tip:"insp",urg:x.zile==null||x.zile>=th*2?3:2,ico:"🔍",t:x.nume,s:x.zile==null?"Fă prima inspecție — stupul nu a fost inspectat niciodată":"Fă inspecția — au trecut "+x.zile+" zile de la ultima",hid:x.id,act:"inspM('"+x.id+"')"});});
     hs.forEach(function(h){
       var nuc=hvIsNuc(h),ins=hvInsps(h.id);
       // queen cells removed → check again
       var iq=ins.filter(function(i){return i.botci&&i.botciAction;})[0];
       if(iq&&iq.botciAction==="removed"){
         var rc=devAdd(iq.date,DEV.recheckRemoved),last=devAdd(iq.date,DEV.capDeadline),chk=ins.some(function(i){return i.date>iq.date;});
-        if(!chk&&last>=td&&td>=devAdd(rc,-1))add({key:"botci:"+h.id+iq.date,tip:"botci",urg:td>=rc?3:2,ico:"✂️",t:h.name,s:"verifică botcile "+(td===rc?"azi":td>rc?"— ai depășit (ultimul termen "+devFmt(last)+")":"mâine"),hid:h.id,act:"inspM('"+h.id+"')"});
+        if(!chk&&last>=td&&td>=devAdd(rc,-1))add({key:"botci:"+h.id+iq.date,tip:"botci",urg:td>=rc?3:2,ico:"✂️",t:h.name,s:(td===rc?"Verifică botcile azi":td>rc?"Verifică botcile acum":"Verifică botcile mâine")+" — "+(td>rc?"termen depășit, ultima zi e "+devFmt(last):"le-ai eliminat pe "+devFmt(iq.date)+", pot fi altele noi"),hid:h.id,act:"inspM('"+h.id+"')"});
       }
       // new queen: laying check
       var qs=devQueenState(h.id,td);
-      if(qs&&qs.phase==="laying")add({key:"ponta:"+h.id+qs.q.layFrom,tip:"regina",urg:td>qs.q.layTo?3:2,ico:"👑",t:h.name,s:td>qs.q.layTo?"regină nouă — nicio pontă confirmată":"regină nouă — verifică ponta (până pe "+devFmt(qs.q.layTo)+")",hid:h.id,act:"inspM('"+h.id+"')"});
-      if(nuc&&typeof nucNoQueenSrc==="function"&&nucNoQueenSrc(h)&&!hqCurrent(h.id))add({key:"nucq:"+h.id,tip:"regina",urg:3,ico:"🐝",t:h.name,s:"roiul nu are din ce crește regină",hid:h.id,act:"inspM('"+h.id+"')"});
+      if(qs&&qs.phase==="laying")add({key:"ponta:"+h.id+qs.q.layFrom,tip:"regina",urg:td>qs.q.layTo?3:2,ico:"👑",t:h.name,s:td>qs.q.layTo?"Verifică dacă are regină — nicio pontă confirmată până la termen ("+devFmt(qs.q.layTo)+")":"Verifică ponta până pe "+devFmt(qs.q.layTo)+" — regină nouă",hid:h.id,act:"inspM('"+h.id+"')"});
+      if(nuc&&typeof nucNoQueenSrc==="function"&&nucNoQueenSrc(h)&&!hqCurrent(h.id))add({key:"nucq:"+h.id,tip:"regina",urg:3,ico:"🐝",t:h.name,s:"Dă-i o ramă cu ouă sau o botcă — roiul nu are din ce crește regină",hid:h.id,act:"inspM('"+h.id+"')"});
       // planned feeding due
       var fp=fdPlannedFor(h.id)[0];
-      if(fp&&fp.date<=devAdd(td,1))add({key:"hrana:"+fp.id+h.id,tip:"hrana",urg:fp.date<td?3:2,ico:"🍬",t:h.name,s:"hrănire planificată "+(fp.date<td?"— întârziată":fp.date===td?"azi":"mâine")+" · "+fdTypeShort(fp),hid:h.id,act:"fdStartM('"+fp.id+"','"+h.id+"')"});
+      if(fp&&fp.date<=devAdd(td,1))add({key:"hrana:"+fp.id+h.id,tip:"hrana",urg:fp.date<td?3:2,ico:"🍬",t:h.name,s:(fp.date<td?"Hrănește acum":fp.date===td?"Hrănește azi":"Hrănește mâine")+" — hrănire planificată"+(fp.date<td?" pe "+devFmt(fp.date)+", întârziată":"")+" · "+fdTypeShort(fp),hid:h.id,act:"fdStartM('"+fp.id+"','"+h.id+"')"});
       // advice computed from the hive's data
       var A=stup(h);
-      if(A.roire&&A.roire.nivel)add({key:"roire:"+h.id,tip:"roire",urg:A.roire.nivel===2?3:2,ico:"🐝",t:h.name,s:"risc de roire"+(A.roire.nivel===2?" mare":"")+": "+A.roire.motive.slice(0,3).join(", ")+" → "+A.roire.sfat,hid:h.id,act:"inspM('"+h.id+"')"});
-      if(A.spatiu)add({key:"spatiu:"+h.id,tip:"spatiu",urg:A.spatiu.inZile<=3?3:2,ico:"📦",t:h.name,s:A.spatiu.text+" → pune magazie",hid:h.id,act:"inspM('"+h.id+"')"});
-      if(A.varroa&&A.varroa.nivel!=="ok")add({key:"varroa:"+h.id+A.varroa.data,tip:"varroa",urg:A.varroa.nivel==="trateaza"?3:1,ico:"🕷️",t:h.name,s:"varroa "+String(A.varroa.valoare).replace(".",",")+" "+A.varroa.unitate+" — "+A.varroa.text,hid:h.id,act:"go('treatments')"});
-      if(A.tendinta)add({key:"scade:"+h.id,tip:"scade",urg:2,ico:"📉",t:h.name,s:A.tendinta.text,hid:h.id,act:"inspM('"+h.id+"')"});
-      if(A.provizii&&A.provizii.sezon&&A.provizii.lipsa>=2&&!fdActiveFor(h.id).length)add({key:"provizii:"+h.id,tip:"provizii",urg:m>=10?3:2,ico:"🍯",t:h.name,s:"provizii ~"+String(A.provizii.kg).replace(".",",")+" kg din "+A.provizii.tinta+" → mai dă ~"+String(A.provizii.sirop).replace(".",",")+" L sirop 2:1",hid:h.id,act:"hrM('',{hiveId:'"+h.id+"'})"});
+      if(A.roire&&A.roire.nivel)add({key:"roire:"+h.id,tip:"roire",urg:A.roire.nivel===2?3:2,ico:"🐝",t:h.name,s:A.roire.sfat+" — risc de roire"+(A.roire.nivel===2?" mare":"")+": "+A.roire.motive.slice(0,3).join(", "),hid:h.id,act:"inspM('"+h.id+"')"});
+      if(A.spatiu)add({key:"spatiu:"+h.id,tip:"spatiu",urg:A.spatiu.inZile<=3?3:2,ico:"📦",t:h.name,s:"Pune magazie — "+A.spatiu.text,hid:h.id,act:"inspM('"+h.id+"')"});
+      if(A.varroa&&A.varroa.nivel!=="ok")add({key:"varroa:"+h.id+A.varroa.data,tip:"varroa",urg:A.varroa.nivel==="trateaza"?3:1,ico:"🕷️",t:h.name,s:A.varroa.fa+" — varroa "+String(A.varroa.valoare).replace(".",",")+" "+A.varroa.unitate+", "+A.varroa.text,hid:h.id,act:"go('treatments')"});
+      if(A.tendinta)add({key:"scade:"+h.id,tip:"scade",urg:2,ico:"📉",t:h.name,s:A.tendinta.fa+" — "+A.tendinta.text,hid:h.id,act:"inspM('"+h.id+"')"});
+      if(A.provizii&&A.provizii.sezon&&A.provizii.lipsa>=2&&!fdActiveFor(h.id).length)add({key:"provizii:"+h.id,tip:"provizii",urg:m>=10?3:2,ico:"🍯",t:h.name,s:"Hrănește: ~"+String(A.provizii.sirop).replace(".",",")+" L sirop 2:1 — are ~"+String(A.provizii.kg).replace(".",",")+" kg provizii din "+A.provizii.tinta,hid:h.id,act:"hrM('',{hiveId:'"+h.id+"'})"});
     });
     // treatments: ending now / planned soon / count after
     BM.tratamente.randuri().forEach(function(tr){
       if(!tr.date)return;var e=tr.endDate||"";
-      if(e&&!tr.done&&dAgo(e)>=0&&dAgo(e)<=3&&tr.date<=td)add({key:"trfin:"+tr.id,tip:"tratament",urg:2,ico:"💊",t:trShort(tr)||"Tratament",s:(dAgo(e)===0?"se termină azi":"s-a terminat acum "+dAgo(e)+" zile")+" — scoate benzile / încheie-l"+(tr.hiveId?" · "+BM.stupi.nume(tr.hiveId):" · toți stupii"),act:"go('treatments')"});
-      if(tr.date>td&&dAgo(tr.date)>=-3)add({key:"trpl:"+tr.id,tip:"tratament",urg:dAgo(tr.date)>=-1?3:2,ico:"🗓️",t:trShort(tr)||"Tratament",s:"planificat "+(dAgo(tr.date)===-1?"mâine":"în "+(-dAgo(tr.date))+" zile")+(tr.hiveId?" · "+BM.stupi.nume(tr.hiveId):" · toți stupii"),act:"go('treatments')"});
+      if(e&&!tr.done&&dAgo(e)>=0&&dAgo(e)<=3&&tr.date<=td)add({key:"trfin:"+tr.id,tip:"tratament",urg:2,ico:"💊",t:trShort(tr)||"Tratament",s:"Încheie tratamentul (scoate benzile) — "+(dAgo(e)===0?"se termină azi":"s-a terminat acum "+dAgo(e)+" zile")+(tr.hiveId?" · "+BM.stupi.nume(tr.hiveId):" · toți stupii"),act:"go('treatments')"});
+      if(tr.date>td&&dAgo(tr.date)>=-3)add({key:"trpl:"+tr.id,tip:"tratament",urg:dAgo(tr.date)>=-1?3:2,ico:"🗓️",t:trShort(tr)||"Tratament",s:"Pregătește tratamentul — planificat "+(dAgo(tr.date)===-1?"mâine":"în "+(-dAgo(tr.date))+" zile")+(tr.hiveId?" · "+BM.stupi.nume(tr.hiveId):" · toți stupii"),act:"go('treatments')"});
       if(trIsVarroa(tr)&&e&&dAgo(e)>=5&&dAgo(e)<=30){
         var ids=tr.hiveId?[tr.hiveId]:BM.stupi.lista().map(function(h){return h.id;});
         var noCount=ids.filter(function(id){return BM.stupi.get(id)&&!BM.varroa.numaratori(id).some(function(v){return v.date>e;});});
-        if(noCount.length)add({key:"vrdupa:"+tr.id,tip:"varroa",urg:1,ico:"🕷️",t:trShort(tr)||"Tratament",s:"numără varroa după tratament ("+noCount.length+" "+(noCount.length===1?"stup":"stupi")+" fără numărătoare) — vezi cât a fost de eficient",act:"vrM('',{hiveId:'"+noCount[0]+"',treatmentId:'"+tr.id+"'})"});
+        if(noCount.length)add({key:"vrdupa:"+tr.id,tip:"varroa",urg:1,ico:"🕷️",t:trShort(tr)||"Tratament",s:"Numără varroa — tratamentul s-a încheiat, "+noCount.length+" "+(noCount.length===1?"stup":"stupi")+" fără numărătoare de control (așa vezi cât a fost de eficient)",act:"vrM('',{hiveId:'"+noCount[0]+"',treatmentId:'"+tr.id+"'})"});
       }
     });
     // harvest
-    BM.cules.lista().filter(function(e){return e.kg==null;}).forEach(function(e){add({key:"kg:"+e.id,tip:"cules",urg:1,ico:"⚖️",t:"Extracție "+BM.cules.numeCules(e.cules).toLowerCase(),s:"din "+devFmt(e.date)+" — pune kilogramele",act:"go('cules');cuKgM('"+e.id+"')"});});
+    BM.cules.lista().filter(function(e){return e.kg==null;}).forEach(function(e){add({key:"kg:"+e.id,tip:"cules",urg:1,ico:"⚖️",t:"Extracție "+BM.cules.numeCules(e.cules).toLowerCase(),s:"Pune kilogramele — extracția din "+devFmt(e.date)+" nu are cantitatea",act:"go('cules');cuKgM('"+e.id+"')"});});
     var di=BM.cules.dinInspectii(21);
-    if(di.length)add({key:"rame:"+di.map(function(x){return x.inspId;}).join(""),tip:"cules",urg:1,ico:"🍯",t:"Rame de miere scoase",s:di.reduce(function(s,x){return s+x.n;},0)+" rame din "+di.length+" "+(di.length===1?"stup":"stupi")+" — trece-le la Cules",act:"go('cules');cuM()"});
+    if(di.length)add({key:"rame:"+di.map(function(x){return x.inspId;}).join(""),tip:"cules",urg:1,ico:"🍯",t:"Rame de miere scoase",s:"Trece ramele la Cules — "+di.reduce(function(s,x){return s+x.n;},0)+" rame scoase din "+di.length+" "+(di.length===1?"stup":"stupi")+", neînregistrate",act:"go('cules');cuM()"});
     // a main flow about to start
     FLORA.vetre().forEach(function(cx){
       if(cx.tip==="trip"&&!BM.pastorala.randuri().some(function(p){return p.id===cx.id&&pActive(p);}))return;   // planned trips: not yet
       flWith(cx,function(){FLORA.urmeaza().filter(function(x){return x.principal&&x.inZile<=7;}).forEach(function(x){
-        add({key:"cules:"+cx.id+x.id+td.slice(0,4),tip:"flora",urg:1,ico:"🌸",t:x.nume+(cx.tip==="trip"?" · "+cx.nume:""),s:"începe în "+x.inZile+" "+(x.inZile===1?"zi":"zile")+" — pregătește magaziile",act:"BM.flora.alegeContext('"+cx.id+"');go('calendar')"});});});});
+        add({key:"cules:"+cx.id+x.id+td.slice(0,4),tip:"flora",urg:1,ico:"🌸",t:x.nume+(cx.tip==="trip"?" · "+cx.nume:""),s:"Pregătește magaziile — culesul începe în "+x.inZile+" "+(x.inZile===1?"zi":"zile"),act:"BM.flora.alegeContext('"+cx.id+"');go('calendar')"});});});});
     // queens to replace (in the season when it can be done)
-    if(m>=4&&m<=8){var rq=regineDeSchimbat();if(rq.length)add({key:"regine:"+rq.length,tip:"regine",urg:1,ico:"👑",t:rq.length+" "+(rq.length===1?"regină":"regine")+" de schimbat",s:rq.slice(0,3).map(function(r){return r.stup+" ("+r.motive.join(", ")+")";}).join(" · "),act:"go('genealogie')"});}
+    if(m>=4&&m<=8){var rq=regineDeSchimbat();if(rq.length)add({key:"regine:"+rq.length,tip:"regine",urg:1,ico:"👑",t:rq.length+" "+(rq.length===1?"regină":"regine")+" de schimbat",s:"Schimbă regina — "+rq.slice(0,3).map(function(r){return r.stup+" ("+r.motive.join(", ")+")";}).join(" · "),act:"go('genealogie')"});}
     // backup
     var bk=backup();
-    if(bk&&bk.necesar)add({key:"backup",tip:"backup",urg:1,ico:"💾",t:"Backup",s:bk.zile==null?"n-ai făcut niciun backup — datele stau doar în telefon":"ultimul backup e de acum "+bk.zile+" zile",act:"go('settings');seOpen('backup')"});
+    if(bk&&bk.necesar)add({key:"backup",tip:"backup",urg:1,ico:"💾",t:"Backup",s:bk.zile==null?"Fă un backup — nu ai niciunul, datele stau doar în telefon":"Fă un backup — ultimul e de acum "+bk.zile+" zile",act:"go('settings');seOpen('backup')"});
     // hidden for today
     var off=cfg().ascuns||{};
     return out.filter(function(o){return off[o.key]!==td;}).sort(function(a,b){return b.urg-a.urg;});
@@ -235,17 +237,28 @@ if(typeof BM==="object"&&BM)BM.sfaturi=SFATURI;
 // DISPLAY
 // ═══════════════════════════════════════════
 // 📋 the „De făcut” card on top of the Hives page (replaces the old „neinspectați” alert when it is on)
+// "Action — reason" → the action in bold on its own line, the reason under it
+function sfActHTML(s){var i=s.indexOf(" — ");return i<0?'<b>'+esc(cap(s))+'</b>':'<b>'+esc(cap(s.slice(0,i)))+'</b><span>'+esc(cap(s.slice(i+3)))+'</span>';}
 var SF_TIP={insp:"Inspecții",botci:"Botci",regina:"Regine noi",hrana:"Hrăniri",roire:"Risc de roire",spatiu:"Spațiu",varroa:"Varroa",scade:"Colonii în scădere",provizii:"Provizii de iarnă",tratament:"Tratamente",cules:"Cules",flora:"Culesuri",regine:"Regine",backup:"Date"};
 function sfOn(){return SFATURI.setari().on!==false;}
-function sfWxStripHTML(){
-  var w=SFATURI.vreme();if(!w.length)return"";
-  return'<div class="td-wx" title="Zile bune de inspecție: cel puțin 14 °C, fără ploaie, fără vânt tare">'+w.slice(0,7).map(function(x){
-    return'<div class="td-wd'+(x.buna?(x.ideala?" best":" ok"):" no")+'"><b>'+x.zi+'</b><span>'+x.ico+'</span><i>'+x.tmax+'°</i><em>'+(x.buna?"✓":"✕")+'</em></div>';}).join("")+'</div>'
-    +'<div class="hv-ts td-wxl">🌤️ Zile bune de inspecție: '+(w.filter(function(x){return x.buna;}).length?'<b>'+w.filter(function(x){return x.buna;}).map(function(x){return x.zi;}).join(", ")+'</b>':'niciuna în următoarele zile')+'</div>';
+var SF_DAY=["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"];
+function sfWxVerdictHTML(w){
+  // said so it cannot be misread: first whether there is a good day at all, then which ones
+  var good=w.filter(function(x){return x.buna;}),nm=function(x){return x.zi==="Azi"?"azi":SF_DAY[new Date(x.data+"T12:00:00").getDay()];};
+  if(!good.length)return'<div class="td-wxl no">❌ <b>Nicio zi bună de inspecție</b> în următoarele '+w.length+' zile'+(w[0].motiv?' <span>· azi: '+esc(w[0].motiv)+'</span>':'')+'</div>';
+  var today=w[0].zi==="Azi"&&w[0].buna,rest=good.filter(function(x){return x.zi!=="Azi";}).map(nm);
+  if(today)return'<div class="td-wxl ok">✅ <b>Azi e zi bună de inspecție</b>'+(rest.length?' <span>· mai sunt bune: '+rest.join(", ")+'</span>':' <span>· singura din următoarele '+w.length+' zile</span>')+'</div>';
+  return'<div class="td-wxl wait">⏳ <b>Azi NU e zi bună de inspecție</b>'+(w[0].motiv?' — '+esc(w[0].motiv):'')+'<br><span>Zile bune: <b>'+rest.join(", ")+'</b></span></div>';
 }
+function sfWxStripHTML(){
+  var w=SFATURI.vreme().slice(0,7);if(!w.length)return"";
+  return sfWxVerdictHTML(w)+'<div class="td-wx" title="Zi bună de inspecție: cel puțin 14 °C, fără ploaie, fără vânt tare">'+w.map(function(x){
+    return'<div class="td-wd'+(x.buna?(x.ideala?" best":" ok"):" no")+'"><b>'+x.zi+'</b><span>'+x.ico+'</span><i>'+x.tmax+'°</i><em>'+(x.buna?"✓":"✕")+'</em></div>';}).join("")+'</div>';
+}
+var _sfOpen=false;   // closed at every start of the app — the user opens it to see what there is to do
 function sfTodoHTML(){
   if(!sfOn())return typeof hvAlertHTML==="function"?hvAlertHTML():"";
-  var l=SFATURI.deFacut(),open=SFATURI.setari().inchis!==true;
+  var l=SFATURI.deFacut(),open=_sfOpen;
   var u3=l.filter(function(x){return x.urg===3;}).length,u2=l.filter(function(x){return x.urg===2;}).length;
   var wx=sfWxStripHTML();
   if(!l.length&&!wx)return"";
@@ -253,32 +266,32 @@ function sfTodoHTML(){
   var groups={},order=[];l.forEach(function(x){var k=x.tip+"|"+x.urg;if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(x);});
   var row=function(x){return'<div class="td-it u'+x.urg+'">'
     +'<button class="td-ck" title="Gata pentru azi" aria-label="Gata pentru azi" onclick="event.stopPropagation();sfDone(\''+esc(x.key)+'\')"></button>'
-    +'<div class="td-b" role="button" onclick="'+x.act+'"><span class="td-i">'+x.ico+'</span><div class="td-tx"><b>'+esc(x.t)+'</b><span>'+esc(cap(x.s))+'</span></div><span class="hv-arr">›</span></div></div>';};
+    +'<div class="td-b" role="button" onclick="'+x.act+'"><span class="td-i">'+x.ico+'</span><div class="td-tx"><small>'+esc(x.t)+'</small>'+sfActHTML(x.s)+'</div><span class="hv-arr">›</span></div></div>';};
   var body=order.map(function(k){var g=groups[k];
     if(g.length<=3||!g[0].hid)return g.map(row).join("");
-    return'<div class="td-it u'+g[0].urg+' grp"><span class="td-i">'+g[0].ico+'</span><div class="td-tx"><b>'+(SF_TIP[g[0].tip]||"")+' · '+g.length+' stupi</b>'
+    return'<div class="td-it u'+g[0].urg+' grp"><span class="td-i">'+g[0].ico+'</span><div class="td-tx"><b>'+esc(cap(g[0].s.split(" — ")[0].replace(/ (azi|mâine|acum)$/,"")))+' · '+g.length+' stupi</b>'
       +'<div class="td-chips">'+g.map(function(x){return'<span class="bg '+(x.urg===3?"gr":"gy")+'" role="button" title="'+esc(x.s)+'" onclick="'+x.act+'">'+esc(x.t)+'</span>';}).join("")+'</div></div></div>';}).join("");
   return'<div class="c td-card'+(u3?" has3":"")+'">'
     +'<div class="td-h" role="button" onclick="sfToggle()"><b>📋 De făcut</b>'
-    +(u3?'<span class="bg gr">'+u3+' urgent'+(u3>1?"e":"")+'</span>':'')+(u2?'<span class="bg gy">'+u2+' săptămâna asta</span>':'')+(!l.length?'<span class="bg gg">✓ nimic urgent</span>':'')
+    +(u3?'<span class="bg gr">'+u3+' urgent'+(u3>1?"e":"")+'</span>':'')+(u2?'<span class="bg gy">'+u2+' săptămâna asta</span>':'')+(l.length&&!u3&&!u2?'<span class="bg gb">'+l.length+' de știut</span>':'')+(!l.length?'<span class="bg gg">✓ nimic de făcut</span>':'')
     +'<span class="hv-arr">'+(open?"▲":"▼")+'</span></div>'
     +'<div class="td-body" style="display:'+(open?"block":"none")+'">'+wx+(l.length?'<div class="td-list">'+body+'</div>':'')+'</div></div>';
 }
-window.sfToggle=function(){var c=SFATURI.setari();c.inchis=c.inchis!==true;save(false);render();};
+window.sfToggle=function(){_sfOpen=!_sfOpen;render();};
 window.sfDone=function(key){SFATURI.ascunde(key);render();toast("Ascuns pentru azi — revine mâine dacă mai e valabil","✓");};
 
 // rows on the hive card (only what applies now)
 function sfHiveRows(h){
   if(!sfOn())return[];
   var A=SFATURI.stup(h),rows=[];if(!A)return rows;
-  if(A.roire&&A.roire.nivel)rows.push(hvStRow(A.roire.nivel===2?"bad":"warn","🐝","Risc de roire"+(A.roire.nivel===2?" mare":""),A.roire.motive.join(" · ")+'<br>→ '+A.roire.sfat,"inspM('"+h.id+"')"));
-  if(A.spatiu)rows.push(hvStRow("warn","📦","Pune magazie",A.spatiu.text,"inspM('"+h.id+"')"));
-  if(A.varroa&&A.varroa.nivel!=="ok")rows.push(hvStRow(A.varroa.nivel==="trateaza"?"bad":"warn","🕷️","Varroa "+String(A.varroa.valoare).replace(".",",")+" "+A.varroa.unitate,A.varroa.text+' · numărat '+hvAgo(A.varroa.data),"go('treatments')"));
-  if(A.tendinta)rows.push(hvStRow("warn","📉","Colonie în scădere",A.tendinta.text,"hvInspToggle('"+h.id+"')"));
+  if(A.roire&&A.roire.nivel)rows.push(hvStRow(A.roire.nivel===2?"bad":"warn","🐝",A.roire.sfat,"Risc de roire"+(A.roire.nivel===2?" mare":"")+": "+A.roire.motive.join(" · "),"inspM('"+h.id+"')"));
+  if(A.spatiu)rows.push(hvStRow("warn","📦","Pune magazie",cap(A.spatiu.text),"inspM('"+h.id+"')"));
+  if(A.varroa&&A.varroa.nivel!=="ok")rows.push(hvStRow(A.varroa.nivel==="trateaza"?"bad":"warn","🕷️",A.varroa.fa,"Varroa "+String(A.varroa.valoare).replace(".",",")+" "+A.varroa.unitate+" — "+A.varroa.text+' · numărat '+hvAgo(A.varroa.data),"go('treatments')"));
+  if(A.tendinta)rows.push(hvStRow("warn","📉",A.tendinta.fa,"Colonie în scădere — "+A.tendinta.text,"hvInspToggle('"+h.id+"')"));
   if(A.provizii&&A.provizii.sezon&&!hvWinterState(h)){var P=A.provizii,k=function(x){return String(x).replace(".",",");};
-    rows.push(hvStRow(P.lipsa>=2?"warn":"ok","🍯","Provizii de iarnă ~"+k(P.kg)+" kg din "+P.tinta,
-      P.lipsa>=2?"lipsesc ~"+k(P.lipsa)+" kg → ~"+k(P.sirop)+" L sirop 2:1 ("+k(P.zahar)+" kg zahăr)":"suficiente"+(P.rameCuib?" · "+P.rameCuib+" rame cu miere în cuib":""),
-      P.lipsa>=2?"hrM('',{hiveId:'"+h.id+"'})":""));}
+    rows.push(P.lipsa>=2
+      ?hvStRow("warn","🍯","Hrănește: ~"+k(P.sirop)+" L sirop 2:1 ("+k(P.zahar)+" kg zahăr)","Provizii de iarnă prea puține: ~"+k(P.kg)+" kg din "+P.tinta+" (lipsesc ~"+k(P.lipsa)+" kg)","hrM('',{hiveId:'"+h.id+"'})")
+      :hvStRow("ok","🍯","Provizii de iarnă suficiente","~"+k(P.kg)+" kg din "+P.tinta+(P.rameCuib?" · "+P.rameCuib+" rame cu miere în cuib":""),""));}
   return rows;
 }
 
