@@ -78,7 +78,6 @@ function inspCardToggle(c,force){
   if(open)setTimeout(function(){try{c.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}},40);
   inspNavUpd();
 }
-function inspCardVisible(c){return c.offsetParent!==null||getComputedStyle(c).display!=="none"&&!c.closest(".iw-h")&&!c.closest(".iw-s");}
 function inspNavUpd(){
   var nav=document.getElementById("iscNav");if(!nav)return;
   var cs=[].filter.call(document.querySelectorAll("#MB .isc"),function(c){return c.offsetParent!==null;});

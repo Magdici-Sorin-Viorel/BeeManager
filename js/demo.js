@@ -21,7 +21,7 @@ function demoMaybe(){
 }
 function demoApply(){
   var R=demoBuild();
-  ["hives","queens","inspections","treatments","varroa","feedings","pastorage","tasks","hivesArchive","bloomObs","extractions","flora"].forEach(function(k){D[k]=R[k]||[];});
+  ["hives","queens","inspections","treatments","varroa","feedings","pastorage","hivesArchive","bloomObs","extractions","flora"].forEach(function(k){D[k]=R[k]||[];});
   D.settings.culesLearn=R.culesLearn||{};
   D.settings.demoV=DEMO_V;
   save(false);
@@ -38,7 +38,7 @@ function demoCardHTML(){
 
 function demoBuild(){
   var O=t("q_origins")||[];   // 0 Cumpărată · 1 Din roi propriu · 3 Import · 4 Natural (roi) · 5 Schimbare naturală
-  var R={hives:[],queens:[],inspections:[],treatments:[],varroa:[],feedings:[],pastorage:[],tasks:[],hivesArchive:[],bloomObs:[],extractions:[],flora:[]};
+  var R={hives:[],queens:[],inspections:[],treatments:[],varroa:[],feedings:[],pastorage:[],hivesArchive:[],bloomObs:[],extractions:[],flora:[]};
   var W={sun:"☀️ Însorit",part:"⛅ Parțial noros",cloud:"☁️ Înnorat"};
   function M(list){return list.map(function(x){return{f:x[0],cap:x[1]};});}
   function capSum(m){return Math.round(m.reduce(function(s,x){return s+x.f*x.cap/100;},0));}

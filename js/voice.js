@@ -51,7 +51,7 @@ window.appShare=function(){
   if(!navigator.share)return;
   navigator.share({title:"BeeManager Pro",text:"Aplicația de apicultură BeeManager Pro — deschide linkul și instaleaz-o pe telefon.",url:appUrl()}).catch(function(){});
 };
-function qrHives(){return D.hives.slice().sort(function(a,b){return((a.kind==="roi")-(b.kind==="roi"))||(a.num||9999)-(b.num||9999)||String(a.name).localeCompare(String(b.name));});}
+function qrHives(){return BM.stupi.randuri().slice().sort(function(a,b){return((a.kind==="roi")-(b.kind==="roi"))||(a.num||9999)-(b.num||9999)||String(a.name).localeCompare(String(b.name));});}
 // Settings card
 function qrCardHTML(){
   var hs=qrHives(),nS=hs.filter(function(h){return h.kind!=="roi";}).length,nR=hs.length-nS;
@@ -97,7 +97,7 @@ function qrIdFrom(txt){
   if(!txt)return null;
   var m=String(txt).match(/[?&#]stup=([^&#\s]+)/);
   var id=m?decodeURIComponent(m[1]):(/^BMP:/.test(txt)?txt.slice(4):null);
-  return id&&D.hives.some(function(h){return h.id===id;})?id:(id?"?":null);
+  return id&&BM.stupi.randuri().some(function(h){return h.id===id;})?id:(id?"?":null);
 }
 window.qrScan=function(){
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast("Telefonul nu permite camera aici. Deschide aplicația instalată.","⚠️");return;}
@@ -169,7 +169,7 @@ function qrFromUrl(){
   var m=location.search.match(/[?&]stup=([^&#]+)/);if(!m)return;
   var id=decodeURIComponent(m[1]);
   try{history.replaceState(null,"",location.pathname+location.hash);}catch(e){}
-  if(D.hives.some(function(h){return h.id===id;}))setTimeout(function(){vcOpen(id);},350);
+  if(BM.stupi.randuri().some(function(h){return h.id===id;}))setTimeout(function(){vcOpen(id);},350);
   else setTimeout(function(){toast("Codul scanat e de la un stup care nu există în aplicație.","⚠️");},400);
 }
 
@@ -711,7 +711,7 @@ function vcParse(raw,hid){
 // ── 🔄 frame movements: „am luat o ramă de puiet de la stupul 2”, „am scos 2 rame pentru un roi nou” ──
 // which hive a clause talks about: „stupul 2” / „stupul doi” / „roiul 1” / a hive name
 function vcHiveRef(c,self){
-  var hs=D.hives||[],m=/\b(stup\w*|roi\w*)\s+(?:nr |numarul |numar )?(\d+)\b/.exec(c);
+  var hs=BM.stupi.randuri()||[],m=/\b(stup\w*|roi\w*)\s+(?:nr |numarul |numar )?(\d+)\b/.exec(c);
   if(m){var isR=/^roi/.test(m[1]),n=parseInt(m[2]);
     var h=hs.filter(function(x){return(x.kind==="roi")===isR&&parseInt(x.num)===n;})[0]
       ||hs.filter(function(x){return vcNorm(x.name)===vcNorm(m[1].replace(/ul$|ului$/,"")+"ul "+n)||vcNorm(x.name)===(isR?"roi ":"stupul ")+n||vcNorm(x.name)===(isR?"roiul ":"stup ")+n;})[0]

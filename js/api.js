@@ -13,20 +13,49 @@
 //   BM.calendar   inFloare(data?) · urmeaza(data?)  (alias of BM.flora)
 //   BM.genealogie copii(id) · parinte(id) · arbore(id)
 //   BM.rapoarte   an(an) → per hive: inspections, treatments, feed, varroa, nucs, frames, honey
+//   BM.pastorala · BM.arhiva   the other tables (get + a few queries)
 //   BM.date       backup() · restaureaza(obj) · stare()
+// Every table API also has the store's methods (js/store.js): randuri() · rand(id) · numar() · adauga(o) ·
+// modifica(rand, campuri) · pune(o) · sterge(id) · pastreaza(fn) · inlocuieste(lista). No page reads or writes D.<tabel>.
 // Everything returns plain objects / arrays, never HTML.
 var BM=(function(){
   var today=function(){return todayISO();};
   var yearOf=function(d){return String(d||"").slice(0,4);};
-  var hiveLive=function(id){return(D.hives||[]).find(function(h){return h.id===id;})||null;};
-  var hiveById=function(id){return hiveLive(id)||(D.hivesArchive||[]).find(function(h){return h.id===id;})||null;};
+  // the tables (js/store.js) — the API reads and writes the data only through them
+  var tb={};STORE.tabele().forEach(function(n){tb[n]=STORE.tabel(n);});
+  // every table API also offers the store's methods: randuri · rand · numar · adauga · modifica · pune · sterge · pastreaza · inlocuieste
+  var cuTabel=function(api,t,only){(only||["randuri","rand","numar","adauga","modifica","pune","sterge","pastreaza","inlocuieste"]).forEach(function(k){if(api[k]===undefined)api[k]=t[k];});return api;};
+  var hiveLive=function(id){return tb.hives.randuri().find(function(h){return h.id===id;})||null;};
+  var hiveById=function(id){return hiveLive(id)||tb.hivesArchive.randuri().find(function(h){return h.id===id;})||null;};
+
+  // ── ⚡ indexes ──
+  // Per-hive lists built once and reused (the hive cards, the alerts, the reports ask „this hive's inspections,
+  // newest first” many times per page). Rebuilt when the data changes: save() and inspection edits call reset(),
+  // a different array / length is noticed, and every index is dropped at the end of the current task anyway.
+  var _ix={rev:0,ins:null,insRef:null,insLen:-1,insRev:-1,timer:false};
+  var ixInsp=function(){
+    var a=tb.inspections.randuri()||[];
+    if(_ix.ins&&_ix.insRef===a&&_ix.insLen===a.length&&_ix.insRev===_ix.rev)return _ix.ins;
+    var by={},ids={};
+    for(var k=0;k<a.length;k++){var i=a[k];if(!i)continue;if(i.id!=null)ids[i.id]=i;if(!i.date)continue;var ts=+new Date(i.date);(by[i.hiveId]||(by[i.hiveId]=[])).push({i:i,t:ts,k:k});}
+    Object.keys(by).forEach(function(h){by[h]=by[h].sort(function(x,y){return(y.t-x.t)||(x.k-y.k);}).map(function(x){return x.i;});});
+    _ix.ins={by:by,ids:ids};_ix.insRef=a;_ix.insLen=a.length;_ix.insRev=_ix.rev;
+    if(!_ix.timer){_ix.timer=true;Promise.resolve().then(function(){_ix.timer=false;_ix.rev++;});}
+    return _ix.ins;
+  };
+  STORE.laSchimbare("*",function(){_ix.rev++;});   // any add / delete / save → the indexes are rebuilt on next use
+  var idx={
+    reset:function(){_ix.rev++;},
+    inspectii:function(hid){return(ixInsp().by[hid]||[]).slice();},     // newest first (a copy — callers may sort / cut it)
+    inspectie:function(id){return id!=null&&ixInsp().ids[id]||null;}
+  };
 
   // ── 🏠 hives ──
   var stupi={
-    lista:function(){return(D.hives||[]).filter(function(h){return h.kind!=="roi";});},
-    roiuri:function(){return(D.hives||[]).filter(function(h){return h.kind==="roi";});},
-    toate:function(){return(D.hives||[]).slice();},
-    arhiva:function(){return(D.hivesArchive||[]).slice();},
+    lista:function(){return tb.hives.randuri().filter(function(h){return h.kind!=="roi";});},
+    roiuri:function(){return tb.hives.randuri().filter(function(h){return h.kind==="roi";});},
+    toate:function(){return tb.hives.randuri().slice();},
+    arhiva:function(){return tb.hivesArchive.randuri().slice();},
     get:hiveLive,                 // an active hive / nuc (null if archived)
     getOriArhiva:hiveById,       // also closed nucs / deleted hives kept in the archive
     nume:function(id){var h=hiveById(id);return h?h.name:"—";},
@@ -63,43 +92,43 @@ var BM=(function(){
 
   // ── 🔍 inspections ──
   var inspectii={
-    get:function(id){return id?(D.inspections||[]).find(function(i){return i.id===id;})||null:null;},
+    get:function(id){return id?idx.inspectie(id):null;},
     aleStupului:function(id){return hvInsps(id);},
     ultima:function(id){return hvInsps(id)[0]||null;},
     zileDeLaUltima:function(id){var l=hvInsps(id)[0];return l?hvDaysSince(l.date):null;},
     // hives past the alert threshold (Setări); nucs and hives in wintering have no weekly alert — same rule everywhere
     neinspectati:function(zile){zile=zile||parseInt(D.settings.inspAlertThreshold)||INSP_ALERT_DEFAULT;
       return stupi.toate().filter(function(h){return h.kind!=="roi"&&!hvWinterState(h);}).map(function(h){var d=inspectii.zileDeLaUltima(h.id);return{id:h.id,nume:h.name,zile:d,h:h};}).filter(function(x){return x.zile==null||x.zile>=zile;});},
-    peAn:function(an,id){return(D.inspections||[]).filter(function(i){return yearOf(i.date)===String(an)&&(!id||i.hiveId===id);});}
+    peAn:function(an,id){return tb.inspections.randuri().filter(function(i){return yearOf(i.date)===String(an)&&(!id||i.hiveId===id);});}
   };
 
   // ── 💊 treatments ──
   var tratamente={
-    get:function(id){return id?(D.treatments||[]).find(function(x){return x.id===id;})||null:null;},
-    activePentru:function(id,day){day=day||today();return(D.treatments||[]).filter(function(tr){return trAppliesTo(tr,id)&&trIsActive(tr,id,day);});},
-    aleStupului:function(id){return(D.treatments||[]).filter(function(tr){return trAppliesTo(tr,id);}).sort(function(a,b){return a.date<b.date?1:-1;});},
+    get:function(id){return id?tb.treatments.randuri().find(function(x){return x.id===id;})||null:null;},
+    activePentru:function(id,day){day=day||today();return tb.treatments.randuri().filter(function(tr){return trAppliesTo(tr,id)&&trIsActive(tr,id,day);});},
+    aleStupului:function(id){return tb.treatments.randuri().filter(function(tr){return trAppliesTo(tr,id);}).sort(function(a,b){return a.date<b.date?1:-1;});},
     // treatments done in a year (planned ones in the future are not counted); a treatment „for all hives” counts
     // for a hive only while that hive existed (a nuc made in September did not get the January oxalic)
     peAn:function(an,id){var h=id?hiveById(id):null,from=h&&(h.nuc&&h.nuc.start||h.created||""),to=h&&h.closed&&h.closed.date||"",td=today();
-      return(D.treatments||[]).filter(function(tr){return yearOf(tr.date)===String(an)&&tr.date<=td&&(!id||trAppliesTo(tr,id))&&(!from||tr.date>=from)&&(!to||tr.date<=to);});}
+      return tb.treatments.randuri().filter(function(tr){return yearOf(tr.date)===String(an)&&tr.date<=td&&(!id||trAppliesTo(tr,id))&&(!from||tr.date>=from)&&(!to||tr.date<=to);});}
   };
 
   // ── 🕷️ varroa counts ──
   var varroa={
-    numaratori:function(id){return(D.varroa||[]).filter(function(v){return v.hiveId===id;}).sort(function(a,b){return a.date<b.date?1:-1;});},
+    numaratori:function(id){return tb.varroa.randuri().filter(function(v){return v.hiveId===id;}).sort(function(a,b){return a.date<b.date?1:-1;});},
     ultima:function(id){return varroa.numaratori(id)[0]||null;},
-    maxPeAn:function(an,id){var m=null;(D.varroa||[]).forEach(function(v){if(yearOf(v.date)===String(an)&&(!id||v.hiveId===id)&&v.miteCount!=null)m=m==null?v.miteCount:Math.max(m,v.miteCount);});return m;}
+    maxPeAn:function(an,id){var m=null;tb.varroa.randuri().forEach(function(v){if(yearOf(v.date)===String(an)&&(!id||v.hiveId===id)&&v.miteCount!=null)m=m==null?v.miteCount:Math.max(m,v.miteCount);});return m;}
   };
 
   // ── 🍬 feedings ──
   var hraniri={
-    get:function(id){return id?(D.feedings||[]).find(function(x){return x.id===id;})||null:null;},
+    get:function(id){return id?tb.feedings.randuri().find(function(x){return x.id===id;})||null:null;},
     activePentru:function(id,day){return fdActiveFor(id,day||today());},
-    aleStupului:function(id){return(D.feedings||[]).filter(function(f){return fdCovers(f,id);}).sort(function(a,b){return a.date<b.date?1:-1;});},
+    aleStupului:function(id){return tb.feedings.randuri().filter(function(f){return fdCovers(f,id);}).sort(function(a,b){return a.date<b.date?1:-1;});},
     // what a hive got in a year, in base units (kg / L), split by feed type; a feeding for several hives is divided between them
     totalPeAn:function(an,id){
       var out={kg:0,L:0,peTip:{}};
-      (D.feedings||[]).forEach(function(f){
+      tb.feedings.randuri().forEach(function(f){
         if(f.planned)return;var hs=fdHives(f);if(id&&hs.indexOf(id)<0)return;var share=id?1/Math.max(1,hs.length):1;
         fdPortions(f).forEach(function(p){if(yearOf(p.date)!==String(an))return;var u=f.unit||fdType(f).u,q=fdBase(p.qty,u)*share,bu=u==="L"?"L":"kg";
           out[bu]+=q;var k=fdTypeShort(f);out.peTip[k]=(out.peTip[k]||0)+q;});});
@@ -126,12 +155,12 @@ var BM=(function(){
 
   // ── 👑 queens (calculations in genea.js) ──
   var regine={
-    toate:function(){return(D.queens||[]).slice();},
-    get:function(id){return(D.queens||[]).find(function(q){return q.id===id;})||null;},
+    toate:function(){return tb.queens.randuri().slice();},
+    get:function(id){return tb.queens.randuri().find(function(q){return q.id===id;})||null;},
     aleStupului:function(hid){return qHiveQs(hid);},
     actuala:function(hid){return typeof hqCurrent==="function"?hqCurrent(hid):null;},
     mama:function(q){return qMother(typeof q==="object"?q:regine.get(q));},
-    fiice:function(q){var id=typeof q==="object"?q.id:q;return(D.queens||[]).filter(function(x){return x.motherQ===id;});},
+    fiice:function(q){var id=typeof q==="object"?q.id:q;return tb.queens.randuri().filter(function(x){return x.motherQ===id;});},
     perioada:function(q){q=typeof q==="object"?q:regine.get(q);return q?{din:qFrom(q),pana:qTo(q)||null,inStup:!qTo(q)}:null;},
     generatia:function(q){q=typeof q==="object"?q:regine.get(q);return q?qGen(q):null;},
     cod:function(q){q=typeof q==="object"?q:regine.get(q);return q?qCode(q).code+(qGen(q)?"-G"+qGen(q):""):"";},
@@ -161,9 +190,9 @@ var BM=(function(){
         .sort(function(a,b){var v=function(r){if(!r.calitati)return -1;if(!criteriu||criteriu==="score")return r.nota!=null?r.nota:-1;return r.calitati[criteriu]!=null?r.calitati[criteriu]:-1;};return v(b)-v(a);});},
     ceaMaiBuna:function(criteriu,linie){return genealogie.clasament(criteriu,linie)[0]||null;},
     // hive-level tree (nucs made from a hive)
-    copii:function(id){return(D.hives||[]).concat(D.hivesArchive||[]).filter(function(h){return(h.genParent||h.parentId)===id;});},
+    copii:function(id){return tb.hives.randuri().concat(tb.hivesArchive.randuri()).filter(function(h){return(h.genParent||h.parentId)===id;});},
     parinte:function(id){var h=hiveById(id);return h?hiveById(h.genParent||h.parentId):null;},
-    arbore:function(id){var h=hiveById(id);if(!h)return null;return{id:h.id,nume:h.name,roi:h.kind==="roi",arhivat:!(D.hives||[]).some(function(x){return x.id===h.id;}),copii:genealogie.copii(h.id).map(function(c){return genealogie.arbore(c.id);})};}
+    arbore:function(id){var h=hiveById(id);if(!h)return null;return{id:h.id,nume:h.name,roi:h.kind==="roi",arhivat:!tb.hives.randuri().some(function(x){return x.id===h.id;}),copii:genealogie.copii(h.id).map(function(c){return genealogie.arbore(c.id);})};}
   };
 
   // ── 🍯 harvest (extractions) ──
@@ -174,7 +203,7 @@ var BM=(function(){
   var CULES_T=[{id:"rapita",n:"Rapiță",ic:"🟨"},{id:"salcam",n:"Salcâm",ic:"🌳"},{id:"tei",n:"Tei",ic:"💛"},{id:"floarea",n:"Floarea-soarelui",ic:"🌻"},{id:"poliflora",n:"Polifloră / fâneață",ic:"🌸"},{id:"mana",n:"Mană",ic:"🌲"},{id:"altul",n:"Alt cules",ic:"🍯"}];
   var FR_T=["Dadant 1/2 (magazie)","Dadant 1/1 (cuib)","Langstroth 1/2","Langstroth 1/1","Alt tip"];
   var cules={
-    tipuri:function(){var ex={};(D.extractions||[]).forEach(function(e){if(e.cules&&!CULES_T.some(function(c){return c.id===e.cules;}))ex[e.cules]=1;});
+    tipuri:function(){var ex={};tb.extractions.randuri().forEach(function(e){if(e.cules&&!CULES_T.some(function(c){return c.id===e.cules;}))ex[e.cules]=1;});
       return CULES_T.concat(Object.keys(ex).map(function(k){return{id:k,n:k,ic:"🍯"};}));},
     numeCules:function(id){var c=cules.tipuri().find(function(x){return x.id===id;});return c?c.n:(id||"—");},
     icoCules:function(id){var c=cules.tipuri().find(function(x){return x.id===id;});return c?c.ic:"🍯";},
@@ -199,8 +228,8 @@ var BM=(function(){
         h.fT=hvTotal(h);});
       Object.keys(touched).forEach(function(id){var h=hiveById(id);if(h){h.magCount=(h.mags||[]).length;h.hasMag=h.magCount>0;if(typeof saveHiveSnapshot==="function")saveHiveSnapshot(id);}});
       e.applied=true;e.inapoi=!!inapoi;return Object.keys(touched);},
-    lista:function(){return(D.extractions||[]).slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;});},
-    get:function(id){return(D.extractions||[]).find(function(e){return e.id===id;})||null;},
+    lista:function(){return tb.extractions.randuri().slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:0;});},
+    get:function(id){return tb.extractions.randuri().find(function(e){return e.id===id;})||null;},
     // reference kg for one full frame of a type: user's value → standard (core.js FW)
     refRama:function(type){var u=D.settings.frameKg&&parseFloat(D.settings.frameKg[type]);return u>0?u:(FW[type]||2);},
     // what the app learned: kg really obtained per frame, per flow + type (and per type over all flows)
@@ -225,18 +254,18 @@ var BM=(function(){
       e.learned=true;
     },
     salveaza:function(e){
-      if(!D.extractions)D.extractions=[];var ex=e.id?cules.get(e.id):null;
+      var ex=e.id?cules.get(e.id):null;
       if(!e.id)e.id=uid();e.rows=(e.rows||[]).filter(function(r){return r.hiveId&&(parseInt(r.n)||0)>0;}).map(function(r){return{hiveId:r.hiveId,n:parseInt(r.n)||0,type:r.type||FR_T[0],src:r.src||null,inspId:r.inspId||null};});
       if(e.kg===""||e.kg==null)e.kg=null;else e.kg=parseFloat(e.kg)||0;
       if(e.kg==null&&!e.pred)e.pred=cules.estimare(e.cules,e.rows).kg;
-      if(ex)Object.assign(ex,e);else D.extractions.push(e);
+      if(ex)tb.extractions.modifica(ex,e);else tb.extractions.adauga(e);
       var cur=ex||e;if(cur.kg!=null&&!cur.learned)cules.invata(cur);
       save(false);return cur;
     },
-    sterge:function(id){D.extractions=(D.extractions||[]).filter(function(e){return e.id!==id;});save(false);},
+    sterge:function(id){tb.extractions.sterge(id);save(false);},
     // super frames taken off in inspections (magRmF) in the last `zile` days and not yet in an extraction → rows to confirm
-    dinInspectii:function(zile,excludeId){var td=today(),used={};(D.extractions||[]).forEach(function(e){if(e.id!==excludeId)(e.fromInsp||[]).forEach(function(i){used[i]=1;});});
-      var out=[];(D.inspections||[]).forEach(function(i){if(!i.date||used[i.id]||!(parseInt(i.magRmF)>0))return;if(hvDaysSince(i.date)>(zile||21)||i.date>td)return;
+    dinInspectii:function(zile,excludeId){var td=today(),used={};tb.extractions.randuri().forEach(function(e){if(e.id!==excludeId)(e.fromInsp||[]).forEach(function(i){used[i]=1;});});
+      var out=[];tb.inspections.randuri().forEach(function(i){if(!i.date||used[i.id]||!(parseInt(i.magRmF)>0))return;if(hvDaysSince(i.date)>(zile||21)||i.date>td)return;
         var h=hiveById(i.hiveId);if(!h)return;out.push({inspId:i.id,hiveId:i.hiveId,nume:h.name,data:i.date,n:parseInt(i.magRmF),type:cules.tipRamaStup(h)});});
       return out.sort(function(a,b){return a.data<b.data?1:-1;});},
     // forecast from the supers on the hives now: capped frames × kg/frame for the flow in progress
@@ -247,11 +276,11 @@ var BM=(function(){
       return{cules:culesId,kg:+tot.toFixed(1),rame:+fr.toFixed(1),stupi:rows.sort(function(a,b){return b.kg-a.kg;})};},
     culesCurent:function(){var p=typeof getFlow==="function"?getFlow():null;if(p&&CULES_T.some(function(c){return c.id===p.id;}))return p.id;var m=parseInt(today().slice(5,7));return m<=5?"rapita":m===6?"tei":m<=8?"floarea":"poliflora";},
     // kg per hive per year (real or estimated), for the card / genealogy / report
-    kgStup:function(id,an){var kg=0,est=false;(D.extractions||[]).forEach(function(e){if(an&&yearOf(e.date)!==String(an))return;var sp=cules.impartire(e);sp.stupi.forEach(function(r){if(r.hiveId===id){kg+=r.kg;if(!sp.real)est=true;}});});return{kg:+kg.toFixed(1),estimat:est};},
-    kgPeAni:function(id){var o={};(D.extractions||[]).forEach(function(e){var y=yearOf(e.date);cules.impartire(e).stupi.forEach(function(r){if(r.hiveId===id){o[y]=o[y]||{kg:0,estimat:false};o[y].kg=+(o[y].kg+r.kg).toFixed(1);if(e.kg==null)o[y].estimat=true;}});});return o;},
+    kgStup:function(id,an){var kg=0,est=false;tb.extractions.randuri().forEach(function(e){if(an&&yearOf(e.date)!==String(an))return;var sp=cules.impartire(e);sp.stupi.forEach(function(r){if(r.hiveId===id){kg+=r.kg;if(!sp.real)est=true;}});});return{kg:+kg.toFixed(1),estimat:est};},
+    kgPeAni:function(id){var o={};tb.extractions.randuri().forEach(function(e){var y=yearOf(e.date);cules.impartire(e).stupi.forEach(function(r){if(r.hiveId===id){o[y]=o[y]||{kg:0,estimat:false};o[y].kg=+(o[y].kg+r.kg).toFixed(1);if(e.kg==null)o[y].estimat=true;}});});return o;},
     // per flow per year: totals, kg/frame, per hive average, difference from the previous year of the same flow
     peAni:function(){var m={};
-      (D.extractions||[]).forEach(function(e){var y=yearOf(e.date),k=e.cules||"altul",sp=cules.impartire(e),o=m[k]=m[k]||{};var Y=o[y]=o[y]||{kg:0,rame:0,stupi:{},extractii:0,estimat:false};
+      tb.extractions.randuri().forEach(function(e){var y=yearOf(e.date),k=e.cules||"altul",sp=cules.impartire(e),o=m[k]=m[k]||{};var Y=o[y]=o[y]||{kg:0,rame:0,stupi:{},extractii:0,estimat:false};
         Y.kg+=sp.kg;Y.rame+=sp.rame;Y.extractii++;if(!sp.real)Y.estimat=true;sp.stupi.forEach(function(r){Y.stupi[r.hiveId]=(Y.stupi[r.hiveId]||0)+r.kg;});});
       var out=[];Object.keys(m).forEach(function(k){var ys=Object.keys(m[k]).sort(),rows=ys.map(function(y,i){var Y=m[k][y],ns=Object.keys(Y.stupi).length,prev=i?m[k][ys[i-1]]:null;
           return{an:y,kg:+Y.kg.toFixed(1),rame:Y.rame,extractii:Y.extractii,stupi:ns,kgStup:ns?+(Y.kg/ns).toFixed(1):0,kgRama:Y.rame?+(Y.kg/Y.rame).toFixed(2):0,estimat:Y.estimat,
@@ -263,7 +292,7 @@ var BM=(function(){
   // ── 📊 reports ──
   var rapoarte={
     an:function(an){an=String(an||new Date().getFullYear());
-      var hs=(D.hives||[]).concat((D.hivesArchive||[]).filter(function(h){return yearOf(h.closed&&h.closed.date)===an;}));
+      var hs=tb.hives.randuri().concat(tb.hivesArchive.randuri().filter(function(h){return yearOf(h.closed&&h.closed.date)===an;}));
       var rows=hs.map(function(h){
         var ins=inspectii.peAn(an,h.id),trs=tratamente.peAn(an,h.id),fd=hraniri.totalPeAn(an,h.id),mv=rame.mutariPeAn(an,h.id);
         var honey=cules.kgStup(h.id,an).kg;
@@ -281,7 +310,7 @@ var BM=(function(){
       tot.hranaKg=+tot.hranaKg.toFixed(1);tot.hranaL=+tot.hranaL.toFixed(1);tot.miereKg=+tot.miereKg.toFixed(1);
       return{an:an,stupi:rows,total:tot};
     },
-    ani:function(){var s={};(D.inspections||[]).forEach(function(i){if(i.date)s[yearOf(i.date)]=1;});(D.treatments||[]).forEach(function(t2){if(t2.date)s[yearOf(t2.date)]=1;});
+    ani:function(){var s={};tb.inspections.randuri().forEach(function(i){if(i.date)s[yearOf(i.date)]=1;});tb.treatments.randuri().forEach(function(t2){if(t2.date)s[yearOf(t2.date)]=1;});
       var y=String(new Date().getFullYear());s[y]=1;return Object.keys(s).sort().reverse();}
   };
 
@@ -289,9 +318,22 @@ var BM=(function(){
   var date={
     backup:function(){return JSON.parse(JSON.stringify(D));},
     restaureaza:function(obj){if(!obj||typeof obj!=="object")return false;D={...D,...obj};save(false);return true;},
-    stare:function(){return{stupi:(D.hives||[]).length,inspectii:(D.inspections||[]).length,tratamente:(D.treatments||[]).length,hraniri:(D.feedings||[]).length,varroa:(D.varroa||[]).length,
+    stare:function(){return{stupi:tb.hives.randuri().length,inspectii:tb.inspections.randuri().length,tratamente:tb.treatments.randuri().length,hraniri:tb.feedings.randuri().length,varroa:tb.varroa.randuri().length,
       bazaDeDate:typeof dbStatus==="function"?dbStatus():null,salvat:D.settings&&D.settings.savedAt?new Date(D.settings.savedAt).toLocaleString():"—"};}
   };
 
-  return{stupi:stupi,inspectii:inspectii,tratamente:tratamente,varroa:varroa,hraniri:hraniri,rame:rame,calendar:calendar,regine:regine,genealogie:genealogie,cules:cules,rapoarte:rapoarte,date:date};
+  // ── 🚚 migrations · 🗃️ archive of closed hives ──
+  // (their pages keep their own rules; the data goes through the same store as everything else)
+  var byDate=function(f){return function(a,b){var x=a[f]||"",y=b[f]||"";return x<y?1:x>y?-1:0;};};
+  var pastorala=cuTabel({
+    get:function(id){return tb.pastorage.rand(id);},
+    // migrations a hive is in on a day (uses the page's own rules — pastorage.js)
+    aleStupului:function(id){return tb.pastorage.randuri().filter(function(p){return typeof pHives==="function"?pHives(p).indexOf(id)>=0:p.hiveId===id;}).sort(byDate("startDate"));},
+    activa:function(id){return typeof pTripOf==="function"?pTripOf(id):null;}   // the trip the hive is on now
+  },tb.pastorage);
+  var arhiva=cuTabel({get:function(id){return tb.hivesArchive.rand(id);}},tb.hivesArchive);
+  cuTabel(stupi,tb.hives);cuTabel(regine,tb.queens);cuTabel(inspectii,tb.inspections);cuTabel(tratamente,tb.treatments);cuTabel(varroa,tb.varroa);cuTabel(hraniri,tb.feedings);
+  cuTabel(cules,tb.extractions,["randuri","rand","numar"]);   // writes: cules.salveaza / cules.sterge
+
+  return{idx:idx,tabel:STORE.tabel,pastorala:pastorala,arhiva:arhiva,stupi:stupi,inspectii:inspectii,tratamente:tratamente,varroa:varroa,hraniri:hraniri,rame:rame,calendar:calendar,regine:regine,genealogie:genealogie,cules:cules,rapoarte:rapoarte,date:date};
 })();

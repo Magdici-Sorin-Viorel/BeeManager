@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════
 // DATA MODEL
 // ═══════════════════════════════════════════
-let D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],pastorage:[],finances:[],varroa:[],tasks:[],feedings:[],userLoc:null,weather:null,settings:{dark:true,lang:"ro",tempUnit:"C"}};
+let D={hives:[],queens:[],inspections:[],treatments:[],pastorage:[],varroa:[],feedings:[],userLoc:null,weather:null,settings:{dark:true,lang:"ro",tempUnit:"C"}};
 
 // Nectar plants: data in js/plants.js (MELIFERE), logic + API BM.flora in js/flora.js
 
@@ -31,15 +31,15 @@ function load(dbData){
   var s=localStorage.getItem("bmp5");
   if(s){try{var p=JSON.parse(s);D={...D,...p};}catch(e){}}
   if(dbData)D={...D,...dbData};
+  // only the tables the store knows are kept (old copies / backups may carry lists of modules that no longer exist)
+  if(typeof STORE==="object"){var known=STORE.tabele();Object.keys(D).forEach(function(k){if(Array.isArray(D[k])&&known.indexOf(k)<0)delete D[k];});}
   cleanTestData();   // first start of the production version: drop demo / test data left from testing
   if(!D.settings)D.settings={dark:true,lang:"ro",tempUnit:"C"};
   D.settings.lang="ro"; // app is Romanian-only (English option removed from Settings)
   D.settings.tempUnit="C"; // temperature always in Celsius (unit option removed from Settings)
   if(!D.settings.inspAlertThreshold)D.settings.inspAlertThreshold=INSP_ALERT_DEFAULT;
   if(!D.pastorage)D.pastorage=[];
-  if(!D.finances)D.finances=[];
   if(!D.varroa)D.varroa=[];
-  if(!D.tasks)D.tasks=[];
   if(!D.feedings)D.feedings=[];
   if(!D.extractions)D.extractions=[];
   if(!D.flora)D.flora=[];
@@ -57,7 +57,7 @@ function cleanTestData(){
   var demo=hs.length>0&&hs.every(function(h){return(h.id==="h1"&&h.loc==="Livada Est")||(h.id==="h2"&&h.loc==="Deal Vest");});
   if(testMode||demo){
     var keep=D.settings||{},loc=D.userLoc,w=D.weather;
-    D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],pastorage:[],finances:[],varroa:[],tasks:[],feedings:[],
+    D={hives:[],queens:[],inspections:[],treatments:[],pastorage:[],varroa:[],feedings:[],
       hivesArchive:[],bloomObs:[],extractions:[],flora:[],userLoc:loc||null,weather:w||null,settings:keep};
     try{Object.keys(localStorage).forEach(function(k){if(k.indexOf("bmp5_hive_")===0||k==="bmp5_beforeTest"||k==="bmp5_fakeNow")localStorage.removeItem(k);});}catch(e){}
   }
@@ -68,6 +68,7 @@ function cleanTestData(){
 
 function save(showToast){
   if(showToast===undefined)showToast=true;
+  if(typeof STORE==="object")STORE.anunta();   // fields of live rows may have changed → indexes / caches follow
   if(D.settings)D.settings.savedAt=Date.now();
   try{localStorage.setItem("bmp5",JSON.stringify(D));}catch(e){}   // mirror (backups, older versions)
   if(typeof dbSaveSoon==="function")dbSaveSoon();                  // the database (db.js)
@@ -78,8 +79,8 @@ function save(showToast){
 function saveHiveSnapshot(hiveId){
   var hive=BM.stupi.get(hiveId);
   if(!hive)return;
-  var snap={hive:hive,inspections:D.inspections.filter(function(i){return i.hiveId===hiveId;}),queens:D.queens?D.queens.filter(function(q){return q.hive===hiveId;}):[], honeyHarvests:D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;}),savedAt:new Date().toISOString()};
-  localStorage.setItem("bmp5_hive_"+hiveId,JSON.stringify(snap));
+  var snap={hive:hive,inspections:D.inspections.filter(function(i){return i.hiveId===hiveId;}),queens:D.queens?D.queens.filter(function(q){return q.hive===hiveId;}):[],savedAt:new Date().toISOString()};
+  try{localStorage.setItem("bmp5_hive_"+hiveId,JSON.stringify(snap));}catch(e){}   // storage full: the snapshot is skipped, the data itself is in the database
 }
 
 // themes: "dark" (default) · "light" · "trk" (console look, css/theme-trk.css). D.settings.dark is kept for older data.
@@ -127,10 +128,11 @@ window.saveManualWeather=function(){
   var hum=parseInt(($q("mwHum")||{}).value)||60;
   var wind=parseInt(($q("mwWind")||{}).value)||0;
   var rain=parseInt(($q("mwRain")||{}).value||"0")===1;
+  var days=D.weather&&D.weather.days;
   D.weather={temp:temp,hum:hum,wind:wind,rain:rain,ic:rain?"🌧️":"☀️",wc:0,prec:rain?1:0,ts:Date.now(),manual:true};
+  if(days)D.weather.days=days;   // the forecast stays
   save(false);
   closeM();
-  if(curP==="dashboard")renderDashboard();
   toast("🌡️ Vreme salvată manual");
 };
 function toast(m,ic){ic=ic||"🍯";var el=document.createElement("div");el.className="toast";el.innerHTML=ic+" "+m;document.body.appendChild(el);setTimeout(function(){el.remove();},2700);}
@@ -172,12 +174,8 @@ function isoLocal(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(
 function todayISO(){return isoLocal(new Date());}
 function doy(y,m,d){return Math.floor((new Date(y,m-1,d)-new Date(y,0,0))/86400000);}
 function cdoy(){var n=new Date();return doy(n.getFullYear(),n.getMonth()+1,n.getDate());}
-function getLatOffset(){
-  // Adjust bloom dates by latitude vs 45.5°N (Central Romania/Europe reference)
-  // ~4 days later per degree north, ~4 days earlier per degree south
-  if(!D.userLoc)return 0;
-  return Math.round((D.userLoc.lat-45.5)*4);
-}
+// days the bloom dates are shifted at the place in force (latitude + altitude) — see flCtx() in flora.js
+function getLatOffset(){return typeof flCtx==="function"?flCtx().off:(D.userLoc?Math.round((D.userLoc.lat-45.5)*4):0);}
 // main nectar flow blooming now (the one in its peak-nectar period takes priority) — see BM.flora (js/flora.js)
 function getFlow(){return BM.flora.culesCurent();}
 function sBadge(s){
@@ -240,11 +238,6 @@ function showTemp(c){
   return u==="F"?(toF(c)+"°F"):(c+"°C");
 }
 function showTempRange(lo,hi){return showTemp(lo)+"–"+showTemp(hi);}
-function tempGaugeLabels(){
-  return(D.settings.tempUnit||"C")==="F"
-    ?["32°F","50°F","68°F","86°F","104°F"]
-    :["0°","10°","20°","30°","40°C"];
-}
 function fmtTempInput(c){
   // For form inputs: value in display unit
   if(c===null||c===undefined||c==="")return"";
@@ -257,7 +250,6 @@ function parseTempInput(val){
   return(D.settings.tempUnit||"C")==="F"?toC(n):n;
 }
 function tempInputLabel(){return(D.settings.tempUnit||"C")==="F"?"🌡️ Temperature (°F)":"🌡️ Temperatură (°C)";}
-function setTempUnit(u){D.settings.tempUnit=u;save(false);render();}
 function mapWeatherLabel(){
   if(!D.weather||D.weather.wc===undefined)return"";
   var wc=D.weather.wc;var wo=t("wo");

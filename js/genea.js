@@ -7,7 +7,7 @@
 function genParentOf(h){
   if(!h)return{root:true,why:"start"};
   if(h.genRoot)return h.genRoot;   // trace of a deleted hive
-  var qs=(D.queens||[]).filter(function(q){return q.hive===h.id;});
+  var qs=BM.regine.randuri().filter(function(q){return q.hive===h.id;});
   for(var i=qs.length-1;i>=0;i--){
     var q=qs[i],k=qOrigIdx(q.orig);
     if(k===0||k===3)return{root:true,why:"bought",q:q};
@@ -19,8 +19,8 @@ function genParentOf(h){
   if(h.nuc&&h.nuc.found)return{root:true,why:"found"};
   return{root:true,why:"start"};
 }
-function qHiveQs(hid){return(D.queens||[]).filter(function(q){return q.hive===hid;});}
-function qFind(id){return id?(D.queens||[]).find(function(q){return q.id===id;}):null;}
+function qHiveQs(hid){return BM.regine.randuri().filter(function(q){return q.hive===hid;});}
+function qFind(id){return id?BM.regine.rand(id):null;}
 function qFrom(q){
   if(q.from)return q.from;
   var hs=qHiveQs(q.hive),i=hs.indexOf(q);
@@ -68,9 +68,9 @@ function qGen(q){var g=0,seen={},m;while(q&&!seen[q.id]&&(m=qMother(q))){seen[q.
 var _lcT=0;
 function ensureLineCodes(force){
   var n=Date.now();if(!force&&n-_lcT<1500)return;_lcT=n;
-  var roots=(D.queens||[]).filter(function(q){return !qMother(q);}).sort(function(a,b){return qFrom(a)<qFrom(b)?-1:1;});
+  var roots=BM.regine.randuri().filter(function(q){return !qMother(q);}).sort(function(a,b){return qFrom(a)<qFrom(b)?-1:1;});
   var max={},changed=false;
-  (D.queens||[]).forEach(function(q){var m=/^([A-Z]{3})-(\d+)$/.exec(q.lineCode||"");if(m)max[m[1]]=Math.max(max[m[1]]||0,parseInt(m[2]));});
+  BM.regine.randuri().forEach(function(q){var m=/^([A-Z]{3})-(\d+)$/.exec(q.lineCode||"");if(m)max[m[1]]=Math.max(max[m[1]]||0,parseInt(m[2]));});
   roots.forEach(function(q){var pre=raceCode(q.race);
     if(q.lineCode&&q.lineCode.indexOf(pre+"-")===0)return;
     max[pre]=(max[pre]||0)+1;q.lineCode=pre+"-"+("00"+max[pre]).slice(-3);changed=true;});
@@ -83,7 +83,7 @@ function qCodeTag(q){var c=qCode(q);return'<span class="qc-tag">'+esc(c.code)+' 
 // 🍯 honey 40% (peak capped frames in supers, vs. the best in the same year)
 // 😊 gentleness 20% (aggressiveness 1 → 100, 5 → 0) · 🐝 swarming 20% (0% inspections with cells → 100, ≥50% → 0)
 // ❄️ wintering 20% (frames with bees going into winter: ≤3 → 0, ≥9 → 100)
-// A missing component → weight spread over the others. Weights: SCORE_W in config.js.
+// A missing component → weight spread over the others. Weights: GEN_PRESETS below / the user's own (D.settings.genW).
 // 🎯 what matters to you: the weights of the score. Presets, or your own numbers (D.settings.genW).
 var GEN_PRESETS=[
   {id:"bal",l:"⚖️ Echilibrat",w:{honey:25,gentle:15,swarm:15,brood:15,winter:15,health:15}},
@@ -101,10 +101,10 @@ function genScoresAll(){
   var W=genW();
   var res={},best={},bestKg={},bestBr={},bestSpr={},worstV={};
   // 🌤️ first flow of each year = first extraction (Cules); without one, 10 May — spring build-up is judged until then
-  var flowAt={};(D.extractions||[]).forEach(function(e){var y=String(e.date||"").slice(0,4);if(y&&(!flowAt[y]||e.date<flowAt[y]))flowAt[y]=e.date;});
-  (D.queens||[]).forEach(function(q){
+  var flowAt={};BM.cules.randuri().forEach(function(e){var y=String(e.date||"").slice(0,4);if(y&&(!flowAt[y]||e.date<flowAt[y]))flowAt[y]=e.date;});
+  BM.regine.randuri().forEach(function(q){
     var f=qFrom(q),t2=qTo(q),h=genFind(q.hive),yrs={};
-    (D.inspections||[]).forEach(function(i){
+    BM.inspectii.randuri().forEach(function(i){
       if(i.hiveId!==q.hive||!i.date||i.date<f||(t2&&i.date>=t2))return;
       if(h&&h.nuc&&!h.promotedAt&&h.kind==="roi")return;
       var y=i.date.slice(0,4),Y=yrs[y]=yrs[y]||{n:0,ag:[],sw:0,cap:null,win:null,sup:0};
@@ -124,17 +124,17 @@ function genScoresAll(){
       if(i.winter&&i.winter.frames!=null)Y.win=parseInt(i.winter.frames);
     });
     // 🍯 real honey: kg extracted from this hive while this queen was in it (Cules page) — beats the capped-frames proxy
-    (D.extractions||[]).forEach(function(e){if(!e.date||e.date<f||(t2&&e.date>=t2))return;var y=e.date.slice(0,4);
+    BM.cules.randuri().forEach(function(e){if(!e.date||e.date<f||(t2&&e.date>=t2))return;var y=e.date.slice(0,4);
       BM.cules.impartire(e).stupi.forEach(function(r){if(r.hiveId!==q.hive)return;var Y=yrs[y]=yrs[y]||{n:0,ag:[],sw:0,cap:null,win:null,sup:0};Y.kg=+((Y.kg||0)+r.kg).toFixed(1);});});
     // 🕷️ varroa: the worst count of the year for this hive (sticky board / wash), while this queen was there
-    (D.varroa||[]).forEach(function(v){if(v.hiveId!==q.hive||!v.date||v.date<f||(t2&&v.date>=t2)||v.miteCount==null)return;var y=v.date.slice(0,4),Y=yrs[y]=yrs[y]||{n:0,ag:[],sw:0,cap:null,win:null,sup:0};Y.vmax=Math.max(Y.vmax||0,parseInt(v.miteCount)||0);});
+    BM.varroa.randuri().forEach(function(v){if(v.hiveId!==q.hive||!v.date||v.date<f||(t2&&v.date>=t2)||v.miteCount==null)return;var y=v.date.slice(0,4),Y=yrs[y]=yrs[y]||{n:0,ag:[],sw:0,cap:null,win:null,sup:0};Y.vmax=Math.max(Y.vmax||0,parseInt(v.miteCount)||0);});
     Object.keys(yrs).forEach(function(y){var Y=yrs[y];if(Y.cap)best[y]=Math.max(best[y]||0,Y.cap);if(Y.kg){bestKg[y]=Math.max(bestKg[y]||0,Y.kg);}
       if(Y.spr!=null)bestSpr[y]=Math.max(bestSpr[y]||0,Y.spr);if(Y.vmax!=null)worstV[y]=Math.max(worstV[y]||0,Y.vmax);
       if(Y.br&&Y.br.length){Y.brAvg=Y.br.reduce(function(a,b){return a+b;},0)/Y.br.length;bestBr[y]=Math.max(bestBr[y]||0,Y.brAvg);}});
     res[q.id]={yrs:yrs};
   });
   Object.keys(res).forEach(function(id){
-    var r=res[id],tot=[],comp={honey:[],gentle:[],swarm:[],brood:[],winter:[],health:[]},qq=(D.queens||[]).find(function(x){return x.id===id;}),f=qq?qFrom(qq):"";
+    var r=res[id],tot=[],comp={honey:[],gentle:[],swarm:[],brood:[],winter:[],health:[]},qq=BM.regine.rand(id),f=qq?qFrom(qq):"";
     Object.keys(r.yrs).sort().forEach(function(y){
       var Y=r.yrs[y],c={};
       // 🍯 honey: real kg extracted (Cules) vs the best hive of that year. In a year with extractions, a hive with none
@@ -170,7 +170,7 @@ function qScoreOf(q){var s=q?genScoresCached()[q.id]:null;return s&&s.score!=nul
 function genModel(){
   ensureLineCodes(true);
   var S=genScoresAll(),nodes=[],byId={},kids={};
-  (D.queens||[]).forEach(function(q){var h=genFind(q.hive);if(!h)return;var n={id:q.id,q:q,h:h};nodes.push(n);byId[n.id]=n;});
+  BM.regine.randuri().forEach(function(q){var h=genFind(q.hive);if(!h)return;var n={id:q.id,q:q,h:h};nodes.push(n);byId[n.id]=n;});
   genAll().forEach(function(h){
     if(!h.nuc||h.nuc.found||qHiveQs(h.id).length)return;
     var m=qFind(h.nuc.motherQ)||(h.genParent?qAt(h.genParent,h.nuc.start||nucToday()):null);

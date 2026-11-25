@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════
 // CALENDAR — weather & location aware
 // ═══════════════════════════════════════════
-var _calView="pri";   // year calendar: "main" | "pri" | "all"
+var _calView="pri";   // year calendar: "main" | "pri" | "all" (= the whole „flora mea” of the place)
 function renderCalendar(){
   var isEN=D.settings.lang==="en";
   var now=new Date(),yr=now.getFullYear(),cd=cdoy(),w=D.weather,off=getLatOffset();
@@ -28,11 +28,13 @@ function renderCalendar(){
   var dStr=function(dn){var d=new Date(yr,0,dn);return d.getDate()+"."+String(d.getMonth()+1).padStart(2,"0");};
   var dots=function(v,ic){var o="";for(var i=0;i<3;i++)o+='<i class="'+(i<v?"on":"")+'">'+ic+'</i>';return'<span class="cl-dots">'+o+'</span>';};
   // deviation from the calendar (from your observations) + „👀 am văzut-o” button
-  var adjB=function(st){if(!st.adj)return"";return' <span class="bg '+(st.adj<0?"gg":"gb")+' cl-adj" title="'+L2("ajustat după observațiile tale","adjusted from your observations")+'">'+(st.own?"👀 ":"↻ ")+(st.adj>0?"+":"")+st.adj+' '+L2("zile","days")+'</span>';};
+  var adjB=function(st){if(!st.adj)return"";return' <span class="bg '+(st.adj<0?"gg":"gb")+' cl-adj" title="'+(st.wx&&!st.own?"ajustat după temperaturile de anul acesta și observațiile tale":L2("ajustat după observațiile tale","adjusted from your observations"))+'">'+(st.own?"👀 ":st.wx&&Math.abs(st.wx)>=Math.abs(st.adj)-1?"🌡️ ":"↻ ")+(st.adj>0?"+":"")+st.adj+' '+L2("zile","days")+'</span>';};
   var seeB=function(p){return'<button class="cl-see" onclick="bloomObsM(\''+p.id+'\')" title="'+L2("Am văzut-o înflorită","I saw it in bloom")+'">👀</button>';};
   var phLbl=function(st){return{start:"🌱 "+L2("început de înflorire","bloom starting"),peak:"💯 "+L2("nectar maxim","peak nectar"),end:"🍂 "+L2("spre final","ending"),before:"⏳ "+L2("urmează","coming"),after:"✔ "+L2("trecut","over")}[st.phase];};
   var dy0=doy(yr,12,31);
-  var all=BM.flora.toate().map(function(p){return{p:p,st:plState(p,yr,cd,off)};});
+  // only „flora mea” of the place in force (home or a migration site); the full list is under 🌍 Toate plantele
+  var ctx=BM.flora.context(),all=BM.flora.aleMele(ctx).map(function(p){return{p:p,st:plState(p,yr,cd,off)};});
+  if(ctx.lat!=null)BM.flora.vreme.actualizeaza(ctx,function(){if(curP==="calendar"&&!document.getElementById("MB"))renderCalendar();});
   // bloom bar: full period + nectar peak + today
   var bar=function(st){var span=st.e-st.s||1,pct=function(x){return Math.max(0,Math.min(100,(x-st.s)/span*100));};
     return'<div class="cl-bar"><i class="pk" style="left:'+pct(st.ps)+'%;width:'+(pct(st.pe)-pct(st.ps))+'%"></i>'+(st.inBloom?'<b style="left:'+pct(cd)+'%"></b>':'')+'</div>'
@@ -56,23 +58,23 @@ function renderCalendar(){
   var dy=doy(yr,12,31),P=function(dn){return Math.max(0,Math.min(100,dn/dy*100));};
   var months=L2("I F M A M I I A S O N D","J F M A M J J A S O N D").split(" ");
   var yearCard='<div class="c"><div class="ct">📅 '+L2("Calendarul anului","Year calendar")+'</div>'
-    +'<div class="tv-tabs gen-sort" style="margin-top:8px;">'+[["main",L2("Principale","Main")],["pri",L2("+ prioritare","+ priority")],["all",L2("Toate","All")+" ("+all.length+")"]].map(function(x){return'<button class="tv-tab'+(_calView===x[0]?" on":"")+'" onclick="_calView=\''+x[0]+'\';renderCalendar()">'+x[1]+'</button>';}).join("")+'</div>'
+    +'<div class="tv-tabs gen-sort" style="margin-top:8px;">'+[["main",L2("Principale","Main")],["pri",L2("Prioritare","Priority")],["all",L2("Toate","All")+" ("+all.length+")"]].map(function(x){return'<button class="tv-tab'+(_calView===x[0]?" on":"")+'" onclick="_calView=\''+x[0]+'\';renderCalendar()">'+x[1]+'</button>';}).join("")+'</div>'
     +'<div class="cl-y"><div class="cl-yh"><span></span><div class="cl-ym">'+months.map(function(mm){return'<i>'+mm+'</i>';}).join("")+'</div></div>'
     +view.map(function(x){var st=x.st;
       return'<div class="cl-yr'+(x.p.cat==="main"?" mn":"")+(st.inBloom?" now":"")+'" onclick="calPlM(\''+x.p.id+'\')" style="cursor:pointer"><span class="cl-yn">'+x.p.ic+' '+esc(plantN(x.p))+'</span>'
         +'<div class="cl-yb"><i class="bl" style="left:'+P(st.s)+'%;width:'+(P(st.e)-P(st.s))+'%"></i><i class="pk" style="left:'+P(st.ps)+'%;width:'+(P(st.pe)-P(st.ps))+'%"></i><b style="left:'+P(cd)+'%"></b></div></div>';}).join("")
-    +'</div><div class="hv-ts" style="margin-top:6px;">▬ '+L2("înflorire","bloom")+' · <span style="color:var(--gold)">▬</span> '+L2("nectar maxim","peak nectar")+' · <span style="color:var(--danger)">│</span> '+L2("azi","today")+'</div></div>';
+    +'</div><button class="btn gh fl-allb" onclick="flManM()">🌍 Toate plantele din România ('+BM.flora.catalog().length+') · adaugă / schimbă</button>'
+    +'<div class="hv-ts" style="margin-top:6px;">▬ '+L2("înflorire","bloom")+' · <span style="color:var(--gold)">▬</span> '+L2("nectar maxim","peak nectar")+' · <span style="color:var(--danger)">│</span> '+L2("azi","today")+'</div></div>';
 
-  var locNote='<div class="cl-loc">📍 '+(D.userLoc?D.userLoc.lat.toFixed(2)+'°N, '+D.userLoc.lon.toFixed(2)+'°E · '+(off?L2("datele sunt mutate cu","dates shifted by")+' '+(off>0?"+":"")+off+' '+t("hv_days")+' '+L2("față de câmpia de referință","vs. the reference plain"):L2("fără decalaj față de referință (câmpie, 45,5°N)","no shift vs. the reference (plain, 45.5°N)")):L2("Locația nu e cunoscută — datele sunt pentru câmpie, 45,5°N. Pornește locația din Setări.","Location unknown — dates are for a plain at 45.5°N. Enable location in Settings."))
-    +' · '+L2("La deal / munte înfloritul vine mai târziu (~3–4 zile / 100 m).","Hills / mountains bloom later (~3–4 days / 100 m).")+'</div>';
+  var locNote=flLocNoteHTML();
 
   var A=plAdjModel(yr),curObs=A.cur.slice().sort(function(a,b){return a.o.date<b.o.date?1:-1;});
-  var tot=A.avgCur!=null?A.avgCur+A.B:null;
+  var tot=A.avgRaw!=null?A.avgRaw:null;
   // ═══ Board layout: ring for the main flow, swipeable cards, field chips, year bars ═══
   var head='<div class="hv-top"><h2><i class="fas fa-calendar-days" style="color:var(--gold)"></i> '+t("cal_title")+'</h2>'
     +'<button class="btn" onclick="bloomObsM()">👀 '+L2("Am văzut înflorit","I saw it bloom")+'</button></div>';
   // observation chip + observations grouped by plant
-  var obChip=function(c){var dv=c.dev+A.B;
+  var obChip=function(c){var dv=c.raw;
     return'<span class="cl-ob">'+c.p.ic+' <b>'+esc(plantN(c.p))+'</b> '+(c.o.phase==="peak"?"💯":"🌱")+' '+c.o.date.slice(8,10)+'.'+c.o.date.slice(5,7)
       +' <span class="'+(dv<0?"ok":dv>0?"lt":"")+'">'+(dv===0?L2("la timp","on time"):(dv>0?"+":"")+dv+L2("z","d"))+'</span><button onclick="event.stopPropagation();bloomObsDel(\''+c.o.id+'\')" aria-label="✕">✕</button></span>';};
   var obsBy={};curObs.forEach(function(c){(obsBy[c.p.id]=obsBy[c.p.id]||[]).push(c);});
@@ -102,7 +104,8 @@ function renderCalendar(){
     var nowC=curM.slice(1).concat(sec),upC=(nextY?[]:nextM.slice(curM.length?0:1)).concat(soon);
     upC=upC.filter(function(x,i){return upC.indexOf(x)===i;}).sort(function(a,b){return a.st.until-b.st.until;});
     var rail=function(ttl,l,ny){return l.length?'<div class="bd-sh">'+ttl+' <span class="hv-ts">'+l.length+'</span></div><div class="bd-rail">'+l.map(function(x){return card(x,ny);}).join("")+'</div>':'';};
-    vbody='<div class="bd-hero">'+ring+'<div class="bd-hb">'+hm+'</div></div>'
+    vbody=flCtxChipsHTML()+'<div class="bd-hero">'+ring+'<div class="bd-hb">'+hm+'</div></div>'
+      +flDiffHTML()
       +rail("🌸 "+L2("Tot în floare acum","Also in bloom now"),nowC)
       +rail("⏭️ "+L2("Urmează","Coming up"),upC)
       +(nextY?rail("📆 "+L2("Sezonul","Season")+" "+(yr+1),nextM,true):'')
@@ -131,6 +134,8 @@ window.calPlM=function(id){
     +'<div class="hv-ts" style="margin-top:8px;">📍 '+esc(p.z)+'</div>'
     +(p.dc?'<div style="margin-top:6px;font-size:.85rem;">'+esc(p.dc)+'</div>':'')
     +(obs.length?'<div class="cl-obs-l">'+obs.map(function(c){return'<span class="cl-ob">'+(c.o.phase==="peak"?"💯":"🌱")+' '+c.o.date.slice(8,10)+'.'+c.o.date.slice(5,7)+'</span>';}).join("")+'</div>':'')
+    +'<div class="fl-pm"><button class="gen-chip'+(BM.flora.eAMea(p.id)?" on":"")+'" onclick="BM.flora.seteazaAMea(\''+p.id+'\',!BM.flora.eAMea(\''+p.id+'\'));closeM();render();">'+(BM.flora.eAMea(p.id)?"★ În flora mea":"☆ Pune în flora mea")+'</button>'
+    +'<button class="gen-chip" onclick="flEditM(\''+p.id+'\')">✏️ Schimbă datele</button></div>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="closeM();bloomObsM(\''+p.id+'\')">👀 '+L2("Am văzut-o înflorită","I saw it in bloom")+'</button><button class="btn gh" onclick="closeM()">'+L2("Închide","Close")+'</button></div>');
 };
 
@@ -151,7 +156,7 @@ window.bloomObsM=function(pid){
     +'<label><input type="radio" name="boF" value="peak" onchange="bloomObsPrev()"> 💯 '+L2("E în plină floare","In full bloom")+'</label></div>'
     +L(L2("📅 Când","📅 When"))+'<input type="date" id="boD" value="'+todayISO()+'" onchange="bloomObsPrev()">'
     +'<div id="boPrev" class="fd-box" style="margin-top:10px;"></div>'
-    +'<div class="hv-ts">📍 '+(D.userLoc?L2("Se salvează pentru zona ta","Saved for your area")+' ('+D.userLoc.lat.toFixed(2)+'°N, '+D.userLoc.lon.toFixed(2)+'°E · '+BLOOM_RADIUS_KM+' km)':L2("Locația nu e cunoscută — se aplică oriunde.","Location unknown — applies everywhere."))+'</div>'
+    +'<div class="hv-ts">📍 '+(function(){var c=BM.flora.context();return c.tip==="trip"?"Se salvează pentru vatra "+esc(c.nume):c.lat!=null?"Se salvează pentru zona ta ("+c.lat.toFixed(2)+"°N, "+c.lon.toFixed(2)+"°E · "+BLOOM_RADIUS_KM+" km)":"Locația nu e cunoscută — se aplică oriunde.";})()+'</div>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="bloomObsSave()">👀 '+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
   bloomObsPrev();
 };

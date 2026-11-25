@@ -26,7 +26,7 @@ function trStatus(tr){
 }
 
 function tvTabsHTML(){
-  var nDone=(D.treatments||[]).filter(function(x){return trStatus(x)==="done";}).length;
+  var nDone=BM.tratamente.randuri().filter(function(x){return trStatus(x)==="done";}).length;
   var tabs=[["treat","💊 "+L2("În curs & planificate","Active & planned")],["archive","✅ "+L2("Încheiate · eficiență","Finished · efficacy")+(nDone?' <span class="bg gy">'+nDone+'</span>':'')]];
   return'<div class="tv-tabs">'+tabs.map(function(x){
     return'<button class="tv-tab'+(_trTab===x[0]?" on":"")+'" onclick="tvTab(\''+x[0]+'\')">'+x[1]+'</button>';
@@ -44,7 +44,7 @@ function renderTreatments(){
 
 // ── „Tratamente” tab ──────────────────────────────────────────────
 function tvTreatListHTML(){
-  var trs=(D.treatments||[]).slice();
+  var trs=BM.tratamente.randuri().slice();
   if(!trs.length)return'<div class="al ali">'+t("tr_no")+'</div>';
   var act=trs.filter(function(x){return trStatus(x)==="active";}).sort(function(a,b){return trEnd(a)<trEnd(b)?-1:1;});
   var pl=trs.filter(function(x){return trStatus(x)==="planned";}).sort(function(a,b){return a.date<b.date?-1:1;});
@@ -65,7 +65,7 @@ function tvCardHTML(tr){
     :st==="planned"?'<span class="bg gy">🗓️ '+L2("din","from")+' '+tr.date+'</span>'
     :'<span class="bg gg">✅ '+L2("încheiat","finished")+'</span>';
   var prog=st==="active"&&tr.endDate?'<div class="tv-prog"><i style="width:'+Math.min(100,Math.round(day/total*100))+'%"></i></div>':'';
-  var postInsp=(D.inspections||[]).filter(function(i){return i.postTrId===tr.id;});
+  var postInsp=BM.inspectii.randuri().filter(function(i){return i.postTrId===tr.id;});
   var lastEff=postInsp.length?(postInsp.slice().sort(function(a,b){return a.date<b.date?1:-1;})[0].postTrEff||""):"";
   var rows="";
   if(isV){
@@ -132,7 +132,7 @@ window.tvToggle=function(key){
 
 // ── „Eficiență & arhivă” tab ──────────────────────────────────────
 function tvArchiveHTML(){
-  var all=(D.treatments||[]).filter(function(tr){return trStatus(tr)==="done";})
+  var all=BM.tratamente.randuri().filter(function(tr){return trStatus(tr)==="done";})
     .sort(function(a,b){return trEnd(a)<trEnd(b)?1:-1;});
   var done=all.filter(trIsVarroa);
   var info='<div class="al ali tv-info">ℹ️ '+L2("<b>Căzuți</b> = acarieni căzuți pe placă în timpul tratamentului. <b>Reducere</b> = cât a scăzut infestarea între numărătoarea dinainte și cea de după tratament (aceeași metodă). Valorile sunt estimative.","<b>Fallen</b> = mites fallen on the board during the treatment. <b>Reduction</b> = how much the infestation dropped between the before- and after-count (same method). Values are estimates.")+'</div>';
@@ -186,7 +186,7 @@ function tvArchiveHTML(){
 
 // ── Finishing a treatment from the Tratamente page ──
 window.trFinishM=function(id){
-  var tr=(D.treatments||[]).find(function(x){return x.id===id;});if(!tr)return;
+  var tr=BM.tratamente.rand(id);if(!tr)return;
   var td=vrToday();
   if(tr.hiveId){
     showConfirm(L2("Închei azi tratamentul","Finish this treatment today")+' „'+esc(trShort(tr))+'”?',function(){tr.done=td;save(false);render();toast(L2("Tratament încheiat","Treatment finished"),"✅");},null,"✅ "+L2("Da, încheie","Yes, finish"));
@@ -202,7 +202,7 @@ window.trFinishM=function(id){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="trFinishSave(\''+id+'\')">✅ '+L2("Încheie azi","Finish today")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 };
 window.trFinishSave=function(id){
-  var tr=(D.treatments||[]).find(function(x){return x.id===id;});if(!tr)return;
+  var tr=BM.tratamente.rand(id);if(!tr)return;
   var td=vrToday(),sc=(document.querySelector("input[name='trFinSc']:checked")||{}).value;
   if(sc==="one"){var hid=($q("trFinHv")||{}).value;if(!hid)return;tr.doneHives=tr.doneHives||{};tr.doneHives[hid]=td;}
   else tr.done=td;
@@ -219,10 +219,10 @@ function inspTrSecHTML(hid,ex){
   var date=ex?ex.date:vrToday();
   var fins=(ex&&ex.trFinished)||[];
   var finIds=fins.map(function(f){return f.id;});
-  var list=(D.treatments||[]).filter(function(tr){return trAppliesTo(tr,hid)&&(trIsActive(tr,hid,date)||finIds.indexOf(tr.id)>=0);})
+  var list=BM.tratamente.randuri().filter(function(tr){return trAppliesTo(tr,hid)&&(trIsActive(tr,hid,date)||finIds.indexOf(tr.id)>=0);})
     .sort(function(a,b){return(trIsVarroa(b)?1:0)-(trIsVarroa(a)?1:0);});
   // the treatment the inspection's varroa count is attached to
-  var linked=ex&&ex.id?(D.varroa||[]).find(function(v){return v.inspectionId===ex.id;}):null;
+  var linked=ex&&ex.id?BM.varroa.randuri().find(function(v){return v.inspectionId===ex.id;}):null;
   var vrTrId=(linked&&linked.treatmentId)||((trActiveFor(hid,date)||{}).id)||null;
   var html='<div class="dv"><div class="stt">💊 '+L2("Tratament","Treatment")+'</div></div>';
   var vrShown=false;
@@ -245,7 +245,7 @@ function inspTrSecHTML(hid,ex){
   if(!list.length)html+='<div class="hv-ts" style="margin-bottom:6px;">'+L2("Niciun tratament în curs la acest stup.","No active treatment for this hive.")+'</div>';
   // count linked to a treatment no longer in the list (old inspection being edited)
   if(!vrShown&&linked)html+='<div id="iVrSec">'+inspVarroaSecHTML(hid,ex,date,null,true)+'</div>';
-  var pl=ex&&ex.trPlannedId?(D.treatments||[]).find(function(x){return x.id===ex.trPlannedId;}):null;
+  var pl=ex&&ex.trPlannedId?BM.tratamente.rand(ex.trPlannedId):null;
   var prods=(t("tr_products")||[]).slice();if(pl&&pl.product&&prods.indexOf(pl.product)<0)prods.unshift(pl.product);
   html+='<div class="ck"><input type="checkbox" id="iTrPl"'+(pl?" checked":"")+' onchange="document.getElementById(\'iTrPlW\').style.display=this.checked?\'block\':\'none\'"><label for="iTrPl">🗓️ '+L2("Planifică un tratament","Plan a treatment")+'</label></div>'
     +'<div id="iTrPlW" class="dev-box" style="display:'+(pl?"block":"none")+';background:rgba(230,180,34,.06);border-color:rgba(230,180,34,.25);">'
@@ -290,7 +290,7 @@ function inspTrSave(o,prev){
   var prevF=(prev&&prev.trFinished)||[];
   o.trFinished=[];
   [].forEach.call(document.querySelectorAll(".iTrFin"),function(cb){
-    var tr=(D.treatments||[]).find(function(x){return x.id===cb.dataset.tr;});if(!tr)return;
+    var tr=BM.tratamente.rand(cb.dataset.tr);if(!tr)return;
     var was=prevF.find(function(f){return f.id===tr.id;});
     if(was){ // undo last time's finish (redone below if still ticked)
       if(was.all&&tr.done===was.date)delete tr.done;
@@ -302,7 +302,7 @@ function inspTrSave(o,prev){
     o.trFinished.push({id:tr.id,all:all,date:o.date});
   });
   var plOn=$q("iTrPl")&&$q("iTrPl").checked;
-  var prevPl=prev&&prev.trPlannedId?(D.treatments||[]).find(function(x){return x.id===prev.trPlannedId;}):null;
+  var prevPl=prev&&prev.trPlannedId?BM.tratamente.rand(prev.trPlannedId):null;
   if(plOn){
     var prod=($q("iTrPlP")||{}).value||"",start=($q("iTrPlD")||{}).value||devAdd(o.date,7),end=($q("iTrPlE")||{}).value||"";
     if(end&&end<start)end="";
@@ -310,11 +310,11 @@ function inspTrSave(o,prev){
     var tg=($q("iTrPlTg")||{}).value||"varroa",dz=(($q("iTrPlN")||{}).value||"").trim();
     var data={product:prod,hiveId:all2?null:o.hiveId,date:start,endDate:end,target:tg,disease:dz};
     if(prevPl)Object.assign(prevPl,data);
-    else{prevPl=Object.assign({id:uid(),dosage:"",notes:L2("Planificat din inspecția din","Planned from the inspection of")+" "+o.date+(dz?" · "+dz:""),fromInspection:o.id},data);D.treatments.push(prevPl);}
+    else{prevPl=Object.assign({id:uid(),dosage:"",notes:L2("Planificat din inspecția din","Planned from the inspection of")+" "+o.date+(dz?" · "+dz:""),fromInspection:o.id},data);BM.tratamente.adauga(prevPl);}
     o.trPlannedId=prevPl.id;
   }else{
     // unticked on edit: delete planning created from this inspection, if not started yet
-    if(prevPl&&prevPl.fromInspection===o.id&&prevPl.date>vrToday())D.treatments=D.treatments.filter(function(x){return x!==prevPl;});
+    if(prevPl&&prevPl.fromInspection===o.id&&prevPl.date>vrToday())BM.tratamente.pastreaza(function(x){return x!==prevPl;});
     o.trPlannedId=null;
   }
 }
@@ -324,8 +324,8 @@ function inspTrSave(o,prev){
 // ═══════════════════════════════════════════
 function inspVarroaSecHTML(hid,ex,dateOverride,keep,compact){
   var date=dateOverride||(ex?ex.date:vrToday());
-  var linked=ex?(D.varroa||[]).find(function(v){return v.inspectionId===ex.id;}):null;
-  var tr=trActiveFor(hid,date)||(linked&&linked.treatmentId?(D.treatments||[]).find(function(x){return x.id===linked.treatmentId;}):null);
+  var linked=ex?BM.varroa.randuri().find(function(v){return v.inspectionId===ex.id;}):null;
+  var tr=trActiveFor(hid,date)||(linked&&linked.treatmentId?BM.tratamente.rand(linked.treatmentId):null);
   if(!tr)return"";
   keep=keep||{};
   // method: the one used at this treatment's last count (remembered between inspections)
@@ -358,30 +358,20 @@ window.inspVrMeth=function(m){
   var a=document.getElementById("iVrDaysW"),b=document.getElementById("iVrBeesW");
   if(a)a.style.display=w?"none":"block";if(b)b.style.display=w?"block":"none";
 };
-// Inspection date changed → section shows / hides based on the treatment ongoing on that date
-window.inspVrRefresh=function(){
-  var box=document.getElementById("iVrSec");if(!box)return;
-  var hid=($q("iHive")||{}).value,date=($q("iDt")||{}).value||vrToday();
-  var mb=document.getElementById("MB"),exId=mb?mb.dataset.inspId:"";
-  var ex=exId?BM.inspectii.get(exId):null;
-  var keep={};
-  if($q("iVrMites")){keep={meth:$q("iVrMeth").value,days:$q("iVrDays").value,mites:$q("iVrMites").value,bees:$q("iVrBees").value,re:$q("iVrRe").checked};}
-  box.innerHTML=inspVarroaSecHTML(hid,ex,date,keep,true);
-};
 // On inspection save: create / update / delete the count linked to it
 function inspVarroaSave(insp){
   var el=$q("iVrMites");
-  var linked=(D.varroa||[]).find(function(v){return v.inspectionId===insp.id;});
+  var linked=BM.varroa.randuri().find(function(v){return v.inspectionId===insp.id;});
   if(!el){   // no count field (no treatment ongoing) — a count said in the voice inspection is still kept (sticky board, 1 day)
     var vv=$q("iVoiceVar"),vn=vv&&vv.value!==""?Math.max(0,parseInt(vv.value)||0):null;
     if(vn==null)return;
-    var tr0=insp.trPlannedId?(D.treatments||[]).find(function(x){return x.id===insp.trPlannedId&&trIsVarroa(x)&&x.date<=insp.date;}):null;
+    var tr0=insp.trPlannedId?BM.tratamente.randuri().find(function(x){return x.id===insp.trPlannedId&&trIsVarroa(x)&&x.date<=insp.date;}):null;
     var o0={hiveId:insp.hiveId,date:insp.date,method:"sticky",miteCount:vn,beeCount:null,hours:24,infestationPct:null,hasBrood:true,treatmentId:tr0?tr0.id:null,reapplied:false,inspectionId:insp.id};
-    if(!D.varroa)D.varroa=[];
-    if(linked)Object.assign(linked,o0);else D.varroa.push(Object.assign({id:uid(),notes:L2("Din inspecția vocală","From the voice inspection")},o0));
+    
+    if(linked)BM.varroa.modifica(linked,o0);else BM.varroa.adauga(Object.assign({id:uid(),notes:L2("Din inspecția vocală","From the voice inspection")},o0));
     return;}
   var raw=(el.value||"").trim();
-  if(raw===""){if(linked)D.varroa=D.varroa.filter(function(v){return v!==linked;});return;}
+  if(raw===""){if(linked)BM.varroa.pastreaza(function(v){return v!==linked;});return;}
   var meth=($q("iVrMeth")||{}).value||"sticky",isWash=meth==="alcohol"||meth==="sugar";
   var mites=Math.max(0,parseInt(raw)||0),bees=parseInt(($q("iVrBees")||{}).value)||300;
   var days=Math.max(1,parseInt(($q("iVrDays")||{}).value)||1);
@@ -389,6 +379,6 @@ function inspVarroaSave(insp){
   var o={hiveId:insp.hiveId,date:insp.date,method:meth,miteCount:mites,
     beeCount:isWash?bees:null,hours:isWash?null:days*24,infestationPct:isWash?parseFloat(((mites/bees)*100).toFixed(2)):null,
     hasBrood:true,treatmentId:trId,reapplied:!!($q("iVrRe")||{}).checked,inspectionId:insp.id};
-  if(!D.varroa)D.varroa=[];
-  if(linked)Object.assign(linked,o);else D.varroa.push(Object.assign({id:uid(),notes:""},o));
+  
+  if(linked)BM.varroa.modifica(linked,o);else BM.varroa.adauga(Object.assign({id:uid(),notes:""},o));
 }

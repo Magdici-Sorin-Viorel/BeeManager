@@ -1,7 +1,7 @@
 // BeeManager Pro — varroa.js
 // Varroa: counts, link to treatments, efficacy
 //
-// A count (D.varroa) can be linked to a treatment (treatmentId).
+// A count (BM.varroa.randuri()) can be linked to a treatment (treatmentId).
 // The phase is computed from dates, so it updates if you change the treatment period:
 //   "before"  – before the treatment starts (baseline)
 //   "during"  – during treatment (mites dropped = treatment effect)
@@ -13,21 +13,6 @@
 // ═══════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════
-function vrLevel(v){
-  if(!v)return"ok";
-  var m=v.method||"natural";
-  if(m==="natural"||m==="sticky"){
-    var rate=(v.miteCount||0)/((v.hours||24)/24);   // mites / 24h
-    if(rate<3)return"ok";
-    if(rate<10)return"watch";
-    return"treat";
-  }else{
-    var pct=v.infestationPct||0;
-    if(pct<1)return"ok";
-    if(pct<2)return"watch";
-    return"treat";
-  }
-}
 function vrTint(col,a){
   var rgb=col.indexOf("--ok")>=0?"111,191,76":col.indexOf("--gold")>=0?"230,180,34":col.indexOf("--info")>=0?"74,158,255":"224,124,76";
   return"rgba("+rgb+","+a+")";
@@ -54,17 +39,17 @@ function trEnd(tr,hiveId){var e=tr.endDate||tr.date,f=trFinFor(tr,hiveId);if(f&&
 function trIsActive(tr,hiveId,date){var f=trFinFor(tr,hiveId);return !!tr.date&&tr.date<=date&&trEnd(tr,hiveId)>=date&&!(f&&f<=date);}
 function trShort(tr){return((tr&&tr.product)||"").replace(/^[^A-Za-zÀ-ž0-9]+/,"").trim();}
 function trAppliesTo(tr,hiveId){return !tr.hiveId||tr.hiveId===hiveId;}
-function trHives(tr){return tr.hiveId?D.hives.filter(function(h){return h.id===tr.hiveId;}):D.hives.slice();}
+function trHives(tr){return tr.hiveId?BM.stupi.randuri().filter(function(h){return h.id===tr.hiveId;}):BM.stupi.randuri().slice();}
 // Varroa treatment ongoing on a date (default today)
 function trActiveFor(hiveId,date){
   date=date||vrToday();
-  return(D.treatments||[]).filter(function(tr){return trIsVarroa(tr)&&trAppliesTo(tr,hiveId)&&trIsActive(tr,hiveId,date);})
+  return BM.tratamente.randuri().filter(function(tr){return trIsVarroa(tr)&&trAppliesTo(tr,hiveId)&&trIsActive(tr,hiveId,date);})
     .sort(function(a,b){return a.date<b.date?1:-1;})[0]||null;
 }
 // Matching treatment for a count: ongoing, else the nearest (30 days before / 45 after)
 function trAutoFor(hiveId,date){
   var a=trActiveFor(hiveId,date);if(a)return a;
-  var c=(D.treatments||[]).filter(function(tr){
+  var c=BM.tratamente.randuri().filter(function(tr){
     if(!(trIsVarroa(tr)&&tr.date&&trAppliesTo(tr,hiveId)))return false;
     var toStart=vrDayDiff(date,tr.date);      // > 0: treatment starts after the count (→ „înainte”)
     var sinceEnd=vrDayDiff(trEnd(tr,hiveId),date);   // > 0: count is after finishing (→ „după / control”)
@@ -79,7 +64,7 @@ function trAutoFor(hiveId,date){
 }
 function vrPhase(v){
   if(!v||!v.treatmentId)return"monitor";
-  var tr=(D.treatments||[]).find(function(x){return x.id===v.treatmentId;});
+  var tr=BM.tratamente.rand(v.treatmentId);
   if(!tr)return"monitor";
   if(v.date<tr.date)return"before";
   if(v.date<=trEnd(tr,v.hiveId))return"during";
@@ -91,7 +76,7 @@ function vrPhaseLbl(ph){
 function vrPhaseIcon(ph){return{before:"⏮️",during:"💊",after:"✅",monitor:"🔎"}[ph]||"";}
 // A treatment's counts on a hive (ascending by date)
 function vrCountsFor(trId,hiveId,phase){
-  return(D.varroa||[]).filter(function(v){return v.treatmentId===trId&&v.hiveId===hiveId&&(!phase||vrPhase(v)===phase);})
+  return BM.varroa.randuri().filter(function(v){return v.treatmentId===trId&&v.hiveId===hiveId&&(!phase||vrPhase(v)===phase);})
     .sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
 }
 // Treatment × hive statistics
@@ -121,9 +106,9 @@ function trStats(tr,hiveId){
 // Suggested drop days: from this treatment's previous count, else from its start
 function vrDefaultDays(hiveId,trId,date,exceptId){
   if(!trId)return 1;
-  var tr=(D.treatments||[]).find(function(x){return x.id===trId;});
+  var tr=BM.tratamente.rand(trId);
   // previous count during the treatment (those before the start don't count)
-  var prev=(D.varroa||[]).filter(function(v){return v.treatmentId===trId&&v.hiveId===hiveId&&v.id!==exceptId&&v.date<date&&(!tr||v.date>=tr.date);})
+  var prev=BM.varroa.randuri().filter(function(v){return v.treatmentId===trId&&v.hiveId===hiveId&&v.id!==exceptId&&v.date<date&&(!tr||v.date>=tr.date);})
     .sort(function(a,b){return a.date<b.date?1:-1;})[0];
   var from=prev?prev.date:(tr&&tr.date<date?tr.date:null);
   var d=from?vrDayDiff(from,date):1;
@@ -140,17 +125,9 @@ function vrValStr(v){
 // ═══════════════════════════════════════════
 var _vrHiveFilter="all";
 
-// The Varroa page is now a tab in „Tratamente”
-function renderVarroa(){_trTab="counts";renderTreatments();}
 
 
 
-window.delVr=function(id){
-  showConfirm(t("vr_del_c"),function(){
-    D.varroa=D.varroa.filter(function(v){return v.id!==id;});
-    save();render();
-  });
-};
 
 // ═══════════════════════════════════════════
 // COUNT FORM
@@ -158,7 +135,7 @@ window.delVr=function(id){
 // vrM(id)                          – edit
 // vrM("",{hiveId,treatmentId})      – new count for a hive / treatment
 function vrTrOptions(hiveId,date,selId){
-  var list=(D.treatments||[]).filter(function(tr){return trIsVarroa(tr)&&tr.date&&trAppliesTo(tr,hiveId)
+  var list=BM.tratamente.randuri().filter(function(tr){return trIsVarroa(tr)&&tr.date&&trAppliesTo(tr,hiveId)
       &&(tr.id===selId||(vrDayDiff(date,tr.date)<=30&&vrDayDiff(trEnd(tr,hiveId),date)<=60));})
     .sort(function(a,b){return a.date<b.date?1:-1;});
   return'<option value="">'+L2("— fără (monitorizare)","— none (monitoring)")+'</option>'
@@ -169,7 +146,7 @@ function vrTrOptions(hiveId,date,selId){
 }
 function vrTrHint(trId,date){
   if(!trId)return'<span class="hint">'+L2("Numărătoare obișnuită — se compară cu pragurile.","Regular count — compared with the thresholds.")+'</span>';
-  var tr=(D.treatments||[]).find(function(x){return x.id===trId;});if(!tr)return"";
+  var tr=BM.tratamente.rand(trId);if(!tr)return"";
   var ph=vrPhase({treatmentId:trId,date:date});
   var extra=ph==="during"?' · '+L2("ziua","day")+' '+(vrDayDiff(tr.date,date)+1)+(tr.endDate?' / '+(vrDayDiff(tr.date,tr.endDate)+1):''):'';
   return'<span class="hint">'+vrPhaseIcon(ph)+' '+L2("Faza:","Phase:")+' <b>'+vrPhaseLbl(ph)+'</b>'+extra+'</span>';
@@ -183,9 +160,9 @@ function vrFieldsHTML(meth,mites,daysOrBees){
      +'<div>'+L(L2("🕷️ Acarieni căzuți","🕷️ Mites fallen"))+'<input type="number" id="vrMites" inputmode="numeric" min="0" value="'+esc(mites)+'" oninput="vrLiveCalc()"></div></div>';
 }
 function vrM(id,preset){
-  var ex=id?((D.varroa||[]).find(function(v){return v.id===id;})):null;
+  var ex=id?(BM.varroa.rand(id)):null;
   preset=preset||{};
-  var hid=ex?ex.hiveId:(preset.hiveId||(_vrHiveFilter!=="all"?_vrHiveFilter:((D.hives[0]||{}).id||"")));
+  var hid=ex?ex.hiveId:(preset.hiveId||(_vrHiveFilter!=="all"?_vrHiveFilter:((BM.stupi.randuri()[0]||{}).id||"")));
   var date=ex?ex.date:vrToday();
   var trId=ex?(ex.treatmentId||""):(preset.treatmentId!==undefined?preset.treatmentId:((trAutoFor(hid,date)||{}).id||""));
   var meth=ex?(ex.method||"natural"):(preset.method||"sticky");
@@ -193,7 +170,7 @@ function vrM(id,preset){
   var d0=ex?(vrIsDrop(ex)?vrDays(ex):(ex.beeCount||300)):(vrIsDrop({method:meth})?vrDefaultDays(hid,trId,date,null):300);
   openM('<div class="mt">'+(id?t("vr_edit_t"):"🕷️ "+L2("Numărătoare varroa","Varroa count"))+'</div>'
     +'<div class="r2"><div>'+L(t("vr_hive"))+'<select id="vrHv" onchange="vrRefreshTr()">'
-    +D.hives.map(function(h){return'<option value="'+h.id+'"'+(hid===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
+    +BM.stupi.randuri().map(function(h){return'<option value="'+h.id+'"'+(hid===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
     +'<div>'+L(t("vr_date"))+'<input type="date" id="vrDt" value="'+date+'" onchange="vrRefreshTr()"></div></div>'
     +L(L2("🔗 Tratament asociat","🔗 Linked treatment"))+'<select id="vrTr" onchange="vrRefreshTr(true)">'+vrTrOptions(hid,date,trId)+'</select>'
     +'<div id="vrTrHint" style="margin:-4px 0 8px;">'+vrTrHint(trId,date)+'</div>'
@@ -265,7 +242,7 @@ window.saveVr=function(id){
   var bees=parseInt(($q("vrBees")||{}).value)||300;
   var days=Math.max(1,parseInt(($q("vrDays")||{}).value)||1);
   var hasBrood=document.querySelector("input[name='vrBrood']:checked");
-  var ex=id?(D.varroa||[]).find(function(v){return v.id===id;}):null;
+  var ex=id?BM.varroa.rand(id):null;
   var trId=($q("vrTr")||{}).value||null;
   var date=($q("vrDt")||{}).value||vrToday();
   var o={
@@ -283,7 +260,7 @@ window.saveVr=function(id){
     inspectionId:ex?ex.inspectionId||null:null,
     notes:($q("vrNotes")||{}).value||""
   };
-  if(!D.varroa)D.varroa=[];
-  if(ex)Object.assign(ex,o);else D.varroa.push(o);
+  
+  if(ex)BM.varroa.modifica(ex,o);else BM.varroa.adauga(o);
   save(false);closeM();render();toast(t("vr_saved"),"🕷️");
 };

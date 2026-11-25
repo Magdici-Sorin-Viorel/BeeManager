@@ -6,15 +6,15 @@
 // ═══════════════════════════════════════════
 
 // ── Hive queen ──────────────────────────────────────────────
-// Queens still live in D.queens (field "hive" = the hive id).
+// Queens still live in BM.regine.randuri() (field "hive" = the hive id).
 // Current queen = the hive's latest queen that is not „înlocuită” (replaced).
 // The „înlocuite” (replaced) ones form the hive's history.
 function hqCurrent(hiveId){
-  var qs=(D.queens||[]).filter(function(q){return q.hive===hiveId&&q.status!=="înlocuită";});
+  var qs=BM.regine.randuri().filter(function(q){return q.hive===hiveId&&q.status!=="înlocuită";});
   return qs.length?qs[qs.length-1]:null;
 }
 function hqHistory(hiveId){
-  return (D.queens||[]).filter(function(q){return q.hive===hiveId&&q.status==="înlocuită";});
+  return BM.regine.randuri().filter(function(q){return q.hive===hiveId&&q.status==="înlocuită";});
 }
 function hqStatusLbl(st){var e=(t("q_statuses")||[]).find(function(s){return s[0]===st;});return e?e[1]:st;}
 
@@ -32,7 +32,7 @@ function hqFieldsHTML(q,hiveId){
     +'<div>'+L("📅 Anul nașterii")+'<input id="qY" type="number" inputmode="numeric" value="'+esc(xv(q,"yr",new Date().getFullYear()))+'"></div></div>'
     +'<div class="r2"><div>'+L("🌱 Origine")+'<select id="qOr" onchange="hqOrigChg(this)">'+qOrigs.map(function(o){return'<option value="'+esc(o)+'"'+(orig===o?" selected":"")+'>'+esc(o)+'</option>';}).join("")+'</select></div>'
     +'<div>'+L("📅 În stup din")+'<input type="date" id="qFr" value="'+esc(q?(typeof qFrom==="function"?qFrom(q):(q.from||"")):todayISO())+'"></div></div>'
-    +'<div id="qOHw" style="display:'+(needH?"block":"none")+'">'+L("🏠 Din ce stup vine")+'<select id="qOH"><option value="">'+t("q_orig_none")+'</option>'+D.hives.filter(function(h){return h.id!==hiveId;}).map(function(h){return'<option value="'+h.id+'"'+(xv(q,"origHive","")===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
+    +'<div id="qOHw" style="display:'+(needH?"block":"none")+'">'+L("🏠 Din ce stup vine")+'<select id="qOH"><option value="">'+t("q_orig_none")+'</option>'+BM.stupi.randuri().filter(function(h){return h.id!==hiveId;}).map(function(h){return'<option value="'+h.id+'"'+(xv(q,"origHive","")===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
     +'<div class="r2"><div>'+L("🔘 Status")+'<select id="qSt">'+qSts.filter(function(s){return s[0]!=="înlocuită";}).map(function(s){return'<option value="'+s[0]+'"'+(xv(q,"status","activă")===s[0]?" selected":"")+'>'+s[1]+'</option>';}).join("")+'</select></div>'
     +'<div>'+L("📜 Linie genetică")+'<input id="qLn" value="'+esc(xv(q,"line",""))+'" placeholder="'+t("q_line_ph")+'"></div></div>'
     +'<div class="r2"><div>'+L("⭐ Pontă")+lv("qLy",xv(q,"lay",4),"slabă","excelentă")+'</div>'
@@ -78,9 +78,9 @@ window.hqReplaceToggle=function(hiveId,on){
 window.hqDelete=function(hiveId,qid){
   showConfirm(t("hq_del_c"),function(){
     // her daughters are re-attached to her mother, so the line is not split
-    var dq=(D.queens||[]).find(function(q){return q.id===qid;}),gm=dq&&typeof qMother==="function"?qMother(dq):null;
-    (D.queens||[]).forEach(function(q){if(q.id!==qid&&typeof qMother==="function"&&qMother(q)===dq){q.motherQ=gm?gm.id:null;q.motherSet=true;}});
-    D.queens=D.queens.filter(function(q){return q.id!==qid;});
+    var dq=BM.regine.rand(qid),gm=dq&&typeof qMother==="function"?qMother(dq):null;
+    BM.regine.randuri().forEach(function(q){if(q.id!==qid&&typeof qMother==="function"&&qMother(q)===dq){q.motherQ=gm?gm.id:null;q.motherSet=true;}});
+    BM.regine.pastreaza(function(q){return q.id!==qid;});
     save(false);_hqReplace=false;
     var box=$q("hqBox");if(box)box.innerHTML=hqBoxHTML(hiveId);
     renderHives();
@@ -110,10 +110,8 @@ function hvWinterBanner(h){
   return'<div class="hv-win'+(fd?" "+fd[0]:"")+'">❄️ <b>În iernare</b> din '+devFmt(w.since)
     +(w.frames!=null?' · 🐝 ghem pe '+w.frames+' rame':'')+(fd?' · 🍯 '+fd[1]:'')+'</div>';
 }
-function hvInsps(hiveId){
-  return D.inspections.filter(function(i){return i.hiveId===hiveId&&i.date;})
-    .sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-}
+// a hive's inspections, newest first — from the per-hive index (BM.idx, api.js), built once per data change
+function hvInsps(hiveId){return BM.idx.inspectii(hiveId);}
 function hvDaysSince(dateStr){
   var a=new Date(dateStr);a.setHours(0,0,0,0);var b=new Date();b.setHours(0,0,0,0);
   return Math.round((b-a)/86400000);
@@ -129,7 +127,7 @@ function hvIsFed(hiveId){return fdActiveFor(hiveId).length>0;}
 // active = start ≤ today ≤ end (no end date = that day only)
 function hvTreatInfo(hiveId){
   var today=todayISO();
-  var trs=(D.treatments||[]).filter(function(tr){return tr.date&&(!tr.hiveId||tr.hiveId===hiveId);});
+  var trs=BM.tratamente.randuri().filter(function(tr){return tr.date&&(!tr.hiveId||tr.hiveId===hiveId);});
   var end=function(tr){return trEnd(tr,hiveId);};
   return{
     active:trs.filter(function(tr){return trIsActive(tr,hiveId,today);}).sort(function(a,b){return end(a)<end(b)?-1:1;}),
@@ -218,6 +216,8 @@ function hvStatusHTML(h){
   }
   // New queen / mating / laying, new bees, queen-cell check — from calculations ticked at inspection
   rows=rows.concat(devHiveRows(h));
+  // advice computed from the hive's own data: swarming risk, space, varroa level, colony going down, winter stores (advisor.js)
+  if(typeof sfHiveRows==="function")rows=rows.concat(sfHiveRows(h));
   return rows.length?'<div class="hv-sec hv-sts">'+rows.join("")+'</div>':'';
 }
 
@@ -264,13 +264,16 @@ function hvPastBanner(h){
     +'</div>';
 }
 
-// Inspections: latest + collapsible history (each inspection expands in detail)
-function hvInspSecHTML(h,insps){
-  var open=!!_hvInspOpen[h.id],li=insps[0];
-  var late=!hvIsNuc(h)&&!hvWinterState(h)&&(!li||hvDaysSince(li.date)>=hvThreshold());   // nucs and wintering hives have no weekly warning
-  var rows=insps.map(function(i){
+// Inspections: latest + collapsible history (each inspection expands in detail).
+// Lazy: the rows are built only when the history is opened and an inspection's full card only when it is
+// expanded — with years of weekly inspections the Hives page would otherwise build thousands of hidden cards.
+function hvInspDetailHTML(i){
+  return inspCardHTML(i,false).replace('<div class="c">','<div class="c" style="margin:4px 0 8px;padding:10px;box-shadow:none;background:rgba(255,255,255,.03);">');
+}
+function hvInspRowsHTML(insps){
+  return insps.map(function(i){
     var det=!!_hvInspDetail[i.id];
-    var detail=inspCardHTML(i,false).replace('<div class="c">','<div class="c" style="margin:4px 0 8px;padding:10px;box-shadow:none;background:rgba(255,255,255,.03);">');
+    var detail=det?hvInspDetailHTML(i):"";
     return'<div class="hv-ir">'
       +'<div class="hv-ir-h" onclick="hvInspDetail(\''+i.id+'\')">'
       +'<span class="hv-ir-d">'+i.date+'</span>'
@@ -287,12 +290,17 @@ function hvInspSecHTML(h,insps){
       +'<div id="hvID_'+i.id+'" style="display:'+(det?"block":"none")+'">'+detail+'</div>'
       +'</div>';
   }).join("");
+}
+function hvInspSecHTML(h,insps){
+  var open=!!_hvInspOpen[h.id],li=insps[0];
+  var late=!hvIsNuc(h)&&!hvWinterState(h)&&(!li||hvDaysSince(li.date)>=hvThreshold());   // nucs and wintering hives have no weekly warning
+  var rows=open?hvInspRowsHTML(insps):"";
   return'<div class="hv-sec hv-ins-w">'
     +'<div class="hv-ins'+(late?' late':'')+'" onclick="hvInspToggle(\''+h.id+'\')" role="button">'
     +'<span>📋 '+t("hv_insp_l")+' <span class="bg gy">'+insps.length+'</span></span>'
     +'<span class="hv-ins-last">'+(late?'⚠️ ':'')+cap(li?t("hv_last")+': '+hvAgo(li.date):t("hv_never_insp"))
     +' <span id="hvIA_'+h.id+'" class="hv-arr">'+(open?"▲":"▼")+'</span></span></div>'
-    +'<div id="hvI_'+h.id+'" class="hv-ins-list" style="display:'+(open?"block":"none")+';">'
+    +'<div id="hvI_'+h.id+'" class="hv-ins-list"'+(insps.length&&!open?' data-lazy="1"':'')+' style="display:'+(open?"block":"none")+';">'
     +(insps.length?rows:'<div class="hv-ts" style="padding:8px 2px;">'+t("hv_insp_none")+'</div>')
     +'</div></div>';
 }
@@ -340,23 +348,34 @@ function hvCardHTML(h,opt){
     +'</div>'
     +'</div>';
 }
+// builds what was left out (lazy): the history rows of a hive / the full card of one inspection
+function hvInspFill(hid){
+  var el=document.getElementById("hvI_"+hid);
+  if(el&&el.getAttribute("data-lazy")){el.removeAttribute("data-lazy");el.innerHTML=hvInspRowsHTML(hvInsps(hid));}
+  return el;
+}
+function hvInspDetailFill(id){
+  var el=document.getElementById("hvID_"+id);
+  if(el&&!el.firstChild){var i=BM.inspectii.get(id);if(i)el.innerHTML=hvInspDetailHTML(i);}
+  return el;
+}
 window.hvInspToggle=function(hid){
   _hvInspOpen[hid]=!_hvInspOpen[hid];
-  var el=document.getElementById("hvI_"+hid);if(el)el.style.display=_hvInspOpen[hid]?"block":"none";
+  var el=_hvInspOpen[hid]?hvInspFill(hid):document.getElementById("hvI_"+hid);if(el)el.style.display=_hvInspOpen[hid]?"block":"none";
   var ar=document.getElementById("hvIA_"+hid);if(ar)ar.textContent=_hvInspOpen[hid]?"▲":"▼";
 };
 window.hvInspDetail=function(id){
   _hvInspDetail[id]=!_hvInspDetail[id];
-  var el=document.getElementById("hvID_"+id);if(el)el.style.display=_hvInspDetail[id]?"block":"none";
+  var el=_hvInspDetail[id]?hvInspDetailFill(id):document.getElementById("hvID_"+id);if(el)el.style.display=_hvInspDetail[id]?"block":"none";
   var ar=document.getElementById("hvIDA_"+id);if(ar)ar.textContent=_hvInspDetail[id]?"▲":"▼";
 };
 
 // ═══════════════════════════════════════════
 // DISPLAY — Hives page
 // ═══════════════════════════════════════════
-// Quick summary at the top (replaces what the Dashboard showed about hives)
+// Quick summary at the top of the Hives page
 function hvSummaryHTML(){
-  var hs=D.hives.filter(function(h){return !hvIsNuc(h);});
+  var hs=BM.stupi.randuri().filter(function(h){return !hvIsNuc(h);});
   var n=function(f){return hs.filter(f).length;};
   var chips=[
     ['gg','💪 '+n(function(h){return h.str==="puternic";})+' '+t("hv_s_strong")],
@@ -450,9 +469,9 @@ window.hvUpdTotal=function(){var b=parseInt(($q("hFB")||{}).value)||0,f=parseInt
 // ── Hive list ───────────────────────────────────────────────
 var _hvQ="";   // search text (kept across redraws)
 function hvFilter(q){
-  if(!q)return D.hives;
+  if(!q)return BM.stupi.randuri();
   q=q.toLowerCase();
-  return D.hives.filter(function(h){
+  return BM.stupi.randuri().filter(function(h){
     var qn=hqCurrent(h.id);
     return(h.name+" "+h.loc+" "+String(h.num||"")+(qn?" "+(qn.race||"")+" "+(qn.line||""):"")).toLowerCase().indexOf(q)>=0;
   });
@@ -466,7 +485,7 @@ function hvNucAlert(h){   // nuc needs attention: cannot raise a queen / laying 
 }
 function hvGridHTML(q){
   var nucTab=_hvTab==="nucs";
-  var all=D.hives.filter(function(h){return nucTab?hvIsNuc(h):!hvIsNuc(h);});
+  var all=BM.stupi.randuri().filter(function(h){return nucTab?hvIsNuc(h):!hvIsNuc(h);});
   var list=hvFilter(q).filter(function(h){return nucTab?hvIsNuc(h):!hvIsNuc(h);});
   if(!all.length)return nucTab
     ?'<div class="al ali">🐝 '+L2("Niciun roi în formare. Apasă «🐝 Roi nou» sau butonul 🐝 de pe cardul unui stup donator.","No nucs in progress. Tap «🐝 New nuc» or the 🐝 button on a donor hive's card.")+'</div>'
@@ -487,7 +506,7 @@ function renderHives(q){
     var grid=document.getElementById("hvGrid");
     if(grid&&document.getElementById("hvSearch")){grid.innerHTML=hvGridHTML(_hvQ);return;}
   }
-  var nu=D.hives.filter(hvIsNuc),st=D.hives.filter(function(h){return !hvIsNuc(h);});
+  var nu=BM.stupi.randuri().filter(hvIsNuc),st=BM.stupi.randuri().filter(function(h){return !hvIsNuc(h);});
   if(_hvTab==="nucs"&&!nu.length&&!_hvNucStay)_hvTab="hives";
   _hvNucStay=false;
   var nucTab=_hvTab==="nucs",cur=nucTab?nu:st,warn=nu.filter(hvNucAlert).length;
@@ -499,7 +518,7 @@ function renderHives(q){
     +(nucTab?'<button class="btn" onclick="nucM()">🐝 '+L2("Roi nou","New nuc")+'</button>':'<button class="btn" onclick="hiveM()">'+t("h_new")+'</button>')+'</div>'
     +tabs
     +(!nucTab&&st.length?hvSummaryHTML():'')
-    +(!nucTab?hvAlertHTML():'<div class="hv-ts hv-nuc-note">'+L2("Roiurile nu au avertizarea de inspecție săptămânală. Când regina e împerecheată, roiul trece la 🏠 Stupi.","Nucs have no weekly inspection warning. Once the queen is mated, the nuc moves to 🏠 Hives.")+'</div>')
+    +(!nucTab?sfTodoHTML():'<div class="hv-ts hv-nuc-note">'+L2("Roiurile nu au avertizarea de inspecție săptămânală. Când regina e împerecheată, roiul trece la 🏠 Stupi.","Nucs have no weekly inspection warning. Once the queen is mated, the nuc moves to 🏠 Hives.")+'</div>')
     +(cur.length>3?'<input id="hvSearch" class="hv-search" type="search" placeholder="'+t("h_search")+'" value="'+esc(_hvQ)+'" oninput="debouncedHiveSearch(this.value)">':'')
     +'<div id="hvGrid">'+hvGridHTML(cur.length>3?_hvQ:"")+'</div>');
 }
@@ -508,9 +527,9 @@ var _hvNucStay=false;
 window.delH=function(id){
   showConfirm(t("h_del_c"),function(){
     genArchiveStub(BM.stupi.get(id));   // trace in genealogy
-    D.hives=D.hives.filter(function(h){return h.id!==id;});
-    D.inspections=D.inspections.filter(function(i){return i.hiveId!==id;});
-    D.queens=D.queens.filter(function(q){return q.hive!==id;});
+    BM.stupi.pastreaza(function(h){return h.id!==id;});
+    BM.inspectii.pastreaza(function(i){return i.hiveId!==id;});
+    BM.regine.pastreaza(function(q){return q.hive!==id;});
     try{localStorage.removeItem("bmp5_hive_"+id);}catch(e){}
     save();renderHives();
   });
@@ -599,7 +618,6 @@ window.saveH=function(id){
     else o.nestF=null;})();
 
   // ── Queen ──
-  if(!D.queens)D.queens=[];
   var cur=id?hqCurrent(id):null;
   var hasBox=$q("qR");                       // queen fields exist in the form
   var addNew=$q("hqHas")?$q("hqHas").checked:false;
@@ -618,13 +636,13 @@ window.saveH=function(id){
     }else if(cur&&_hqReplace){
       cur.status="înlocuită";                // old queen → history
       cur.replacedAt=qd.from||todayISO();
-      D.queens.push(Object.assign({id:uid(),hive:o.id,motherQ:mom(cur),motherSet:true},qd));
+      BM.regine.adauga(Object.assign({id:uid(),hive:o.id,motherQ:mom(cur),motherSet:true},qd));
     }else if(addNew){
-      D.queens.push(Object.assign({id:uid(),hive:o.id,motherQ:mom(null),motherSet:true},qd));
+      BM.regine.adauga(Object.assign({id:uid(),hive:o.id,motherQ:mom(null),motherSet:true},qd));
     }
   }
   _hqReplace=false;
 
-  if(id){var ex=BM.stupi.get(id);if(ex)Object.assign(ex,o);}else{D.hives.push(o);}
+  if(id){var ex=BM.stupi.get(id);if(ex)BM.stupi.modifica(ex,o);}else{BM.stupi.adauga(o);}
   save();closeM();renderHives();
 };

@@ -1,7 +1,7 @@
 {
   "name": "BeeManager Pro",
   "short_name": "BeeManager",
-  "description": "Gestionarea stupinei: stupi, inspecții, recolte, tratamente, varroa, financiar.",
+  "description": "Gestionarea stupinei: stupi, inspecții, recolte, tratamente, varroa, cules, genealogie.",
   "lang": "ro",
   "id": "./",
   "start_url": "./",

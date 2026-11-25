@@ -1,6 +1,6 @@
 # 🐝 BeeManager Pro
 
-Aplicație pentru gestionarea stupinei: stupi, inspecții, regine, recolte, tratamente, varroa, hrănire, inventar, financiar.
+Aplicație pentru gestionarea stupinei: stupi, inspecții, regine, cules (extracții), tratamente, varroa, hrănire, pastorală, calendar de înflorire, genealogie.
 Funcționează pe telefon ca aplicație instalată (PWA), **inclusiv fără internet**. Datele stau doar în telefon.
 
 ---
@@ -17,34 +17,42 @@ BeeManagerPro/
 ├── lib/                  ← biblioteci (grafice, iconițe Font Awesome)
 └── js/
     ├── i18n.js           ← traducerile RO / EN
-    ├── core.js           ← datele (D), salvare/încărcare, toast, confirmare, helperi
-    ├── weather.js        ← vremea (Open-Meteo) și activitatea albinelor
+    ├── core.js           ← datele în memorie (D), salvare/încărcare, toast, confirmare, helperi
+    ├── db.js             ← baza de date locală (IndexedDB) — scrie doar ce s-a schimbat
+    ├── store.js          ← 🗄️ poarta unică spre date: tabele cu randuri / adauga / modifica / sterge
+    ├── api.js            ← 🧩 API-ul intern BM (stupi, inspecții, tratamente, varroa, hrăniri, regine, genealogie, cules, rapoarte…)
+    ├── config.js         ← constante de configurare
+    ├── weather.js        ← vremea (Open-Meteo)
     ├── nav.js            ← meniul, navigarea între pagini, ferestrele (modal)
-    ├── dashboard.js      ← Dashboard
     ├── hives.js          ← Stupi (inclusiv regina stupului)
     ├── inspections.js    ← formularul de inspecție (afișat din Stupi)
-    ├── queens.js         ← Regine (meniu separat, dezactivat — vezi hives.js)
-    ├── honey.js          ← Recoltă miere
+    ├── inspui.js · boxes.js · frames.js ← părți ale inspecției: interfață, cutii, mutări de rame
     ├── treatments.js     ← formularul de tratament (scop: varroa / altul)
     ├── treatvarroa.js    ← pagina „Tratamente” (taburi), eficiență, numărătoarea din inspecție
-    ├── inventory.js      ← Inventar
-    ├── pastorage.js      ← Pastorare
-    ├── calendar.js       ← Calendar
-    ├── analytics.js      ← Analize
-    ├── settings.js       ← Setări
-    ├── calculator.js     ← Calculator apicol (meniu dezactivat — vezi devcalc.js)
-    ├── devcalc.js        ← calcule regină / albine noi, din inspecție → pe cardul stupului
-    ├── nucs.js           ← 🐝 roiuri (înmulțire) + 🌳 genealogie (linii, clasament, oprire ramură)
-    ├── feeding.js        ← Hrănire
-    ├── tasks.js          ← Sarcini
     ├── varroa.js         ← numărători varroa, legătura cu tratamentele, faze înainte/în timpul/după
-    ├── finance.js        ← Financiar + vânzare miere
+    ├── feeding.js        ← Hrănire
+    ├── cules.js          ← 🍯 Cules: extracții, kg pe stup, prognoză, comparație pe ani
+    ├── pastorage.js      ← Pastorare
+    ├── plants.js         ← lista de plante melifere (doar date)
+    ├── flora.js          ← 🌼 calculele de înflorire + BM.flora (plantele tale, observații)
+    ├── calendar.js       ← Calendar
+    ├── report.js         ← raportul anual + starea bazei de date
+    ├── advisor.js        ← 🧭 sfaturi (BM.sfaturi): „De făcut”, provizii de iarnă, risc de roire, varroa, zile bune de lucru
+    ├── floraui.js        ← vetre (acasă / pastorală), „Toate plantele”, prognoza la vatră
+    ├── settings.js       ← Setări
+    ├── devcalc.js        ← calcule regină / albine noi, din inspecție → pe cardul stupului
+    ├── genea.js          ← calculele de genealogie (linii, note pe calități)
+    ├── nucs.js           ← 🐝 roiuri (înmulțire) + 🌳 pagina Genealogie
+    ├── fisa.js           ← fișa stupului (PDF) + registrul de tratamente
+    ├── voice.js · vctrain.js ← inspecția vocală, QR, antrenarea vocii
     ├── export.js         ← backup JSON: Google Drive, telefon, import
+    ├── demo.js           ← date de test (?demo)
     ├── app.js            ← pornirea aplicației
     └── pwa.js            ← înregistrarea pentru offline / instalare
 ```
 
-Ordinea scripturilor din `index.html` contează: `i18n → core → config → weather → nav → module → export → app`.
+Ordinea scripturilor din `index.html` contează: `i18n → core → db → store → api → config → weather → nav → module → export → app`.
+Nicio pagină nu citește / scrie direct tabelele de date: totul trece prin `BM` (api.js) și `STORE` (store.js).
 
 ### 💊 Tratamente (cu Varroa)
 
@@ -116,19 +124,11 @@ Stiva de magazii cu bare colorate după % căpăcit (M3 / M2 / M1 + rame) a fost
 Se alege din aplicație: **Setări → ☰ Ordinea meniului** (drag & drop pe ☰ sau săgețile ▲▼).
 Aplicația pornește pe primul meniu; pe telefon primele 4 apar în bara de jos. Ordinea se salvează cu datele (intră în backup).
 
-### ⚙️ Module dezactivate (`js/config.js`)
+### 🧭 Meniurile aplicației
 
-Momentan sunt **ascunse**: Financiar, Analize, Inventar, Recoltă miere, Dashboard, Regine, Inspecții, Varroa, Calcule Apicole (din 23.10.2026), Sarcini (din 26.10.2026).
-**Regine** nu e pierdut: e integrat în **Stupi** (secțiunea 👑 Regina din formularul stupului, cu înlocuire și istoric).
-**Inspecții** e integrat tot în **Stupi**: butonul 🔍 Inspecție de pe card + câmpul 📋 Inspecții (istoricul stupului), iar alerta pentru stupi neinspectați apare sus pe pagina Stupi.
-Aplicația pornește pe primul meniu activ (acum **Stupi**).
-Nu apar în meniu, pe Dashboard, în Setări sau în formularul de Hrănire.
-Codul lor și datele deja salvate rămân neatinse.
-
-Ca să readuci un modul, scoate-l din lista din `js/config.js`:
-```js
-var MODULES_OFF=["financiar","analytics","inventory","honey","dashboard","queens","inspections","varroa","calculator","sarcini"];
-```
+Stupi · Scanează QR · Cules · Hrănire · Tratamente · Pastorare · Calendar · Genealogie · Setări (lista e în `js/nav.js`).
+**Regina** se ține din **Stupi** (secțiunea 👑 din formularul stupului, cu înlocuire și istoric), **inspecțiile** tot din Stupi
+(butonul 🔍 Inspecție + istoricul 📋 de pe card), iar **numărătorile de varroa** din inspecție sau de pe cardul stupului.
 
 ---
 
@@ -200,8 +200,5 @@ Când aplicația e finalizată:
 - Reparat: lista *Auto-salvare per stup* din Setări era goală.
 - Reparat: reginele lipseau din snapshot-ul per stup; umiditatea lipsea din PDF-ul per stup.
 - Reparat: pragul de alerte inspecții — implicit 7 zile peste tot.
-- Reparat: editarea unei sarcini finalizate nu mai șterge data finalizării.
-- Reparat: culorile insignelor din Varroa și eticheta de categorie din Sarcini.
-- Reparat: la editarea unei hrăniri, stocul se pune înapoi corect chiar dacă schimbi articolul din inventar; „polen” e recunoscut ca hrană.
 - Reparat: ghilimelele sau `<` din nume/notițe nu mai strică formularele.
 - La ștergerea unui stup se șterge și snapshot-ul lui local.

@@ -5,34 +5,26 @@
 // NAV — desktop sidebar + mobile bottom bar
 // ═══════════════════════════════════════════
 var PGS_DEFAULT=[
-  {id:"dashboard",lk:"nav_dashboard",i:"fa-chart-line"},
   {id:"hives",lk:"nav_hives",i:"fa-house"},
   {id:"scan",lk:"nav_scan",i:"fa-qrcode",act:"qrScan"},   // not a page: opens the QR scanner (voice.js); can be moved like any menu item
-  {id:"queens",lk:"nav_queens",i:"fa-crown"},
-  {id:"inspections",lk:"nav_inspections",i:"fa-book-open"},
-  {id:"honey",lk:"nav_honey",i:"fa-droplet"},
   {id:"cules",lk:"nav_cules",i:"fa-jar"},   // 🍯 extractions: frames per hive → kg → share per hive (cules.js)
   {id:"hranire",lk:"nav_hranire",i:"fa-bowl-rice"},
   {id:"treatments",lk:"nav_treatments",i:"fa-syringe"},
-  {id:"varroa",lk:"nav_varroa",i:"fa-bug"},
   {id:"pastorare",lk:"nav_pastorare",i:"fa-truck"},
-  {id:"inventory",lk:"nav_inventory",i:"fa-boxes-stacked"},
   {id:"calendar",lk:"nav_calendar",i:"fa-calendar-days"},
-  {id:"analytics",lk:"nav_analytics",i:"fa-chart-bar"},
-  {id:"calculator",lk:"nav_calculator",i:"fa-calculator"},
-  {id:"financiar",lk:"nav_financiar",i:"fa-coins"},
-  {id:"sarcini",lk:"nav_sarcini",i:"fa-list-check"},
   {id:"genealogie",lk:"nav_genealogie",i:"fa-sitemap"},
   {id:"settings",lk:"nav_settings",i:"fa-sliders"}
 ];
-// Displayed menu = PGS_DEFAULT minus disabled modules (config.js), in the order
+// Displayed menu = PGS_DEFAULT, in the order
 // you chose in Setări → Ordinea meniului (D.settings.menuOrder).
 //  - start page (HOME) = first menu item
 //  - on phone: first 4 items in the bottom bar, the rest under „Mai mult”
 var PGS=[],HOME="hives",MOB_PRIMARY=[];
 function applyMenuOrder(){
-  var avail=PGS_DEFAULT.filter(function(p){return modOn(p.id);});
+  var avail=PGS_DEFAULT.slice();
   var order=(D&&D.settings&&D.settings.menuOrder)||[];
+  // ids of menus that no longer exist are dropped from the saved order
+  if(order.length){var all={};PGS_DEFAULT.forEach(function(p){all[p.id]=1;});var kept=order.filter(function(id){return all[id];});if(kept.length!==order.length){D.settings.menuOrder=kept;order=kept;}}
   var byId={};avail.forEach(function(p){byId[p.id]=p;});
   var res=[];
   order.forEach(function(id){if(byId[id]){res.push(byId[id]);delete byId[id];}});
@@ -129,11 +121,9 @@ function go(p){
   if(document.getElementById("MB")){requestCloseM(function(){go(p);});return;}
   // „Mai mult” drawer open: close it first, then change page
   if(_moreOpen){closeMoreDrw(function(){go(p);});return;}
-  // Varroa is a tab inside „Tratamente”
-  if(p==="varroa"&&!modOn("varroa")&&modOn("treatments")){_trTab="counts";p="treatments";}
-  else if(p==="treatments"&&curP!=="treatments")_trTab="treat";
+  if(p==="treatments"&&curP!=="treatments")_trTab="treat";
   if(p==="settings"&&curP!=="settings"&&typeof _seSec!=="undefined")_seSec=null;   // Settings opens on its menu
-  if(!modOn(p))p=HOME;
+  if(!PGS_DEFAULT.some(function(x){return x.id===p;}))p=HOME;   // unknown page (old link / old saved state)
   curP=p;
   closeMoreDrw();
   buildNav();
@@ -156,11 +146,10 @@ function pageFromHash(){
 }
 window.addEventListener("hashchange",function(){var p=pageFromHash();if(p!==curP)go(p);});
 
-var RENDERERS=function(){return{dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,cules:renderCules,hranire:renderHranire,treatments:renderTreatments,varroa:renderVarroa,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,calculator:renderCalculator,financiar:renderFinanciar,sarcini:renderSarcini,settings:renderSettings,pastorare:renderPastorage,genealogie:renderGenealogy};};
+var RENDERERS=function(){return{hives:renderHives,cules:renderCules,hranire:renderHranire,treatments:renderTreatments,calendar:renderCalendar,settings:renderSettings,pastorare:renderPastorage,genealogie:renderGenealogy};};
 function render(){var r=RENDERERS();(r[curP]||r[HOME])();}
 function setP(h){document.getElementById("pg").innerHTML=h;}
 function closeSB(){document.getElementById("sb").classList.remove("open");document.getElementById("ov").classList.remove("show");}
-function setLang(l){D.settings.lang=l;applyTheme();save(false);buildNav();render();}
 
 // ═══════════════════════════════════════════
 // MODAL

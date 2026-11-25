@@ -14,14 +14,14 @@ function fsStrip(s){return String(s||"").replace(/^[^A-Za-zÀ-ž0-9]+/,"").trim(
 // Years that have inspections for the hive(s), plus the current year
 function fsYears(){
   var ys={},cur=new Date().getFullYear();ys[cur]=1;
-  (D.inspections||[]).forEach(function(i){var y=parseInt((i.date||"").slice(0,4));if(y)ys[y]=1;});
+  BM.inspectii.randuri().forEach(function(i){var y=parseInt((i.date||"").slice(0,4));if(y)ys[y]=1;});
   return Object.keys(ys).map(Number).sort(function(a,b){return b-a;});
 }
 
 // Feeding portions of a hive in a year: [{date, qty, unit, type}]
 function fsFeeds(hid,yr){
   var out=[];
-  (D.feedings||[]).forEach(function(f){
+  BM.hraniri.randuri().forEach(function(f){
     if(f.planned||!fdCovers(f,hid))return;
     var u=f.unit||fdType(f).u||"kg";
     fdPortions(f).forEach(function(p){
@@ -46,7 +46,7 @@ function fsQueen(hid,yr){
 
 function fsData(hive,yr){
   var Y=String(yr),hid=hive.id;
-  var insps=(D.inspections||[]).filter(function(i){return i.hiveId===hid&&(i.date||"").slice(0,4)===Y;})
+  var insps=BM.inspectii.randuri().filter(function(i){return i.hiveId===hid&&(i.date||"").slice(0,4)===Y;})
     .sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
   var feeds=fsFeeds(hid,yr),inspDays={};
   insps.forEach(function(i){inspDays[i.date]=1;});
@@ -69,22 +69,22 @@ function fsData(hive,yr){
   });
   // periodic observations: treatments, pastorage, queens, varroa counts, feedings outside inspection days
   var ev=[];
-  (D.treatments||[]).forEach(function(tr){
+  BM.tratamente.randuri().forEach(function(tr){
     if(!tr.date||!trHives(tr).some(function(h){return h.id===hid;}))return;
     if(tr.date.slice(0,4)!==Y&&(tr.endDate||"").slice(0,4)!==Y)return;
     ev.push({date:tr.date,txt:(tr.date>todayISO()?"Tratament planificat: ":"Tratament: ")+trShort(tr)+(tr.disease?" ("+fsStrip(tr.disease)+")":"")+(tr.endDate&&tr.endDate!==tr.date?" — până la "+fsD(tr.endDate):"")+(tr.dosage?" · doză: "+tr.dosage:"")});
   });
-  (D.pastorage||[]).forEach(function(p){
+  BM.pastorala.randuri().forEach(function(p){
     if(pHives(p).indexOf(hid)<0||(p.startDate||"").slice(0,4)!==Y)return;
     var back=(p.returned&&p.returned[hid])||p.endDate||"";
     ev.push({date:p.startDate,txt:"Pastorare: "+(p.location||"—")+(p.target?" · cules "+p.target:"")+(back?" — întors pe "+fsD(back):"")});
   });
-  (D.queens||[]).forEach(function(q){
+  BM.regine.randuri().forEach(function(q){
     var d=q.from||(q.yr?q.yr+"-01-01":"");
     if(q.hive!==hid||d.slice(0,4)!==Y||!q.from)return;
     ev.push({date:q.from,txt:"Matcă nouă: "+[q.race,q.orig].filter(Boolean).join(", ")});
   });
-  (D.varroa||[]).forEach(function(v){
+  BM.varroa.randuri().forEach(function(v){
     if(v.hiveId!==hid||(v.date||"").slice(0,4)!==Y)return;
     ev.push({date:v.date,txt:"Varroa: "+fsStrip(typeof vrValStr==="function"?vrValStr(v):(v.miteCount||0)+" acarieni")});
   });
@@ -141,7 +141,7 @@ function fsSheetHTML(hive,yr,blank){
 window.fisaPrint=function(){
   var yr=parseInt(($q("fsYr")||{}).value)||new Date().getFullYear();
   var hv=($q("fsHv")||{}).value||"all";
-  var hives=hv==="all"?D.hives.slice():D.hives.filter(function(h){return h.id===hv;});
+  var hives=hv==="all"?BM.stupi.randuri().slice():BM.stupi.randuri().filter(function(h){return h.id===hv;});
   if(!hives.length){toast("Nu ai niciun stup.","⚠️");return;}
   hives.sort(function(a,b){return(a.num||9999)-(b.num||9999)||String(a.name).localeCompare(String(b.name));});
   var old=document.getElementById("fisaPrint");if(old)old.remove();
@@ -180,7 +180,7 @@ window.fisaDoPrint=function(){
 // Settings card
 function fisaCardHTML(){
   var yrs=fsYears();
-  var hs=D.hives.slice().sort(function(a,b){return(a.num||9999)-(b.num||9999);});
+  var hs=BM.stupi.randuri().slice().sort(function(a,b){return(a.num||9999)-(b.num||9999);});
   return'<div class="c" style="margin-bottom:14px;"><div class="ct">📋 Fișa de observație</div>'
     +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;line-height:1.45;">Câte o fișă pe stup pentru un an (ianuarie–decembrie), completată automat din inspecții, hrăniri, tratamente și pastorare, cu un scris asemănător scrisului de mână.</p>'
     +'<div class="r2"><div>'+L("📅 Anul")+'<select id="fsYr">'+yrs.map(function(y){return'<option>'+y+'</option>';}).join("")+'</select></div>'
@@ -188,4 +188,56 @@ function fisaCardHTML(){
     +hs.map(function(h){return'<option value="'+h.id+'">'+esc(h.name)+'</option>';}).join("")+'</select></div></div>'
     +'<button class="btn" style="width:100%;margin-top:10px;" onclick="fisaPrint()">🖨️ Salvează PDF / Printează</button>'
     +'<p style="font-size:.72rem;color:var(--mut);margin:8px 0 0;line-height:1.45;">În fereastra care se deschide alege <b>Salvează ca PDF</b> (sau imprimanta). Foaia e A4 pe orizontală.</p></div>';
+}
+
+// ═══════════════════════════════════════════
+// 💊 REGISTRU DE TRATAMENTE — one table per year, from the treatments already saved
+// (product, dose, dates, treated hives, purpose) — to show at a control or keep with the apiary's papers.
+// Uses the same print window as the observation sheet.
+// ═══════════════════════════════════════════
+function regRows(yr){
+  var td=todayISO(),Y=String(yr);
+  return BM.tratamente.randuri().filter(function(tr){return tr.date&&tr.date.slice(0,4)===Y&&tr.date<=td;})
+    .sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;})
+    .map(function(tr){
+      var p=trProdParts(tr.product||""),all=!tr.hiveId;
+      // „all hives”: the hives that existed on the day of the treatment
+      var hs=all?BM.stupi.randuri().concat(BM.arhiva.randuri()).filter(function(h){var from=(h.nuc&&h.nuc.start)||h.created||"",to=(h.closed&&h.closed.date)||"";return(!from||from<=tr.date)&&(!to||to>=tr.date);}):[BM.stupi.getOriArhiva(tr.hiveId)].filter(Boolean);
+      var names=hs.map(function(h){return h.num?String(h.num):h.name;});
+      var fin=tr.done||"",end=tr.endDate||"";if(fin&&(!end||fin<end))end=fin;
+      return{start:tr.date,end:end,produs:p.name||fsStrip(tr.product),detalii:p.det,doza:tr.dosage||"",scop:trIsVarroa(tr)?"Varroa":"Alt scop",
+        stupi:all?"Toți stupii ("+hs.length+")"+(names.length&&names.length<=30?": "+names.join(", "):""):names.join(", ")||"—",n:hs.length,obs:tr.notes||""};});
+}
+function regSheetHTML(yr){
+  var rows=regRows(yr),minRows=Math.max(rows.length+4,16);
+  var head='<div class="fs-hd"><span><b>REGISTRU DE TRATAMENTE</b></span><span><i>ANUL</i><em>'+yr+'</em></span>'
+    +'<span><i>APICULTOR</i><em class="rg-fill"></em></span><span><i>STUPINA (COD / LOCALITATE)</i><em class="rg-fill"></em></span>'
+    +'<span><i>NR. FAMILII</i><em>'+BM.stupi.randuri().length+'</em></span></div>';
+  var cols=[4,9,9,20,14,8,19,17],th=["Nr.","Început","Sfârșit","Produs (substanță)","Doză / mod de aplicare","Scop","Stupi tratați","Observații"];
+  var body="";
+  for(var i=0;i<minRows;i++){var r=rows[i];
+    body+='<tr>'+(r?'<td>'+(i+1)+'</td><td>'+fsD(r.start)+'.'+r.start.slice(0,4)+'</td><td>'+(r.end?fsD(r.end)+'.'+r.end.slice(0,4):'')+'</td><td class="l"><b>'+esc(r.produs)+'</b>'+(r.detalii?'<br>'+esc(r.detalii):'')+'</td><td class="l">'+esc(r.doza)+'</td><td>'+r.scop+'</td><td class="l">'+esc(r.stupi)+'</td><td class="l">'+esc(r.obs)+'</td>'
+      :'<td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>')+'</tr>';}
+  return'<div class="fs-pg rg-pg">'+head+'<table class="fs-t rg-t"><colgroup>'+cols.map(function(c){return'<col style="width:'+c+'%">';}).join("")+'</colgroup>'
+    +'<thead><tr>'+th.map(function(x){return'<th>'+x+'</th>';}).join("")+'</tr></thead><tbody>'+body+'</tbody></table>'
+    +'<div class="rg-ft">Întocmit din datele aplicației BeeManager Pro la '+fsD(todayISO())+'.'+todayISO().slice(0,4)+' · '+rows.length+' tratamente în '+yr+'. Semnătura: ____________________</div></div>';
+}
+window.regPrint=function(){
+  var yr=parseInt(($q("rgYr")||{}).value)||new Date().getFullYear();
+  var old=document.getElementById("fisaPrint");if(old)old.remove();
+  var box=document.createElement("div");box.id="fisaPrint";box.className="fs-ov";
+  box.innerHTML='<div class="fs-bar"><b>💊 Registru de tratamente '+yr+'</b>'
+    +'<button class="btn" onclick="fisaDoPrint()">🖨️ Salvează PDF / Printează</button>'
+    +'<button class="btn gh" onclick="fisaClose()">✕ Închide</button></div>'
+    +'<div class="fs-pages">'+regSheetHTML(yr)+'</div>';
+  document.body.appendChild(box);box.dataset.title="Registru_tratamente_"+yr;fisaFit();
+};
+function regCardHTML(){
+  var ys={};BM.tratamente.randuri().forEach(function(tr){if(tr.date)ys[tr.date.slice(0,4)]=1;});ys[String(new Date().getFullYear())]=1;
+  var yrs=Object.keys(ys).sort().reverse(),cur=regRows(yrs[0]).length;
+  return'<div class="c" style="margin-bottom:14px;"><div class="ct">💊 Registru de tratamente</div>'
+    +'<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;line-height:1.45;">Un tabel pe an cu toate tratamentele făcute: produs, doză, perioadă, stupii tratați și scopul — completat din ce ai notat deja la Tratamente. Îl poți printa sau salva ca PDF și ține lângă carnetul de stupină.</p>'
+    +L("📅 Anul")+'<select id="rgYr">'+yrs.map(function(y){return'<option value="'+y+'">'+y+' — '+regRows(y).length+' tratamente</option>';}).join("")+'</select>'
+    +'<button class="btn" style="width:100%;margin-top:10px;" onclick="regPrint()">🖨️ Salvează PDF / Printează</button>'
+    +'<p style="font-size:.72rem;color:var(--mut);margin:8px 0 0;line-height:1.45;">Tratamentele planificate (din viitor) nu apar. Numele și codul stupinei se completează de mână pe foaia printată.</p></div>';
 }

@@ -24,9 +24,16 @@ var DEV={
 };
 
 function devAdd(dateStr,n){var p=String(dateStr).slice(0,10).split("-");return isoLocal(new Date(+p[0],+p[1]-1,+p[2]+n));}
+// "12 mai" — one formatter per language and a memo per date string (toLocaleDateString is slow and this is
+// called for every date on every card)
+var _devFmtF={},_devFmtC={},_devFmtN=0;
 function devFmt(dateStr){
-  try{return new Date(dateStr).toLocaleDateString(D.settings.lang==="en"?"en-GB":"ro-RO",{day:"numeric",month:"short"});}
-  catch(e){return dateStr;}
+  var lg=D.settings.lang==="en"?"en-GB":"ro-RO",k=lg+dateStr,c=_devFmtC[k];
+  if(c!==undefined)return c;
+  try{var f=_devFmtF[lg]||(_devFmtF[lg]=new Intl.DateTimeFormat(lg,{day:"numeric",month:"short"}));c=f.format(new Date(dateStr));}
+  catch(e){try{c=new Date(dateStr).toLocaleDateString(lg,{day:"numeric",month:"short"});}catch(e2){c=dateStr;}}
+  if(++_devFmtN>5000){_devFmtC={};_devFmtN=0;}
+  _devFmtC[k]=c;return c;
 }
 function devRange(a,b){return a===b?devFmt(a):devFmt(a)+" – "+devFmt(b);}
 
@@ -144,7 +151,6 @@ function devQueenInspHTML(hid,ex){
 // On save: the new queen becomes the hive's queen (if ticked)
 function devQueenInspSave(o){
   if(!o.qMated||!$q("iQRep")||!$q("iQRep").checked)return;
-  if(!D.queens)D.queens=[];
   var cur=hqCurrent(o.hiveId);
   if(cur){cur.status="înlocuită";cur.replacedAt=o.date;}
   var origins=t("q_origins")||[];
@@ -153,7 +159,7 @@ function devQueenInspSave(o){
   var dq=isN?hqCurrent(hv.genParent):null,src=cur||dq;
   // mother: for a nuc = donor's queen (on the nuc's day); in hive = previous queen (natural supersedure)
   var mq=isN?((hv.nuc&&hv.nuc.motherQ)||(dq?dq.id:null)):(cur?cur.id:null);
-  D.queens.push({id:uid(),hive:o.hiveId,yr:parseInt((o.date||"").slice(0,4))||new Date().getFullYear(),from:o.date,
+  BM.regine.adauga({id:uid(),hive:o.hiveId,yr:parseInt((o.date||"").slice(0,4))||new Date().getFullYear(),from:o.date,
     race:src?src.race:"",lay:null,aggr:null,orig:isN?(origins[1]||""):(origins[5]||origins[1]||""),origHive:isN?hv.genParent:o.hiveId,line:src?src.line:"",status:"activă",motherQ:mq,motherSet:true});
 }
 
@@ -196,7 +202,7 @@ function devHiveRows(h){
 // Opens the hive's inspection history with that inspection expanded
 window.hvInspOpenOne=function(hid,iid){
   _hvInspOpen[hid]=true;_hvInspDetail[iid]=true;
-  var el=document.getElementById("hvI_"+hid);
+  var el=typeof hvInspFill==="function"?hvInspFill(hid):document.getElementById("hvI_"+hid);
   if(el){el.style.display="block";var a=document.getElementById("hvIA_"+hid);if(a)a.textContent="▲";
-    var d=document.getElementById("hvID_"+iid);if(d){d.style.display="block";d.scrollIntoView({behavior:"smooth",block:"center"});}}
+    var d=typeof hvInspDetailFill==="function"?hvInspDetailFill(iid):document.getElementById("hvID_"+iid);if(d){var da=document.getElementById("hvIDA_"+iid);if(da)da.textContent="▲";d.style.display="block";d.scrollIntoView({behavior:"smooth",block:"center"});}}
 };

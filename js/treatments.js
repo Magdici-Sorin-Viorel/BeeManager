@@ -6,9 +6,9 @@
 // ═══════════════════════════════════════════
 // The „Tratamente” page is in treatvarroa.js (renderTreatments)
 window.delTr=function(id){showConfirm(t("tr_del_c"),function(){
-  D.treatments=D.treatments.filter(function(t2){return t2.id!==id;});
+  BM.tratamente.pastreaza(function(t2){return t2.id!==id;});
   // counts are kept but no longer linked to the deleted treatment
-  (D.varroa||[]).forEach(function(v){if(v.treatmentId===id)v.treatmentId=null;});
+  BM.varroa.randuri().forEach(function(v){if(v.treatmentId===id)v.treatmentId=null;});
   save();render();
 });};
 function treatM(id){
@@ -22,9 +22,10 @@ function treatM(id){
     +L(L2("🎯 Scop","🎯 Purpose"))+'<select id="tTg">'
     +'<option value="varroa"'+(!ex||trIsVarroa(ex)?" selected":"")+'>🕷️ Varroa</option>'
     +'<option value="other"'+(ex&&!trIsVarroa(ex)?" selected":"")+'>🩺 '+L2("Alt scop (ex. nosemoză, locă)","Other (e.g. nosema, foulbrood)")+'</option></select>'
-    +L(t("tr_hive"))+'<select id="tHv"><option value="">'+t("tr_all_h")+'</option>'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
-    +'<div class="r2"><div>'+L(t("tr_date"))+'<input type="date" id="tDt" value="'+(xv(ex,"date",todayISO()))+'"></div>'
+    +L(t("tr_hive"))+'<select id="tHv"><option value="">'+t("tr_all_h")+'</option>'+BM.stupi.randuri().map(function(h){return'<option value="'+h.id+'"'+(xv(ex,"hiveId","")=== h.id?" selected":"")+'>'+h.name+'</option>';}).join("")+'</select>'
+    +'<div class="r2"><div>'+L(t("tr_date"))+'<input type="date" id="tDt" value="'+(xv(ex,"date",todayISO()))+'" onchange="if(window.sfTrWx)sfTrWx()"></div>'
     +'<div>'+L(t("tr_end"))+'<input type="date" id="tEnd" value="'+esc(xv(ex,"endDate",""))+'"><span class="hint">'+t("tr_end_h")+'</span></div></div>'
+    +'<div id="tWx"></div>'
     +L(t("tr_dose"))+'<input id="tDs" value="'+(esc(xv(ex,"dosage","")))+'" placeholder="'+t("tr_dose_ph")+'">'
     +'<div class="al ali" style="font-size:.76rem;padding:6px 10px;margin:8px 0;">'
     +'💡 '+L2("La tratamentele pentru varroa, numără acarieni căzuți pe placă (din 🔍 Inspecție sau ➕ Numărătoare). O numărătoare înainte și una după tratament arată cât de eficient a fost.","For varroa treatments, count the mites fallen on the board (from 🔍 Inspect or ➕ Count). One count before and one after the treatment shows how effective it was.")
@@ -34,26 +35,15 @@ function treatM(id){
       +'<div class="ck" style="margin-top:6px;"><input type="checkbox" id="tReopen"><label for="tReopen">↩️ '+L2("Anulează încheierea (tratamentul redevine în curs)","Undo finishing (treatment becomes active again)")+'</label></div></div>':'')
     +L(t("tr_notes"))+'<textarea id="tNt" rows="2">'+(esc(xv(ex,"notes","")))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveTr(\''+(id||'')+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
+  if(window.sfTrWx)sfTrWx();
 }
 window.saveTr=function(id){
   var o={id:id||uid(),target:($q("tTg")||{}).value||"varroa",product:($q("tPr")||{}).value,hiveId:($q("tHv")||{}).value||null,date:($q("tDt")||{}).value,endDate:($q("tEnd")||{}).value||"",dosage:($q("tDs")||{}).value,notes:($q("tNt")||{}).value};
   if(o.endDate&&o.date&&o.endDate<o.date){toast("⚠️ "+t("tr_end_err"));var e=$q("tEnd");if(e){e.classList.add("err");setTimeout(function(){e.classList.remove("err");},2500);}return;}
-  if(id){var ex=BM.tratamente.get(id);if(ex){Object.assign(ex,o);if($q("tReopen")&&$q("tReopen").checked){delete ex.done;delete ex.doneHives;}}}else{D.treatments.push(o);}
+  if(id){var ex=BM.tratamente.get(id);if(ex){BM.tratamente.modifica(ex,o);if($q("tReopen")&&$q("tReopen").checked){delete ex.done;delete ex.doneHives;}}}else{BM.tratamente.adauga(o);}
   save(false);closeM();render();toast(id?t("tr_upd"):t("tr_saved"),"💊");
 };
 
-// Helper: equipment items where 1 unit is sufficient (no warning when qty===min===1)
-var EQUIP_SINGLE=["Mască apicol","Mănuși apicole","Combinezon","Fumigător mic","Fumigător mare",
-  "Daltă apicol","Perie albine",
-  "Beekeeping Veil","Beekeeping Gloves","Beekeeping Suit","Small Smoker","Large Smoker",
-  "Hive Tool","Bee Brush"];
-function isLowStock(i){
-  // For individual equipment: warning only if qty < min (not when equal)
-  if(EQUIP_SINGLE.some(function(n){return i.name&&i.name.toLowerCase()===n.toLowerCase();})){
-    return i.qty<i.min;
-  }
-  return i.qty<=i.min;
-}
 
 // ═══════════════════════════════════════════
 // 🧪 Product picker — phone friendly (the native <select> showed the long names cut off)
@@ -82,7 +72,7 @@ window.trProdSync=function(id){var h=$q(id),b=$q(id+"_b"),o=$q(id+"_o");if(!h||!
   b.innerHTML=trProdLabel(h.value)+'<span class="hv-arr">›</span>';
   if(o){var known=(t("tr_products")||[]).indexOf(h.value)>=0;o.style.display=trProdIsOther(h.value)||(h.value&&!known)?"block":"none";if(h.value&&!known)o.value=h.value;}
 };
-window.trProdSet=function(id,val){var h=$q(id);if(!h)return;h.value=val;trProdSync(id);if(typeof _mDirty!=="undefined")_mDirty=true;trProdClose();
+window.trProdSet=function(id,val){var h=$q(id);if(!h)return;h.value=val;trProdSync(id);if(id==="tPr"&&window.sfTrWx)sfTrWx();if(typeof _mDirty!=="undefined")_mDirty=true;trProdClose();
   var o=$q(id+"_o");if(o&&trProdIsOther(val)){o.value="";setTimeout(function(){o.focus();},80);}};
 window.trProdOther=function(id,v){var h=$q(id);if(!h)return;v=(v||"").trim();h.value=v||(t("tr_products")||[]).filter(trProdIsOther)[0]||"";var b=$q(id+"_b");if(b)b.innerHTML=trProdLabel(v?"📦 "+v:h.value)+'<span class="hv-arr">›</span>';if(typeof _mDirty!=="undefined")_mDirty=true;};
 window.trProdOpen=function(id){

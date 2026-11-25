@@ -20,10 +20,8 @@
 
 // frame types — the SAME list for frames taken out and put in
 var MV_T=[["b","🟨 Puiet"],["ba","🐝 Puiet cu albine"],["h","🟩 Miere"],["p","🟧 Păstură"],["e","🟫 Fagure clădit gol"],["f","⬜ Fundație nouă (neclădită)"],["old","⬛ Fagure vechi (de schimbat)"]];
-var MV_OUT_T=MV_T,MV_IN_T=MV_T;
 var MV_OLD={d:"🟫 Fagure clădit gol",pl:"⬢ Fagure de plastic"};   // labels of types saved by an earlier version
 function mvTLbl(t){return mvLbl(MV_T,t)||MV_OLD[t]||(t==="e"?"🟫 Fagure clădit gol":"");}
-function mvInLbl(t){return mvTLbl(t);}
 var MV_EMPTY={e:1,f:1,old:1,d:1,pl:1};   // empty frames → column „Noi / Goale” on the sheet
 // ⬢ plastic: every frame type can be on a plastic foundation (second group of the type list) → the hive keeps a count (h.plastic)
 // frame type list with two groups: wax (normal) foundation and ⬢ plastic foundation — value "t" or "t|pl"
@@ -37,14 +35,13 @@ function mvIsPl(r){return !!(r&&(r.pl||r.t==="pl"));}
 function mvPlTxt(r){return mvIsPl(r)?" (plastic)":"";}
 var MV_DEST=[["hive","➡️ Alt stup"],["nuc","🐝 Roi nou"],["extract","🍯 Extracție"],["store","📦 Depozit"],["melt","🔥 Topit"],["other","📝 Altceva"]];
 var MV_SRC=[["hive","⬅️ Alt stup"],["store","📦 Depozit"],["new","🆕 Noi"],["other","📝 Altceva"]];
-var MV_NEST={b:1,ba:1,h:1,p:1};   // types counted in the brood-nest frames (brood + food)
 
 function mvLbl(list,v){var x=list.filter(function(o){return o[0]===v;})[0];return x?x[1]:"";}
 function mvPlain(s){return String(s||"").replace(/^[^A-Za-zĂÂÎȘȚăâîșț0-9]+/,"");}
 function mvHiveName(id){var h=BM.stupi.get(id)||(typeof genFind==="function"?genFind(id):null);return h?h.name:"—";}
 function mvOpts(list,cur){return list.map(function(o){return'<option value="'+o[0]+'"'+(cur===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");}
 function mvHiveOpts(cur,self){
-  return'<option value="">— alege stupul —</option>'+D.hives.filter(function(h){return h.id!==self;}).map(function(h){return'<option value="'+h.id+'"'+(cur===h.id?" selected":"")+'>'+(h.kind==="roi"?"🐝 ":"🏠 ")+esc(h.name)+'</option>';}).join("");
+  return'<option value="">— alege stupul —</option>'+BM.stupi.randuri().filter(function(h){return h.id!==self;}).map(function(h){return'<option value="'+h.id+'"'+(cur===h.id?" selected":"")+'>'+(h.kind==="roi"?"🐝 ":"🏠 ")+esc(h.name)+'</option>';}).join("");
 }
 // frames in the brood nest moved by a list of rows (nest types only), split in brood / food
 function mvNest(rows,inbound){
@@ -70,7 +67,7 @@ function mvRowHTML(kind,r){
   // hidden underneath (.mv-n .mv-t .mv-d .mv-h) — mvRead() and the voice inspection use them.
   var DL=(out?MV_DEST:MV_SRC).filter(function(x){return(out?["hive","nuc"]:["hive"]).indexOf(x[0])>=0||x[0]===dest;});   // older rows keep their own choice
   var chip=function(cls,v,lbl,on){return'<button type="button" class="mv-c'+(on?" on":"")+'" data-v="'+v+'" onclick="mvPick(this,\''+cls+'\')">'+lbl+'</button>';};
-  var hives=D.hives.filter(function(h){return h.id!==_mvSelf;});
+  var hives=BM.stupi.randuri().filter(function(h){return h.id!==_mvSelf;});
   return'<div class="mv-row mv-card '+(out?"out":"in")+'" data-kind="'+kind+'"'+(r.tid?' data-tid="'+esc(r.tid)+'"':'')+(r.nucId?' data-nuc="'+esc(r.nucId)+'"':'')+'>'
     +'<div class="mv-c-top"><span class="mv-k">'+(out?"↗️ Dat":"↙️ Primit")+'</span>'
     +'<span class="mv-step"><button type="button" onclick="mvStep(this,-1)" aria-label="−">−</button><b class="mv-nv">'+n+'</b><button type="button" onclick="mvStep(this,1)" aria-label="+">+</button></span>'
@@ -176,7 +173,6 @@ window.mvAdd=function(kind,preset){
   mvRowsChg();
 };
 window.mvDel=function(btn){var r=btn.closest(".mv-row");if(r)r.remove();mvRowsChg();};
-window.mvDestChg=function(sel){var r=sel.closest(".mv-row"),h=r?r.querySelector(".mv-h"):null;if(h)h.style.display=sel.value==="hive"?"block":"none";mvBal();};
 function mvReadKind(kind){
   var box=document.getElementById(kind==="out"?"mvOut":"mvIn");if(!box)return[];
   var on=$q("iRxOn");var ticked=!on||on.checked;
@@ -319,7 +315,7 @@ function mvPlNet(mv){var n=0;if(!mv)return 0;
   (mv.out||[]).forEach(function(r){if(!r.auto&&mvIsPl(r))n-=parseInt(r.n)||0;});return n;}
 
 // ── Applying / undoing transfers on the other hive ──────────────
-function mvLatest(hid,date,exceptId){return !(D.inspections||[]).some(function(i){return i.hiveId===hid&&i.id!==exceptId&&i.date>date;});}
+function mvLatest(hid,date,exceptId){return !BM.inspectii.randuri().some(function(i){return i.hiveId===hid&&i.id!==exceptId&&i.date>date;});}
 function mvHiveAdd(hid,date,db,df,inspId,dg){   // change the hive's current frames (only if that inspection is its latest)
   var h=BM.stupi.get(hid);if(!h||!mvLatest(hid,date,inspId))return;
   h.fB=Math.max(0,(parseInt(h.fB)||0)+db);h.fH=Math.max(0,(parseInt(h.fH)||0)+df);h.fE=Math.max(0,(parseInt(h.fE)||0)+(dg||0));h.fT=h.fB+h.fH+h.fE;h.str=strCalc(h.fB,h.fH,null,date);
@@ -328,13 +324,13 @@ function mvG(t){return t==="e"||t==="f"||t==="old"||t==="d"||t==="pl";}   // �
 function mvRefresh(x){var s=mvSums(x.mv||{});x.fIn=s.fIn;x.fOut=s.fOut;}
 // the other hive's inspection of that day (or a new automatic "transfer" one)
 function mvTarget(hid,src){
-  var x=(D.inspections||[]).find(function(i){return i.hiveId===hid&&i.date===src.date&&i.id!==src.id;});
+  var x=BM.inspectii.randuri().find(function(i){return i.hiveId===hid&&i.date===src.date&&i.id!==src.id;});
   if(x){if(!x.mv)x.mv={out:[],in:[]};return x;}
-  var h=D.hives.find(function(v){return v.id===hid;})||{};
+  var h=BM.stupi.rand(hid)||{};
   x={id:uid(),hiveId:hid,date:src.date,transfer:true,weather:src.weather||"",temp:src.temp,smoke:"",structC:"ok",structN:"",
     behav:null,qSeen:false,eggs:false,larvae:false,capped:false,botci:false,botciN:0,fB:parseInt(h.fB)||0,fH:parseInt(h.fH)||0,fE:parseInt(h.fE)||0,nests:parseInt(h.nests)||1,fP:0,
     popPct:null,bp:"",space:"suficient",diseases:[],diseaseN:"",notes:"",mv:{out:[],in:[]},frBefore:(parseInt(h.fB)||0)+(parseInt(h.fH)||0)+(parseInt(h.fE)||0)};
-  D.inspections.push(x);return x;
+  BM.inspectii.adauga(x);return x;
 }
 // apply the movements of inspection o (origin rows only: not auto, with another hive)
 function mvApply(o){
@@ -372,7 +368,7 @@ function mvRevert(o){
   var tids={};
   (o.mv.out||[]).concat(o.mv.in||[]).forEach(function(r){if(!r.auto&&r.tid)tids[r.tid]=1;});
   if(!Object.keys(tids).length)return;
-  (D.inspections||[]).slice().forEach(function(x){
+  BM.inspectii.randuri().slice().forEach(function(x){
     if(x.id===o.id||!x.mv)return;
     var changed=false;
     ["in","out"].forEach(function(k){
@@ -386,7 +382,7 @@ function mvRevert(o){
       });
     });
     if(changed){mvRefresh(x);
-      if(x.transfer&&!x.mv.in.length&&!x.mv.out.length&&!x.notes&&!(x.weight&&x.weight.kg))D.inspections=D.inspections.filter(function(i){return i.id!==x.id;});}
+      if(x.transfer&&!x.mv.in.length&&!x.mv.out.length&&!x.notes&&!(x.weight&&x.weight.kg))BM.inspectii.pastreaza(function(i){return i.id!==x.id;});}
   });
 }
 
@@ -413,7 +409,7 @@ function mvNucAfterSave(o){
 // a nuc was saved: link it to the inspection rows (from inspection) or note it on the donor (🐝 button)
 function mvNucSaved(nuc,fromInspId,fb,fh,date){
   if(fromInspId){
-    var x=(D.inspections||[]).find(function(i){return i.id===fromInspId;});
+    var x=BM.inspectii.rand(fromInspId);
     if(x&&x.mv)(x.mv.out||[]).forEach(function(r){if(r.dest==="nuc"&&!r.nucId)r.nucId=nuc.id;});
     return;
   }
@@ -422,6 +418,6 @@ function mvNucSaved(nuc,fromInspId,fb,fh,date){
   if(fb)x2.mv.out.push({n:fb,t:"b",dest:"nuc",nucId:nuc.id,auto:true});
   if(fh)x2.mv.out.push({n:fh,t:"h",dest:"nuc",nucId:nuc.id,auto:true});
   if(!x2.transfer){x2.fB=Math.max(0,(parseInt(x2.fB)||0)-fb);x2.fH=Math.max(0,(parseInt(x2.fH)||0)-fh);}
-  else{var d=D.hives.find(function(v){return v.id===don;});if(d){x2.fB=d.fB;x2.fH=d.fH;x2.frBefore=(parseInt(d.fB)||0)+(parseInt(d.fH)||0)+fb+fh;}}
+  else{var d=BM.stupi.rand(don);if(d){x2.fB=d.fB;x2.fH=d.fH;x2.frBefore=(parseInt(d.fB)||0)+(parseInt(d.fH)||0)+fb+fh;}}
   mvRefresh(x2);
 }

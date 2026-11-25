@@ -9,7 +9,7 @@ function renderSettings(){
   var isEN=D.settings.lang==="en";
 
   // ── Archive build (unchanged logic) ──────────────────────────
-  var allSorted2=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
+  var allSorted2=[].concat(BM.inspectii.randuri()).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
   var seenHive2={};var shownIds2={};
   allSorted2.forEach(function(i){if(i.date&&!seenHive2[i.hiveId]){seenHive2[i.hiveId]=true;shownIds2[i.id]=true;}});
   var pastInsp2=allSorted2.filter(function(i){return i.date&&!shownIds2[i.id];});
@@ -52,8 +52,8 @@ function renderSettings(){
     +'<div class="hv-ts" style="margin-top:8px;">🕒 Ultimul backup: <b>'+driveLastExport+'</b></div>';
   // ── Per-hive snapshots status ─────────────────────────────────
   var hiveSnapHTML='';
-  if(D.hives.length>0){
-    var snapRows=D.hives.map(function(h){
+  if(BM.stupi.randuri().length>0){
+    var snapRows=BM.stupi.randuri().map(function(h){
       var snap=null;try{var s=localStorage.getItem("bmp5_hive_"+h.id);if(s)snap=JSON.parse(s);}catch(e){}
       var savedAt=snap?new Date(snap.savedAt).toLocaleString():"—";
       var inspCnt=snap?(snap.inspections||[]).length:0;
@@ -62,7 +62,7 @@ function renderSettings(){
         +'<span style="color:var(--mut);font-size:.7rem;">'+inspCnt+' insp. · '+savedAt+'</span>'
         +'</div>';
     }).join("");
-    hiveSnapHTML=seFoldHTML("snap","🏠 Auto-salvare per stup",D.hives.length+" stupi",
+    hiveSnapHTML=seFoldHTML("snap","🏠 Auto-salvare per stup",BM.stupi.randuri().length+" stupi",
       '<p style="font-size:.78rem;color:var(--mut);margin:4px 0 10px;">Fiecare stup are propriul snapshot local, actualizat la fiecare salvare.</p>'+snapRows);
   }
 
@@ -79,7 +79,9 @@ function renderSettings(){
     +'<button class="btn gh" onclick="impFrom(\'phone\')">📱 Din telefon</button></div>'
     +'<p style="font-size:.72rem;color:var(--mut);margin:10px 0 0;line-height:1.45;">📱 <b>Telefon:</b> fișierul e de obicei în <b>Descărcări</b> (Downloads).<br>☁️ <b>Drive:</b> în fereastra care se deschide apasă <b>☰</b> (sus, stânga) și alege <b>Drive</b>, apoi fișierul.<br>⚠️ Importul înlocuiește datele actuale din aplicație.</p></div>'},
     {id:"raport",ico:"📊",t:"Raport anual",s:"Totaluri pe an și pe stup · export CSV",h:rpCardHTML()},
+    {id:"registru",ico:"💊",t:"Registru de tratamente",s:"Tabel pe an, de printat / PDF",h:regCardHTML()},
     {id:"fisa",ico:"📋",t:"Fișa de observație",s:"PDF pe stup, pentru un an",h:fisaCardHTML()},
+    {id:"sfaturi",ico:"🧭",t:"Sfaturi",s:(BM.sfaturi.setari().on!==false?"Pornite":"Oprite")+" · provizii de iarnă "+(BM.sfaturi.setari().winterKg||SF_WINTER_KG)+" kg",h:sfCardHTML()},
     {id:"voice",ico:"🎓",t:"Antrenează vocea",s:(D.settings.vcLearn||[]).length?(D.settings.vcLearn||[]).length+" cuvinte învățate":"Învață aplicația cum vorbești",h:vtCardHTML()},
     {id:"share",ico:"📲",t:"Deschide pe alt telefon",s:"Cod QR și link pentru instalare",h:appShareHTML()},
     {id:"qr",ico:"🏷️",t:"Coduri QR pentru stupi",s:"Etichete de printat · scanezi și pornește inspecția vocală",h:qrCardHTML()},
@@ -116,7 +118,7 @@ function renderSettings(){
     +'<button class="btn sm" onclick="if(navigator.onLine){if(D.userLoc)fetchW(D.userLoc.lat,D.userLoc.lon);else initLoc();}else{openManualWeather();}">'+(isEN?"Update weather":"Actualizează vreme")+'</button>'
     +'<button class="btn sm gh" onclick="openManualWeather()">✍️ '+(isEN?"Manual entry":"Introdu manual")+'</button>'
     +'</div></div>'},
-    {id:"snap",ico:"🏠",t:"Auto-salvare per stup",s:D.hives.length+" stupi salvați local",h:(function(){_seOpen.snap=true;return hiveSnapHTML;})()}
+    {id:"snap",ico:"🏠",t:"Auto-salvare per stup",s:BM.stupi.randuri().length+" stupi salvați local",h:(function(){_seOpen.snap=true;return hiveSnapHTML;})()}
   ];
   if(typeof demoCardHTML==="function"&&demoCardHTML())SEC.push({id:"demo",ico:"🧪",t:"Date de probă",s:"Doar în previzualizare",h:demoCardHTML()});
   var cur=SEC.filter(function(x){return x.id===_seSec;})[0];
@@ -130,8 +132,8 @@ function renderSettings(){
       return'<div class="se-item" role="button" onclick="seOpen(\''+x.id+'\')"><span class="se-ico">'+x.ico+'</span>'
         +'<div class="se-it"><b>'+x.t+'</b><div class="hv-ts">'+x.s+'</div></div><span class="hv-arr">›</span></div>';}).join("")+'</div>';};
     setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders" style="color:var(--gold)"></i> '+t("se_title")+'</h2>'
-      +grp("Date",["backup","raport","fisa","qr","arc"])
-      +grp("Aplicația",["voice","share","menu","alert","disp","wx"])
+      +grp("Date",["backup","raport","fisa","registru","qr","arc"])
+      +grp("Aplicația",["sfaturi","voice","share","menu","alert","disp","wx"])
       +grp("Altele",["snap","demo"]));
   }
   if(_seSec==="menu")mnoInitDrag();
@@ -197,12 +199,9 @@ function mnoInitDrag(){
     document.addEventListener("pointermove",mv);document.addEventListener("pointerup",up);document.addEventListener("pointercancel",up);
   });
 }
-window.expData=function(){var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:"application/json"}));a.download="beemanager_backup_"+todayISO()+".json";a.click();};
-window.impData=function(){driveImportJSON();};
 // Import source buttons: both open the system file picker (a web app can't open Drive directly);
 // the toast reminds where to tap for the chosen source.
 window.impFrom=function(src){toast(src==="drive"?"Apasă ☰ (sus, stânga) → Drive → alege fișierul":"Alege fișierul din Descărcări (Downloads)",src==="drive"?"☁️":"📱");driveImportJSON();};
-window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");(typeof dbClear==="function"?dbClear():Promise.resolve()).then(function(){location.reload();});});};
 
 // ── Collapsible Settings cards (archive, auto-save list): closed by default, tap the title to open ──
 var _seOpen={};

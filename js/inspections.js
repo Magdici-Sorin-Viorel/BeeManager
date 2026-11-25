@@ -31,7 +31,7 @@ window.inspDisUpd=function(){
 // with „🔎 Am observat ceva”. A new condition (not currently treated) → „🗓️ Planifică tratament”.
 function hlActiveTr(){
   var hid=($q("iHive")||{}).value,date=($q("iDt")||{}).value||todayISO();
-  var a=hid?(D.treatments||[]).filter(function(tr){return trAppliesTo(tr,hid)&&trIsActive(tr,hid,date);}):[];
+  var a=hid?BM.tratamente.randuri().filter(function(tr){return trAppliesTo(tr,hid)&&trIsActive(tr,hid,date);}):[];
   return{varroa:a.some(trIsVarroa),other:a.some(function(tr){return !trIsVarroa(tr);})};
 }
 function hlChecked(){
@@ -106,12 +106,12 @@ function inspCardHTML(i,showHiveName){
     +(i.postTr&&i.postTrEff?'<div style="font-size:.73rem;margin-top:3px;"><span class="bg gb" style="font-size:.65rem;">🔬 '+t("insp_post_tr_t")+'</span> <span class="bg '+(i.postTrEff&&i.postTrEff.indexOf("90")>=0?"gg":i.postTrEff&&i.postTrEff.indexOf("60")>=0?"gy":"gr")+'" style="font-size:.65rem;">📈 '+i.postTrEff+'</span>'+(i.postTrVarroa!==null&&i.postTrVarroa!==undefined?' <span class="bg" style="font-size:.63rem;background:rgba(255,255,255,.08);">🕷️ '+i.postTrVarroa+'/24h</span>':"")+'</div>':"")
     +(i.calcBrood?(function(){var w=devWorker(i.date,{egg:i.eggs,larva:i.larvae,capped:i.capped});return w?'<div style="font-size:.76rem;margin-top:3px;">🐝 '+L2("Albine noi:","New bees:")+' <b>'+devRange(w.from,w.to)+'</b> · '+L2("culegătoare","foragers")+' ~ '+devFmt(w.foragers)+'</div>':"";})():"")
     +(i.botci&&i.botciAction==="keep"?(function(){var q=devQueen(i.date,i.botciS||"mixt");return'<div style="font-size:.76rem;margin-top:3px;">👑 '+L2("Regină nouă:","New queen:")+' <b>'+devRange(q.emFrom,q.emTo)+'</b> · 🥚 '+devRange(q.layFrom,q.layTo)+'</div>';})():"")
-    +((i.trFinished||[]).length?'<div style="font-size:.76rem;margin-top:3px;">✅ '+L2("Încheiat:","Finished:")+' '+(i.trFinished||[]).map(function(f){var tr=(D.treatments||[]).find(function(x){return x.id===f.id;});return esc(tr?trShort(tr):"—")+(f.all?'':' ('+L2("acest stup","this hive")+')');}).join(", ")+'</div>':"")
-    +(i.trPlannedId?(function(){var tr=(D.treatments||[]).find(function(x){return x.id===i.trPlannedId;});return tr?'<div style="font-size:.76rem;margin-top:3px;">🗓️ '+L2("Planificat:","Planned:")+' '+esc(trShort(tr))+' · '+tr.date+'</div>':"";})():"")
+    +((i.trFinished||[]).length?'<div style="font-size:.76rem;margin-top:3px;">✅ '+L2("Încheiat:","Finished:")+' '+(i.trFinished||[]).map(function(f){var tr=BM.tratamente.rand(f.id);return esc(tr?trShort(tr):"—")+(f.all?'':' ('+L2("acest stup","this hive")+')');}).join(", ")+'</div>':"")
+    +(i.trPlannedId?(function(){var tr=BM.tratamente.rand(i.trPlannedId);return tr?'<div style="font-size:.76rem;margin-top:3px;">🗓️ '+L2("Planificat:","Planned:")+' '+esc(trShort(tr))+' · '+tr.date+'</div>':"";})():"")
     +(i.qMated?'<div style="font-size:.76rem;margin-top:3px;">💞 '+L2("Regina nouă e împerecheată","New queen is mated")+'</div>':i.qEmerged?'<div style="font-size:.76rem;margin-top:3px;">🐣 '+L2("Regina nouă a ieșit din botcă","New queen emerged")+'</div>':"")
     +(i.botci&&i.botciAction==="removed"?'<div style="font-size:.76rem;margin-top:3px;">✂️ '+L2("Botci eliminate","Cells removed")+'</div>':"")
     +(function(){var x=i.mv?mvTxt(i):rxTxt(i);return x?'<div style="font-size:.76rem;margin-top:3px;">🔄 '+esc(x)+'</div>':"";})()
-    +(function(){var v=(D.varroa||[]).find(function(x){return x.inspectionId===i.id;});return v?'<div style="font-size:.76rem;margin-top:3px;">🕷️ '+vrValStr(v)+(v.reapplied?' · 💧':'')+' <span class="bg gb" style="font-size:.6rem;">💊 '+vrPhaseLbl(vrPhase(v))+'</span></div>':"";})()
+    +(function(){var v=BM.varroa.randuri().find(function(x){return x.inspectionId===i.id;});return v?'<div style="font-size:.76rem;margin-top:3px;">🕷️ '+vrValStr(v)+(v.reapplied?' · 💧':'')+' <span class="bg gb" style="font-size:.6rem;">💊 '+vrPhaseLbl(vrPhase(v))+'</span></div>':"";})()
     +(i.notes?'<div style="font-size:.72rem;color:var(--mut);margin-top:3px;font-style:italic">'+esc(i.notes)+'</div>':"")
     +(i.voiceTx?'<details class="vc-full"><summary>🎙️ Tot ce ai spus</summary><div>'+esc(i.voiceTx)+'</div></details>':"")
     +'<div class="br"><button class="btn sm be" onclick="inspM(\''+i.hiveId+'\',\''+i.id+'\')">✏️</button>'
@@ -126,126 +126,21 @@ window.toggleArc=function(id){
 };
 
 
-function renderInspections(){
-  var now=new Date();
-  var curMonth=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
-
-  // Sort all inspections descending
-  var allSorted=[].concat(D.inspections).sort(function(a,b){return new Date(b.date)-new Date(a.date);});
-
-  // Current month inspections
-  var curInsp=allSorted.filter(function(i){return i.date&&i.date.startsWith(curMonth);});
-
-  // Alert: hives not inspected in the last 7 days
-  var today7=new Date();today7.setHours(0,0,0,0);
-  var warnHives=BM.inspectii.neinspectati().map(function(x){return x.h;});   // same rule and threshold as the hive cards
-
-  // Last inspection per hive in current month (already sorted desc so first = last)
-  var seenHive={};var curCards=[];var shownIds={};
-  curInsp.forEach(function(i){
-    if(!seenHive[i.hiveId]){seenHive[i.hiveId]=true;shownIds[i.id]=true;curCards.push(inspCardHTML(i,true));}
-  });
-
-  // Archive = ALL inspections except the ones shown as current-month cards
-  // (includes older inspections from current month + all past months)
-  var archiveInsp=allSorted.filter(function(i){return i.date&&!shownIds[i.id];});
-  var byMonth={};
-  archiveInsp.forEach(function(i){
-    var m=i.date.slice(0,7);
-    if(!byMonth[m])byMonth[m]={};
-    if(!byMonth[m][i.hiveId])byMonth[m][i.hiveId]=[];
-    byMonth[m][i.hiveId].push(i);
-  });
-  var monthKeys=Object.keys(byMonth).sort().reverse();
-
-  var alertHTML=warnHives.length?
-    '<div class="sa" style="margin-bottom:16px;">'
-    +'<strong>⚠️ '+t("insp_alert_title")+'</strong><br>'
-    +'<span style="font-size:.82rem;color:var(--mut);">'+(D.settings.lang==="en"?"Not inspected in the last 7 days:":"Nu au fost verificați în ultimele 7 zile:")+'</span><br style="margin-bottom:5px;">'
-    +warnHives.map(function(h){
-      var lastI=BM.inspectii.aleStupului(h.id)[0];
-      var daysAgo=lastI?Math.floor((today7-new Date(lastI.date))/86400000):null;
-      return'<span class="bg gr" style="margin:4px 3px 0 0;display:inline-block;">🏠 '+h.name+(daysAgo!==null?" ("+daysAgo+"d)":"")+'</span>';
-    }).join("")
-    +'</div>':"";
-
-  // Build current month HTML
-  var curHTML='<div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">'
-    +'<span style="font-size:.82rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;">'+t("insp_cur_month")+'</span>'
-    +(curCards.length?'<span class="bg gy" style="font-size:.68rem;">'+curCards.length+' '+t("insp_stupi")+'</span>':"")
-    +'</div>'
-    +(curCards.length?'<div class="g gc">'+curCards.join("")+'</div>':'<div class="al ali">'+t("insp_no_cur")+'</div>');
-
-  // Build archive HTML
-  var arcHTML='<div style="margin-top:22px;margin-bottom:10px;"><span style="font-size:.82rem;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.5px;">'+t("insp_archive")+'</span></div>';
-  if(monthKeys.length===0){
-    arcHTML+='<div class="al ali">'+t("insp_no_arc")+'</div>';
-  } else {
-    arcHTML+=monthKeys.map(function(ym,mi){
-      var arcId="arc_m"+mi;
-      var hivesInMonth=byMonth[ym];
-      var hiveKeys=Object.keys(hivesInMonth);
-      var totalInMonth=0;
-      hiveKeys.forEach(function(hid){totalInMonth+=hivesInMonth[hid].length;});
-      var hivesHTML=hiveKeys.map(function(hid,hi){
-        var hv=BM.stupi.get(hid);
-        var hivArcId=arcId+"_h"+hi;
-        // Sort ascending (chronological)
-        var insps=hivesInMonth[hid].slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
-        var rowsHTML=insps.map(function(insp){
-          return'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;">'
-            +'<span style="font-size:.82rem;font-weight:700;min-width:95px;">📅 '+insp.date+'</span>'
-            +'<span class="bg '+(insp.qSeen?"gg":"gy")+'" style="font-size:.63rem;">'+(insp.qSeen?"👑✅":"👑❓")+'</span>'
-            +'<span class="bg gb" style="font-size:.63rem;">🥚 '+(insp.fB||0)+'</span>'
-            +'<span class="bg gg" style="font-size:.63rem;">🍯 '+(insp.fH||0)+'</span>'
-            +(insp.botci?'<span class="bg gr" style="font-size:.63rem;">🐛</span>':"")
-            +'<div style="margin-left:auto;display:flex;gap:4px;">'
-            +'<button class="btn sm be" onclick="inspM(\''+insp.hiveId+'\',\''+insp.id+'\')">✏️</button>'
-            +'<button class="btn sm bd" onclick="delInsp(\''+insp.id+'\')">🗑️</button>'
-            +'</div></div>';
-        }).join("");
-        return'<div style="margin:3px 0;">'
-          +'<div onclick="toggleArc(\''+hivArcId+'\')" style="cursor:pointer;padding:9px 14px;background:rgba(230,180,34,.04);border:1px solid var(--bdr);border-radius:var(--rs);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
-          +'<span style="font-weight:700;font-size:.83rem;">🏠 '+(hv?hv.name:hid)+'</span>'
-          +'<div style="display:flex;gap:6px;align-items:center;">'
-          +'<span class="bg gy" style="font-size:.65rem;">'+insps.length+' '+t("insp_insp")+'</span>'
-          +'<span style="color:var(--mut);font-size:.75rem;">▼</span>'
-          +'</div></div>'
-          +'<div id="'+hivArcId+'" style="display:none;border:1px solid var(--bdr);border-top:none;border-radius:0 0 var(--rs) var(--rs);overflow:hidden;">'
-          +rowsHTML+'</div></div>';
-      }).join("");
-      return'<div style="margin-bottom:10px;">'
-        +'<div onclick="toggleArc(\''+arcId+'\')" style="cursor:pointer;padding:11px 16px;background:rgba(230,180,34,.09);border:1px solid rgba(230,180,34,.28);border-radius:var(--rm);display:flex;justify-content:space-between;align-items:center;user-select:none;">'
-        +'<span style="font-weight:800;font-size:.92rem;">📅 '+monthName(ym)+'</span>'
-        +'<div style="display:flex;gap:7px;align-items:center;">'
-        +'<span class="bg gy" style="font-size:.68rem;">'+hiveKeys.length+' '+t("insp_stupi")+'</span>'
-        +'<span class="bg gb" style="font-size:.68rem;">'+totalInMonth+' '+t("insp_insp")+'</span>'
-        +'<span style="color:var(--gold);font-size:.8rem;">▼</span>'
-        +'</div></div>'
-        +'<div id="'+arcId+'" style="display:none;padding:8px 4px;">'
-        +hivesHTML+'</div></div>';
-    }).join("");
-  }
-
-  setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-book-open" style="color:var(--gold)"></i> '+t("insp_title")+' <span class="cs">('+D.inspections.length+')</span></h2>'
-    +'<button class="btn" style="margin-bottom:14px;" onclick="inspM(null)">'+t("insp_new")+'</button>'
-    +alertHTML+curHTML+arcHTML);
-}
 
 window.delInsp=function(id){showConfirm(t("insp_del_c"),function(){
   // undo the inspection's side effects: feeding actions, treatment finishes, a planned treatment not started yet
   var ex=BM.inspectii.get(id);
   if(ex){
-    if(ex.fdActs&&ex.fdActs.length)fdRevert(ex.fdActs,D.feedings||[],ex.id,true);
-    (ex.trFinished||[]).forEach(function(f){var tr=(D.treatments||[]).find(function(x){return x.id===f.id;});if(!tr)return;
+    if(ex.fdActs&&ex.fdActs.length)fdRevert(ex.fdActs,BM.hraniri.randuri()||[],ex.id,true);
+    (ex.trFinished||[]).forEach(function(f){var tr=BM.tratamente.rand(f.id);if(!tr)return;
       if(f.all&&tr.done===f.date)delete tr.done;
       else if(tr.doneHives&&tr.doneHives[ex.hiveId]===f.date)delete tr.doneHives[ex.hiveId];});
     mvRevert(ex);   // frames given to / taken from other hives
     mvPlAdd(ex.hiveId,-mvPlNet(ex.mv));   // ⬢ plastic frames count
-    if(ex.trPlannedId)D.treatments=(D.treatments||[]).filter(function(tr){return !(tr.id===ex.trPlannedId&&tr.fromInspection===ex.id&&tr.date>todayISO());});
+    if(ex.trPlannedId)BM.tratamente.pastreaza(function(tr){return !(tr.id===ex.trPlannedId&&tr.fromInspection===ex.id&&tr.date>todayISO());});
   }
-  D.inspections=D.inspections.filter(function(i){return i.id!==id;});
-  D.varroa=(D.varroa||[]).filter(function(v){return v.inspectionId!==id;});   // and the count made during the inspection
+  BM.inspectii.pastreaza(function(i){return i.id!==id;});
+  BM.varroa.pastreaza(function(v){return v.inspectionId!==id;});   // and the count made during the inspection
   // it was the hive's latest inspection → the hive goes back to the frames of the previous one
   if(ex){var hvD=BM.stupi.get(ex.hiveId),liD=hvInsps(ex.hiveId)[0];
     if(hvD&&liD&&ex.date>=liD.date){hvD.fB=parseInt(liD.fB)||0;hvD.fH=inspFood(liD);hvD.fT=hvD.fB+hvD.fH;
@@ -257,7 +152,7 @@ function inspM(hiveId,editId,pick){
   hiveId=hiveId||null;editId=editId||null;
   // opened without a hive („Inspecție nouă” on the Inspections page): show the hive picker and build the
   // whole form for the hive selected in it (prefill, brood boxes, supers…); changing it rebuilds the form (inspPick)
-  if(!hiveId&&!editId){pick=true;hiveId=(D.hives[0]||{}).id||null;}
+  if(!hiveId&&!editId){pick=true;hiveId=(BM.stupi.randuri()[0]||{}).id||null;}
   if(typeof _bx!=="undefined"){_bx.on=false;_bx.put=0;_bx.take=0;_bx.adj={b:0,f:0,e:0};}   // box-editor taps belong to one form (boxes.js)
   var ex=editId?BM.inspectii.get(editId):null;
   var effHid=ex?ex.hiveId:hiveId;
@@ -268,7 +163,7 @@ function inspM(hiveId,editId,pick){
   var disNoteDef=ex?(ex.diseaseN||""):"";
   if(!ex&&effHid){
     var tdI=todayISO();
-    var actI=(D.treatments||[]).filter(function(tr){return trAppliesTo(tr,effHid)&&trIsActive(tr,effHid,tdI);});
+    var actI=BM.tratamente.randuri().filter(function(tr){return trAppliesTo(tr,effHid)&&trIsActive(tr,effHid,tdI);});
     var vA=actI.some(trIsVarroa),oT=actI.filter(function(tr){return !trIsVarroa(tr);})[0];
     disArr=vA?["Varroa"]:(oT?[]:["Sănătos"]);
     if(oT){   // condition of an other-purpose treatment: if it is in the list (e.g. Nosemoză) check it, else „Altă problemă”
@@ -287,7 +182,7 @@ function inspM(hiveId,editId,pick){
   var tempDefault=xv(ex,"temp",autoT);
   var wo=t("wo"),sm=t("sm"),stc=t("stc"),bh=t("bh"),qq=t("qq"),bt=t("bt"),bp=t("bp"),sp=t("sp"),dis=t("dis");
 
-  var hiveSelHTML=(pick||!hive)&&!ex?'<div class="isc-pick">'+L(t("insp_hive"))+'<select id="iHive" data-cur="'+(effHid||"")+'" oninput="event.stopPropagation()" onchange="inspPick(this)">'+D.hives.map(function(h){return'<option value="'+h.id+'"'+(effHid===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
+  var hiveSelHTML=(pick||!hive)&&!ex?'<div class="isc-pick">'+L(t("insp_hive"))+'<select id="iHive" data-cur="'+(effHid||"")+'" oninput="event.stopPropagation()" onchange="inspPick(this)">'+BM.stupi.randuri().map(function(h){return'<option value="'+h.id+'"'+(effHid===h.id?" selected":"")+'>'+esc(h.name)+'</option>';}).join("")+'</select></div>'
     :'<input type="hidden" id="iHive" value="'+effHid+'">';
 
   var magHTML=(hive&&hive.kind==="roi")?'':magBlockHTML(hive,ex);   // a swarm has no supers
@@ -383,7 +278,7 @@ function inspM(hiveId,editId,pick){
     +L(t("insp_post_tr_prod"))
     +'<select id="iPostTrProd">'
     +'<option value="">—</option>'
-    +(D.treatments||[]).filter(function(tr){return !hiveId||!tr.hiveId||tr.hiveId===hiveId||tr.hiveId===(ex?ex.hiveId:null);}).slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).map(function(tr){return'<option value="'+tr.id+'"'+(xv(ex,"postTrId","")=== tr.id?" selected":"")+'>💊 '+tr.product+' ('+tr.date+')</option>';}).join("")
+    +BM.tratamente.randuri().filter(function(tr){return !hiveId||!tr.hiveId||tr.hiveId===hiveId||tr.hiveId===(ex?ex.hiveId:null);}).slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);}).map(function(tr){return'<option value="'+tr.id+'"'+(xv(ex,"postTrId","")=== tr.id?" selected":"")+'>💊 '+tr.product+' ('+tr.date+')</option>';}).join("")
     +'</select>'
     +'<div class="r2">'
     +'<div>'+L(t("insp_post_tr_eff"))+'<select id="iPostTrEff">'
@@ -596,7 +491,7 @@ function wchTxt(i){   // short text of the winter check (inspection card, observ
 
 // ⚖️ WEIGHING — optional, any time of year: whole hive, or only the back lifted (× 2)
 function weighPrev(hid,date,exId){
-  var l=(D.inspections||[]).filter(function(i){return i.hiveId===hid&&i.id!==exId&&i.weight&&i.weight.kg&&i.date<date;})
+  var l=hvInsps(hid).filter(function(i){return i.id!==exId&&i.weight&&i.weight.kg&&i.date<date;})
     .sort(function(a,b){return a.date<b.date?1:-1;});
   return l[0]||null;
 }
@@ -626,15 +521,6 @@ function weighRead(){
   return{kg:Math.round((m==="back"?r*2:r)*10)/10,raw:r,method:m};
 }
 
-// 🔄 Frames added / removed: reads the section (null when unticked or all zero)
-function rxRead(kind){
-  if(!$q("iRxOn")||!$q("iRxOn").checked)return null;
-  var g=function(id){return parseInt(($q(id)||{}).value)||0;},o;
-  if(kind==="in")o={n:g("iInN"),h:g("iInH"),b:g("iInB")};
-  else o={n:g("iOutN"),h:g("iOutH"),p:g("iOutP"),b:g("iOutB"),a:g("iOutA")};
-  for(var k in o)if(o[k])return o;
-  return null;
-}
 function rxTxt(i){   // short text for the inspection card
   var fi=i.fIn||(i.nFrames?{n:i.nFrames}:null),fo=i.fOut,p=[];
   var part=function(o,map){return map.filter(function(m){return o[m[0]];}).map(function(m){return o[m[0]]+' '+m[1];}).join(", ");};
@@ -734,8 +620,8 @@ window.saveInsp=function(editId,hiveId){
   inspTrSave(o,prevI); // treatments: end / plan from the inspection
   inspFdSave(o,prevI); // feeding: start / top up / stop / plan from the inspection
   mvRevert(prevI);     // frames given to / taken from other hives: undo the old version first
-  if(editId){var ei=BM.inspectii.get(editId);if(ei)Object.assign(ei,o);}
-  else{D.inspections.push(o);}
+  if(editId){var ei=BM.inspectii.get(editId);if(ei)BM.inspectii.modifica(ei,o);}   // through the store: the per-hive index follows (an edited date changes the order)
+  else{BM.inspectii.adauga(o);}
   mvApply(o);          // frames given to / taken from other hives → recorded there too
   mvPlAdd(hid,mvPlNet(o.mv)-mvPlNet(prevI&&prevI.mv));   // ⬢ plastic frames count of this hive
   inspVarroaSave(o);   // varroa count from the inspection (if a treatment is ongoing)
@@ -743,7 +629,7 @@ window.saveInsp=function(editId,hiveId){
   var hive=BM.stupi.get(hid);
   // The hive takes the frames from the inspection only if it is its most recent inspection
   // (an edited old inspection does not overwrite the current state)
-  var isLatest=!D.inspections.some(function(i){return i.hiveId===hid&&i.id!==o.id&&i.date&&o.date&&i.date>o.date;});
+  var isLatest=!BM.inspectii.randuri().some(function(i){return i.hiveId===hid&&i.id!==o.id&&i.date&&o.date&&i.date>o.date;});
   if(hive&&isLatest){
     hive.fB=brood;hive.fH=o.fH;hive.fE=o.fE;hive.nests=o.nests;hive.nestF=o.nestF||null;if(o.plAdd)hive.plAny=true;hive.fT=brood+o.fH+o.fE;   // total = brood + food + empty
     hive.str=strCalc(brood,o.fH,o.winter?o.winter.frames:null,o.date);if(o.space==="urgent")hive.sc="red";

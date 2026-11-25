@@ -18,9 +18,9 @@ function pAway(p,hid,day){
 }
 function pAwayHives(p,day){return pHives(p).filter(function(h){return pAway(p,h,day);});}
 function pActive(p){return pAwayHives(p).length>0;}
-function pTripOf(hid,day){return(D.pastorage||[]).filter(function(p){return pAway(p,hid,day);}).sort(function(a,b){return a.startDate<b.startDate?1:-1;})[0]||null;}
+function pTripOf(hid,day){return BM.pastorala.randuri().filter(function(p){return pAway(p,hid,day);}).sort(function(a,b){return a.startDate<b.startDate?1:-1;})[0]||null;}
 function pDays(p){return Math.max(0,Math.round((new Date(pToday())-new Date(p.startDate))/86400000));}
-function pLocations(){var a=[];(D.pastorage||[]).forEach(function(p){if(p.location&&a.indexOf(p.location)<0)a.push(p.location);});return a;}
+function pLocations(){var a=[];BM.pastorala.randuri().forEach(function(p){if(p.location&&a.indexOf(p.location)<0)a.push(p.location);});return a;}
 function pHiveName(id){var h=BM.stupi.get(id)||genFind(id);return h?h.name:"—";}
 
 // ═══════════════════════════════════════════
@@ -35,6 +35,7 @@ function pTripHeadHTML(p){
     +'<span class="bg gg">🚚 '+away.length+' '+(away.length===1?L2("stup","hive"):L2("stupi","hives"))+'</span></div>'
     +(back.length?'<div class="hv-ts">🏠 '+L2("Întorși deja","Already back")+': '+back.map(function(h){return esc(pHiveName(h))+' ('+devFmt(p.returned[h])+')';}).join(", ")+'</div>':'')
     +(p.notes?'<div class="hv-ts" style="font-style:italic;">📝 '+esc(p.notes)+'</div>':'')
+    +(typeof flTripHTML==="function"?flTripHTML(p):'')
     +'<div class="ps-btns"><button class="btn sm fd-go" onclick="pastReturnM(\''+p.id+'\')">🏁 '+L2("Întoarcere acasă…","Bring home…")+'</button>'
     +'<button class="btn sm gh" onclick="pastorM(\''+p.id+'\')">✏️ '+L2("Editează","Edit")+'</button></div>'
     +'</div>';
@@ -43,7 +44,7 @@ function pTripHeadHTML(p){
 var _psTab="now",_psOpen={};
 function pDur(p){var e=p.endDate||pToday();return Math.max(0,Math.round((new Date(e)-new Date(p.startDate))/86400000));}
 function renderPastorage(){
-  var all=D.pastorage||[];
+  var all=BM.pastorala.randuri()||[];
   var act=all.filter(pActive).sort(function(a,b){return a.startDate<b.startDate?1:-1;});
   var done=all.filter(function(p){return !pActive(p)&&!(p.startDate>pToday());}).sort(function(a,b){return(a.endDate||a.startDate)<(b.endDate||b.startDate)?1:-1;});
   var future=all.filter(function(p){return p.startDate>pToday();}).sort(function(a,b){return a.startDate<b.startDate?-1:1;});
@@ -67,7 +68,7 @@ function renderPastorage(){
   var mNames=["Ianuarie","Februarie","Martie","Aprilie","Mai","Iunie","Iulie","August","Septembrie","Octombrie","Noiembrie","Decembrie"];
   var lastM="",histH="";
   done.forEach(function(p){
-    var m=(p.startDate||"").slice(0,7),open=!!_psOpen[p.id],hs=pHives(p),n=(D.inspections||[]).filter(function(i){return i.pastId===p.id;}).length;
+    var m=(p.startDate||"").slice(0,7),open=!!_psOpen[p.id],hs=pHives(p),n=BM.inspectii.randuri().filter(function(i){return i.pastId===p.id;}).length;
     if(m!==lastM){lastM=m;histH+='<div class="fd-month">'+(m?mNames[parseInt(m.slice(5,7))-1]+' '+m.slice(0,4):"—")+'</div>';}
     histH+='<div class="c fd-row'+(open?' open':'')+'">'
       +'<div class="fd-row-h" onclick="_psOpen[\''+p.id+'\']=!_psOpen[\''+p.id+'\'];renderPastorage();" role="button">'
@@ -104,14 +105,14 @@ function renderPastorage(){
     +'<div class="tv-tabs">'+tab("now","🚚 Acum",act.length+future.length)+tab("hist","📜 Istoric",done.length)+tab("stats","📊 Statistici",null)+'</div>'
     +(_psTab==="hist"?histH:_psTab==="stats"?statsH:nowBody));
 }
-window.delPast=function(id){showConfirm(t("past_del_c"),function(){D.pastorage=D.pastorage.filter(function(p){return p.id!==id;});save();render();});};
+window.delPast=function(id){showConfirm(t("past_del_c"),function(){BM.pastorala.pastreaza(function(p){return p.id!==id;});save();render();});};
 
 // ── Departure / edit ──
 function pastorM(id){
-  var ex=id?D.pastorage.find(function(p){return p.id===id;}):null;
+  var ex=id?BM.pastorala.rand(id):null;
   var targets=t("past_targets")||[];
-  var busy={};(D.pastorage||[]).forEach(function(p){if(p!==ex)pAwayHives(p).forEach(function(h){busy[h]=p.location||"—";});});
-  var avail=D.hives.filter(function(h){return !busy[h.id];}).map(function(h){return h.id;});
+  var busy={};BM.pastorala.randuri().forEach(function(p){if(p!==ex)pAwayHives(p).forEach(function(h){busy[h]=p.location||"—";});});
+  var avail=BM.stupi.randuri().filter(function(h){return !busy[h.id];}).map(function(h){return h.id;});
   var chk=ex?pHives(ex).filter(function(h){return avail.indexOf(h)>=0;}):[];
   var locs=pLocations();
   openM('<div class="mt">🚚 '+(ex?L2("Editează pastorarea","Edit migration"):L2("Plec în pastorare","Go on migration"))+'</div>'
@@ -121,6 +122,7 @@ function pastorM(id){
     +L(t("past_loc"))+'<input id="pLc" list="pLcL" value="'+esc(xv(ex,"location",""))+'" placeholder="'+t("past_loc_ph")+'">'
     +'<datalist id="pLcL">'+locs.map(function(l){return'<option value="'+esc(l)+'">';}).join("")+'</datalist>'
     +(locs.length?'<div class="ps-locs">'+locs.slice(0,6).map(function(l){return'<button type="button" class="gen-chip" onclick="$q(\'pLc\').value=this.textContent">'+esc(l)+'</button>';}).join("")+'</div>':'')
+    +flSiteFieldsHTML(ex)
     +L(t("past_target"))+'<select id="pTg">'+targets.map(function(tp){return'<option'+(xv(ex,"target","")===tp?" selected":"")+'>'+tp+'</option>';}).join("")+'</select>'
     +'<div class="r2"><div>'+L(L2("📅 Plecare","📅 Leaving"))+'<input type="date" id="pSt" value="'+esc(xv(ex,"startDate",pToday()))+'"></div>'
     +'<div>'+L(L2("🏁 Întoarcere (aprox.)","🏁 Return (approx.)"))+'<input type="date" id="pPe" value="'+esc(ex?(ex.plannedEnd||(!ex.trip?ex.endDate||"":"")):"")+'"><span class="hint">'+L2("opțional","optional")+'</span></div></div>'
@@ -128,11 +130,12 @@ function pastorM(id){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="savePast(\''+(id||'')+'\')">🚚 '+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 }
 window.savePast=function(id){
-  var ex=id?D.pastorage.find(function(p){return p.id===id;}):null;
+  var ex=id?BM.pastorala.rand(id):null;
   var sel=fdReadHives("past").ids;
   if(!sel.length){toast("⚠️ "+L2("Bifează cel puțin un stup","Tick at least one hive"));return;}
   var loc=(($q("pLc")||{}).value||"").trim();if(!loc){toast("⚠️ "+t("past_loc"));return;}
   var o={trip:true,hiveIds:sel,hiveId:null,location:loc,target:($q("pTg")||{}).value||"",startDate:($q("pSt")||{}).value||pToday(),plannedEnd:($q("pPe")||{}).value||null,notes:($q("pNt")||{}).value||""};
+  flSiteRead(o);   // relief / altitude / GPS position of the site (floraui.js)
   if(ex){
     // hives already returned stay in the list (history); legacy → trip
     var keepBack=pHives(ex).filter(function(h){return ex.returned&&ex.returned[h];});
@@ -142,14 +145,14 @@ window.savePast=function(id){
       if(ex.endDate&&ex.endDate<=pToday()){pHives(ex).forEach(function(h){o.returned[h]=ex.endDate;});o.endDate=ex.endDate;}
       else if(ex.endDate&&!o.plannedEnd)o.plannedEnd=ex.endDate;
     }
-    Object.assign(ex,o);
-  }else{o.id=uid();o.returned={};o.endDate=null;D.pastorage.push(o);}
+    BM.pastorala.modifica(ex,o);
+  }else{o.id=uid();o.returned={};o.endDate=null;BM.pastorala.adauga(o);}
   save();closeM();render();toast(L2("Pastorare salvată","Migration saved"),"🚚");
 };
 
 // ── 🏁 Return home: tick the hives (or all) ──
 window.pastReturnM=function(id){
-  var p=D.pastorage.find(function(x){return x.id===id;});if(!p)return;
+  var p=BM.pastorala.rand(id);if(!p)return;
   var away=pAwayHives(p);
   openM('<div class="mt">🏁 '+L2("Întoarcere din pastorare","Back from migration")+'</div>'
     +'<div class="fd-box">📍 <b>'+esc(p.location)+'</b> · 🌸 '+esc(p.target||"")+' · '+pDays(p)+' '+t("hv_days")+'</div>'
@@ -159,7 +162,7 @@ window.pastReturnM=function(id){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="pastReturnSave(\''+id+'\')">🏁 '+L2("Vin acasă","Bring home")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 };
 window.pastReturnSave=function(id){
-  var p=D.pastorage.find(function(x){return x.id===id;});if(!p)return;
+  var p=BM.pastorala.rand(id);if(!p)return;
   var sel=fdReadHives("pret").ids;if(!sel.length){toast("⚠️ "+L2("Bifează cel puțin un stup","Tick at least one hive"));return;}
   var d=($q("pRd")||{}).value||pToday();
   if(p.startDate&&d<p.startDate){toast("⚠️ "+L2("Data întoarcerii e înaintea plecării!","Return date is before departure!"));return;}

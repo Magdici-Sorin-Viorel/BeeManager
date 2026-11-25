@@ -8,7 +8,7 @@
 //   On create: frames taken (brood + food) are deducted from the donor (taken — restored on edit).
 //   New queen: periods computed from the chosen stage (eggs / larvae / cell) — see nucQueenIQ + devcalc.js.
 //   When inspection confirms a mated queen → „Roiul devine stup?” (promotedAt). Also a manual button.
-//   ❌ Failed nuc / 🔗 merged → moved to D.hivesArchive (stays in genealogy as a closed branch).
+//   ❌ Failed nuc / 🔗 merged → moved to BM.arhiva.randuri() (stays in genealogy as a closed branch).
 //
 // GENEALOGY (🌳 Genealogie menu): the genetic line follows the QUEEN:
 //   bought / imported queen → new line (root) · found / natural swarm → unknown origin (root)
@@ -22,7 +22,7 @@ DEV.queen.roi_oua=[12,16];     // bees pick young larvae from the given eggs
 DEV.queen.roi_larve=[10,13];   // young larvae (≤ 3 days)
 
 function hvIsNuc(h){return !!h&&h.kind==="roi";}
-function genAll(){return D.hives.concat(D.hivesArchive||[]);}
+function genAll(){return BM.stupi.randuri().concat(BM.arhiva.randuri());}
 function genFind(id){return id?genAll().find(function(h){return h.id===id;}):null;}
 function nucToday(){return todayISO();}
 function qOrigIdx(o){
@@ -50,7 +50,7 @@ function nucNoQueenSrc(h){var s=(h.nuc&&h.nuc.stage)||{};return hvIsNuc(h)&&!(h.
 // NUC FORM
 // ═══════════════════════════════════════════
 function nucDonorOpts(sel,exclude){
-  return D.hives.filter(function(h){return h.id!==exclude;}).map(function(h){
+  return BM.stupi.randuri().filter(function(h){return h.id!==exclude;}).map(function(h){
     var stop=genStoppedAt(h);
     return'<option value="'+h.id+'"'+(sel===h.id?" selected":"")+'>'+(hvIsNuc(h)?"🐝 ":"🏠 ")+esc(h.name)+(function(){var q=hqCurrent(h.id);if(!q)return"";var c=qCode(q);return" · "+c.code+" G"+c.gen;})()+' — '+(h.fB||0)+' '+L2("puiet","brood")+' / '+(h.fH||0)+' '+L2("mâncare","food")+(stop?' ⛔':'')+'</option>';
   }).join("");
@@ -59,7 +59,7 @@ window.nucM=function(id,donorId){
   var h=id?BM.stupi.get(id):null,n=(h&&h.nuc)||{};
   var found=!!n.found,st=n.stage||{};
   var don=h?(n.taken&&n.taken.donor)||h.parentId:(donorId||"");
-  var nextN=D.hives.reduce(function(m,x){return Math.max(m,parseInt(x.num)||0);},0)+1;
+  var nextN=BM.stupi.randuri().reduce(function(m,x){return Math.max(m,parseInt(x.num)||0);},0)+1;
   var nucN=genAll().filter(hvIsNucEver).length+1;
   var bt=t("bt")||[];
   openM('<div class="mt">🐝 '+(h?L2("Editează roiul","Edit nuc"):L2("Roi nou","New nuc"))+'</div>'
@@ -72,6 +72,7 @@ window.nucM=function(id,donorId){
     +'<div>'+L(L2("📦 Cutia are (rame)","📦 Box holds (frames)"))+'<input type="number" inputmode="numeric" id="nMax" min="2" max="12" value="'+esc(n.max||6)+'"></div></div>'
     +'<div id="nDonW" style="display:'+(found?"none":"block")+'">'
     +L(L2("🏠 Stupul donator","🏠 Donor hive"))+'<select id="nDon" onchange="nucPrev()"><option value="">—</option>'+nucDonorOpts(don,id)+'</select>'
+    +(!h&&typeof sfNucHintHTML==="function"?sfNucHintHTML():'')
     +'</div>'
     +'<div class="r2"><div>'+L('<span id="nFBl">'+(found?L2("🟤 Rame cu puiet","🟤 Brood frames"):L2("🟤 Rame puiet luate","🟤 Brood frames taken"))+'</span>')+'<input type="number" inputmode="numeric" min="0" id="nFB" value="'+esc(h?(n.fB0!=null?n.fB0:(n.taken?n.taken.fB:h.fB)):2)+'" oninput="nucPrev()"></div>'
     +'<div>'+L('<span id="nFHl">'+(found?L2("🍯 Rame mâncare","🍯 Food frames"):L2("🍯 Rame mâncare luate","🍯 Food frames taken"))+'</span>')+'<input type="number" inputmode="numeric" min="0" id="nFH" value="'+esc(h?(n.fH0!=null?n.fH0:(n.taken?n.taken.fH:h.fH)):1)+'" oninput="nucPrev()"></div></div>'
@@ -177,13 +178,12 @@ window.nucSave=function(id){
     mod:L2("Cutie roi","Nuc box")+" "+max+" "+L2("rame","frames"),fB:nfB,fH:nfH,parentId:don,genParent:don,nuc:nuc});
   o.fT=hvTotal(o);o.str=strCalc(nfB);
   if(!h&&fromInsp&&_mvNuc&&_mvNuc.pl)o.plastic=_mvNuc.pl;   // ⬢ plastic frames that went into the nuc
-  if(!h){D.hives.push(o);
+  if(!h){BM.stupi.adauga(o);
     // note it on the donor's record (inspection of the day / automatic transfer entry) — see frames.js
     if(taken&&typeof mvNucSaved==="function")mvNucSaved(o,fromInsp,taken.fB,taken.fH,nuc.start);}
   _mvNuc=null;
   // found swarm with queen → the queen (natural origin); the line starts here
-  if(!D.queens)D.queens=[];
-  if(f&&nuc.queenIn&&!hqCurrent(o.id))D.queens.push({id:uid(),hive:o.id,yr:parseInt(nuc.start.slice(0,4))||null,from:nuc.start,motherQ:null,motherSet:true,race:"",lay:null,aggr:null,orig:(t("q_origins")||[])[4]||"Natural (roi)",origHive:null,line:"",status:"activă"});
+  if(f&&nuc.queenIn&&!hqCurrent(o.id))BM.regine.adauga({id:uid(),hive:o.id,yr:parseInt(nuc.start.slice(0,4))||null,from:nuc.start,motherQ:null,motherSet:true,race:"",lay:null,aggr:null,orig:(t("q_origins")||[])[4]||"Natural (roi)",origHive:null,line:"",status:"activă"});
   if(typeof _hvTab!=="undefined"){_hvTab="nucs";_hvNucStay=true;}   // show the 🐝 Roiuri tab
   save();closeM();render();toast(L2("Roi salvat","Nuc saved"),"🐝");
 };
@@ -208,9 +208,8 @@ window.nucPromoteSave=function(id){
   var d=($q("npDt")||{}).value||nucToday();
   h.name=(($q("npNm")||{}).value||h.name).trim();h.num=parseInt(($q("npNum")||{}).value)||h.num;h.mod=($q("npMd")||{}).value||h.mod;
   delete h.kind;h.promotedAt=d;
-  if(!D.queens)D.queens=[];
   if(!hqCurrent(h.id)){var dq=h.genParent?hqCurrent(h.genParent):null;
-    D.queens.push({id:uid(),hive:h.id,yr:parseInt(d.slice(0,4))||null,from:d,race:dq?dq.race:"",lay:null,aggr:null,orig:(t("q_origins")||[])[1]||"",origHive:h.genParent||null,line:dq?dq.line:"",status:"activă",
+    BM.regine.adauga({id:uid(),hive:h.id,yr:parseInt(d.slice(0,4))||null,from:d,race:dq?dq.race:"",lay:null,aggr:null,orig:(t("q_origins")||[])[1]||"",origHive:h.genParent||null,line:dq?dq.line:"",status:"activă",
       motherQ:(h.nuc&&h.nuc.motherQ)||(dq?dq.id:null),motherSet:true});}
   if(typeof _hvTab!=="undefined")_hvTab="hives";
   save();closeM();render();toast(L2("Roiul a devenit stup","The nuc is now a hive"),"⬆️");
@@ -221,7 +220,7 @@ window.nucFailM=function(id){
     +'<div class="dev-act">'
     +'<label><input type="radio" name="nfR" value="esuat" checked onchange="document.getElementById(\'nfIW\').style.display=\'none\'"> ❌ '+L2("Eșuat (regina nu s-a împerecheat / s-a pierdut)","Failed (queen not mated / lost)")+'</label>'
     +'<label><input type="radio" name="nfR" value="unit" onchange="document.getElementById(\'nfIW\').style.display=\'block\'"> 🔗 '+L2("Unit cu alt stup","Merged into another hive")+'</label></div>'
-    +'<div id="nfIW" style="display:none">'+L(L2("🏠 Unit cu","🏠 Merged into"))+'<select id="nfI">'+D.hives.filter(function(x){return x.id!==id;}).map(function(x){return'<option value="'+x.id+'"'+(x.id===h.parentId?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'
+    +'<div id="nfIW" style="display:none">'+L(L2("🏠 Unit cu","🏠 Merged into"))+'<select id="nfI">'+BM.stupi.randuri().filter(function(x){return x.id!==id;}).map(function(x){return'<option value="'+x.id+'"'+(x.id===h.parentId?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'
     +'<div class="hv-ts">'+L2("Ramele roiului se adaugă la stupul ales.","The nuc's frames are added to the chosen hive.")+'</div></div>'
     +'<div class="r2"><div>'+L(L2("📅 Data","📅 Date"))+'<input type="date" id="nfD" value="'+nucToday()+'"></div><div>'+L(t("insp_notes"))+'<input id="nfN"></div></div>'
     +'<div class="hv-ts">'+L2("Roiul dispare din Stupi, dar rămâne în 🌳 Genealogie ca ramură închisă (cu inspecțiile lui).","The nuc leaves Hives but stays in 🌳 Genealogy as a closed branch (with its inspections).")+'</div>'
@@ -231,18 +230,16 @@ window.nucFailSave=function(id){
   var h=BM.stupi.get(id);if(!h)return;
   var r=(document.querySelector("input[name='nfR']:checked")||{}).value||"esuat",into=r==="unit"?(($q("nfI")||{}).value||null):null;
   if(into){var t2=BM.stupi.get(into);if(t2){t2.fB=(t2.fB||0)+(h.fB||0);t2.fH=(t2.fH||0)+(h.fH||0);t2.fT=hvTotal(t2);t2.str=strCalc(t2.fB);}}
-  if(!D.hivesArchive)D.hivesArchive=[];
-  D.hivesArchive.push(Object.assign({},h,{closed:{date:($q("nfD")||{}).value||nucToday(),reason:r,into:into,note:($q("nfN")||{}).value||""}}));
-  D.hives=D.hives.filter(function(x){return x.id!==id;});
+  BM.arhiva.adauga(Object.assign({},h,{closed:{date:($q("nfD")||{}).value||nucToday(),reason:r,into:into,note:($q("nfN")||{}).value||""}}));
+  BM.stupi.pastreaza(function(x){return x.id!==id;});
   save();closeM();render();toast(r==="unit"?L2("Roi unit","Nuc merged"):L2("Roi închis","Nuc closed"),"🐝");
 };
 // On hive delete: a trace stays in genealogy (name + links) so the tree does not break
 function genArchiveStub(h){
   if(!h)return;
-  var has=!!h.genParent||genAll().some(function(x){return x.genParent===h.id||x.parentId===h.id;})||(D.queens||[]).some(function(q){return q.origHive===h.id;});
+  var has=!!h.genParent||genAll().some(function(x){return x.genParent===h.id||x.parentId===h.id;})||BM.regine.randuri().some(function(q){return q.origHive===h.id;});
   if(!has)return;
-  if(!D.hivesArchive)D.hivesArchive=[];
-  D.hivesArchive.push({id:h.id,num:h.num,name:h.name,kind:h.kind,nuc:h.nuc,parentId:h.parentId||null,genParent:h.genParent||null,promotedAt:h.promotedAt||null,lineStop:h.lineStop||null,
+  BM.arhiva.adauga({id:h.id,num:h.num,name:h.name,kind:h.kind,nuc:h.nuc,parentId:h.parentId||null,genParent:h.genParent||null,promotedAt:h.promotedAt||null,lineStop:h.lineStop||null,
     genRoot:genParentOf(h),closed:{date:nucToday(),reason:"sters"}});
 }
 
@@ -341,7 +338,7 @@ function genLineCardHTML(l,M){
     +'<div class="gen-chart">'+genChartSVG(l,M)+'</div></div>';
 }
 function renderGenealogy(){
-  if(!(D.queens||[]).length&&!genAll().some(function(h){return h.nuc;})){   // empty app: nothing to show yet
+  if(!BM.regine.randuri().length&&!genAll().some(function(h){return h.nuc;})){   // empty app: nothing to show yet
     setP('<div class="hv-top"><h2><i class="fas fa-sitemap" style="color:var(--gold)"></i> '+L2("Genealogie","Genealogy")+'</h2></div>'
       +'<div class="al ali">🌳 '+L2("Genealogia apare după ce adaugi stupi cu regina lor (în ✏️ Editează → Regina) sau faci primul roi.","The genealogy appears once you add hives with their queen (✏️ Edit → Queen) or make your first nuc.")+'</div>');
     return;
@@ -351,7 +348,7 @@ function renderGenealogy(){
   var chips='<div class="gen-chips"><button class="gen-chip'+(_genLine==="all"?" on":"")+'" onclick="_genLine=\'all\';renderGenealogy()">'+L2("Toate liniile","All lines")+' <b>'+M.lines.length+'</b></button>'
     +M.lines.map(function(l){return'<button class="gen-chip'+(_genLine===l.r.id?" on":"")+'" style="--c:'+l.color+'" onclick="_genLine=\''+l.r.id+'\';renderGenealogy()"><span class="gen-dot" style="background:'+l.color+'"></span>'+esc(genLineName(l))+' <b>'+l.mem.length+'</b></button>';}).join("")+'</div>';
   // Ranking: the CURRENT queen of each active hive
-  var rows=D.hives.filter(function(h){return !hvIsNuc(h);}).map(function(h){var q=hqCurrent(h.id);return{h:h,q:q,s:q?S[q.id]:null,l:q?M.lineOf[q.id]:null};})
+  var rows=BM.stupi.randuri().filter(function(h){return !hvIsNuc(h);}).map(function(h){var q=hqCurrent(h.id);return{h:h,q:q,s:q?S[q.id]:null,l:q?M.lineOf[q.id]:null};})
     .filter(function(r){return _genLine==="all"||(r.l&&r.l.r.id===_genLine);});
   var kf={score:function(r){return r.s&&r.s.score!=null?r.s.score:-1;},honey:function(r){return r.s&&r.s.avg.honey!=null?r.s.avg.honey:-1;},
     gentle:function(r){return r.s&&r.s.avg.gentle!=null?r.s.avg.gentle:-1;},swarm:function(r){return r.s&&r.s.avg.swarm!=null?r.s.avg.swarm:-1;},
@@ -399,6 +396,7 @@ function renderGenealogy(){
         +(rows.length?'<div class="c gr-list">'+rank
           +(rows.length>5?'<button class="gen-more" onclick="_genRankAll=!_genRankAll;renderGenealogy()">'+(_genRankAll?"▲ Doar primii 5":"▼ Vezi toți ("+rows.length+")")+'</button>':'')+'</div>'
           :'<div class="al ali">Niciun stup în această linie acum.</div>')
+        +(typeof sfQueensCardHTML==="function"?sfQueensCardHTML():'')
         +'<button class="gen-help-b" onclick="_genHelp=!_genHelp;renderGenealogy()">ℹ️ Cum se calculează nota '+(_genHelp?'▲':'▼')+'</button>'+(_genHelp?GEN_INFO_HTML():'')
     :_genTab==="lines"?'<div class="hv-ts" style="margin:0 2px 8px;">Apasă pe o linie ca să-i vezi arborele.</div>'+linesH
     :chips+help+lines.map(function(l){return genLineCardHTML(l,M);}).join(""));
