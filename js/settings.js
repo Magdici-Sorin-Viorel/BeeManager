@@ -20,7 +20,7 @@ function renderSettings(){
     var arcId2="se_arc_m"+mi;var hivesInMonth2=byMonth2[ym];var hiveKeys2=Object.keys(hivesInMonth2);
     var total2=0;hiveKeys2.forEach(function(hid){total2+=hivesInMonth2[hid].length;});
     var hivesHTML2=hiveKeys2.map(function(hid,hi){
-      var hv=D.hives.find(function(h){return h.id===hid;});var hivArcId2=arcId2+"_h"+hi;
+      var hv=BM.stupi.get(hid);var hivArcId2=arcId2+"_h"+hi;
       var insps2=hivesInMonth2[hid].slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
       var rows2=insps2.map(function(insp){
         return'<div style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;">'
@@ -69,7 +69,7 @@ function renderSettings(){
   // Settings home = a short menu (like the phone's settings); each item opens its own page with ‹ Setări.
   var arcN=pastInsp2.length,mo=PGS.slice(0,3).map(function(p){return String(t(p.lk)||"").replace(/^[^A-Za-zĂÂÎȘȚ]+/,"");}).join(", ")+(PGS.length>3?"…":"");
   var SEC=[
-    {id:"backup",ico:"☁️",t:"Backup și restaurare",s:"Ultimul backup: "+driveLastExport,h:''
+    {id:"backup",ico:"☁️",t:"Backup și restaurare",s:"Ultimul backup: "+driveLastExport,h:dbCardHTML()
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">💾 1. Fă backup</div>'
     +driveStatusHTML
     +'</div>'
@@ -78,6 +78,7 @@ function renderSettings(){
     +'<div class="bk-btns"><button class="btn" onclick="impFrom(\'drive\')">☁️ Din Google Drive</button>'
     +'<button class="btn gh" onclick="impFrom(\'phone\')">📱 Din telefon</button></div>'
     +'<p style="font-size:.72rem;color:var(--mut);margin:10px 0 0;line-height:1.45;">📱 <b>Telefon:</b> fișierul e de obicei în <b>Descărcări</b> (Downloads).<br>☁️ <b>Drive:</b> în fereastra care se deschide apasă <b>☰</b> (sus, stânga) și alege <b>Drive</b>, apoi fișierul.<br>⚠️ Importul înlocuiește datele actuale din aplicație.</p></div>'},
+    {id:"raport",ico:"📊",t:"Raport anual",s:"Totaluri pe an și pe stup · export CSV",h:rpCardHTML()},
     {id:"fisa",ico:"📋",t:"Fișa de observație",s:"PDF pe stup, pentru un an",h:fisaCardHTML()},
     {id:"voice",ico:"🎓",t:"Antrenează vocea",s:(D.settings.vcLearn||[]).length?(D.settings.vcLearn||[]).length+" cuvinte învățate":"Învață aplicația cum vorbești",h:vtCardHTML()},
     {id:"share",ico:"📲",t:"Deschide pe alt telefon",s:"Cod QR și link pentru instalare",h:appShareHTML()},
@@ -100,6 +101,7 @@ function renderSettings(){
     {id:"disp",ico:"🎨",t:"Afișaj",s:({dark:"Temă întunecată",light:"Temă luminoasă",trk:"Temă TRK (consolă)"})[themeId()],h:''
     +'<div class="c" style="margin-bottom:14px;"><div class="ct">'+t("se_display")+'</div>'
     +'<p class="bk-p">Alege cum arată aplicația. Se aplică imediat, pe toate paginile.</p>'
+    +'<div class="ck" style="margin:0 0 12px;padding:10px 12px;border:1px solid var(--bdr);border-radius:var(--rs);"><input type="checkbox" id="cgTg"'+(D.settings.culesGrafic!==false?" checked":"")+' onchange="D.settings.culesGrafic=this.checked;save(false);toast(this.checked?\'La extracție stupul apare desenat.\':\'La extracție apar câmpuri cu numere.\',\'🍯\')"><label for="cgTg">🍯 <b>Extracție: stupul desenat</b> — atingi ramele cu miere pe care le iei; oprit = scrii numărul de rame</label></div>'
     +'<div class="th-list">'+[["dark","🌙","Întunecată","galben pe negru — tema de bază"],["light","☀️","Luminoasă","pentru soare puternic, pe teren"],["trk","🛰️","TRK — consolă","albastru-negru, portocaliu, cyan; litere ca pe un panou de comandă"]].map(function(x){
       return'<button type="button" class="th-opt th-'+x[0]+(themeId()===x[0]?" on":"")+'" onclick="setTheme(\''+x[0]+'\')"><span class="th-sw"><i></i><i></i><i></i></span><span class="th-t"><b>'+x[1]+' '+x[2]+'</b><small>'+x[3]+'</small></span>'+(themeId()===x[0]?'<span class="bg gy">activă</span>':'')+'</button>';}).join("")+'</div>'
     +'</div>'},
@@ -121,14 +123,14 @@ function renderSettings(){
   if(cur){
     setP('<div class="se-bar"><button class="se-back" onclick="seBack()" aria-label="Înapoi la Setări">‹</button>'
       +'<div class="se-bar-t"><span class="hv-ts">Setări</span><b>'+cur.ico+' '+cur.t+'</b></div></div>'
-      +'<div class="se-title" style="display:none"></div><div class="se-page'+(cur.id==="backup"||cur.id==="arc"?'':' one')+'">'+cur.h+'</div>');   // one card → its own title is hidden (the page title says it)
+      +'<div class="se-title" style="display:none"></div><div class="se-page'+(cur.id==="backup"||cur.id==="arc"||cur.id==="raport"?'':' one')+'">'+cur.h+'</div>');   // one card → its own title is hidden (the page title says it)
   }else{
     _seSec=null;
     var grp=function(title,ids){return'<div class="se-grp-t">'+title+'</div><div class="c se-list">'+SEC.filter(function(x){return ids.indexOf(x.id)>=0;}).map(function(x){
       return'<div class="se-item" role="button" onclick="seOpen(\''+x.id+'\')"><span class="se-ico">'+x.ico+'</span>'
         +'<div class="se-it"><b>'+x.t+'</b><div class="hv-ts">'+x.s+'</div></div><span class="hv-arr">›</span></div>';}).join("")+'</div>';};
     setP('<h2 style="margin-bottom:12px;font-size:1.2rem;"><i class="fas fa-sliders" style="color:var(--gold)"></i> '+t("se_title")+'</h2>'
-      +grp("Date",["backup","fisa","qr","arc"])
+      +grp("Date",["backup","raport","fisa","qr","arc"])
       +grp("Aplicația",["voice","share","menu","alert","disp","wx"])
       +grp("Altele",["snap","demo"]));
   }
@@ -200,7 +202,7 @@ window.impData=function(){driveImportJSON();};
 // Import source buttons: both open the system file picker (a web app can't open Drive directly);
 // the toast reminds where to tap for the chosen source.
 window.impFrom=function(src){toast(src==="drive"?"Apasă ☰ (sus, stânga) → Drive → alege fișierul":"Alege fișierul din Descărcări (Downloads)",src==="drive"?"☁️":"📱");driveImportJSON();};
-window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");location.reload();});};
+window.rstData=function(){showConfirm(t("se_rst"),function(){localStorage.removeItem("bmp5");(typeof dbClear==="function"?dbClear():Promise.resolve()).then(function(){location.reload();});});};
 
 // ── Collapsible Settings cards (archive, auto-save list): closed by default, tap the title to open ──
 var _seOpen={};

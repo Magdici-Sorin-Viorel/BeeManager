@@ -100,7 +100,7 @@ function inspCardSum(c){
   else if(k==="behav"){p.push(inspSelTxt("iBhv"));}
   else if(k==="queen"){if(inspCk("iQS"))p.push("matcă văzută");if(inspCk("iEg"))p.push("ouă");if(inspCk("iLv"))p.push("larve");if(inspCk("iCap"))p.push("căpăcit");if(!p.length)p.push("matcă nevăzută");p.push(inspSelTxt("iQQ"));}
   else if(k==="botci"){p.push(inspCk("iBtc")?((v("iBtcN")||"")+" botci "+(inspSelTxt("iBtcS")||"")).trim():"fără botci");}
-  else if(k==="frames"){var b=parseInt(v("iFB"))||0,f=parseInt(v("iFH"))||0,e=parseInt(v("iFE"))||0,ns=parseInt(v("iNst"))||1,hid=(($q("iHive")||{}).value)||_mvSelf,h=D.hives.find(function(x){return x.id===hid;})||{};
+  else if(k==="frames"){var b=parseInt(v("iFB"))||0,f=parseInt(v("iFH"))||0,e=parseInt(v("iFE"))||0,ns=parseInt(v("iNst"))||1,hid=(($q("iHive")||{}).value)||_mvSelf,h=BM.stupi.get(hid)||{};
     p.push((b+f+e)+"/"+hvCap(h,ns));p.push(b+" puiet");p.push(f+" mâncare");if(e)p.push(e+" goale");if(ns>1)p.push(ns+" cuiburi");
     var mm=(typeof _magSt!=="undefined"&&_magSt)?_magSt.cur:[];if(mm.length&&document.getElementById("bxEd"))p.push(mm.length+(mm.length===1?" magazie":" magazii"));if(v("iPop"))p.push(v("iPop")+"%");}
   else if(k==="moves"){var mv=typeof mvRead==="function"?mvRead():{out:[],in:[]},o=mv.out.reduce(function(a,r){return a+r.n;},0),n=mv.in.reduce(function(a,r){return a+r.n;},0);
@@ -157,7 +157,7 @@ function inspSegUpd(w,s){[].forEach.call(w.children,function(b){b.classList.togg
 function inspSlotsUpd(){
   var el=document.getElementById("iscSlots");if(!el)return;
   var g=function(id){return Math.max(0,parseInt(($q(id)||{}).value)||0);},b=g("iFB"),f=g("iFH"),e=g("iFE"),ns=parseInt(($q("iNst")||{}).value)||1;
-  var hid=(($q("iHive")||{}).value)||_mvSelf,h=D.hives.find(function(x){return x.id===hid;})||{},cap=h.kind==="roi"?Math.max(b+f+e,parseInt((String(h.mod||"").match(/(\d+)/)||[])[1])||6):hvCap(h,ns),tot=b+f+e,n=Math.max(cap,tot),html="";
+  var hid=(($q("iHive")||{}).value)||_mvSelf,h=BM.stupi.get(hid)||{},cap=h.kind==="roi"?Math.max(b+f+e,parseInt((String(h.mod||"").match(/(\d+)/)||[])[1])||6):hvCap(h,ns),tot=b+f+e,n=Math.max(cap,tot),html="";
   for(var i=0;i<n;i++){var c=i<b?"b":i<b+f?"f":i<tot?"e":"";html+='<i class="'+c+(i>=cap?" over":"")+'"></i>';}
   el.innerHTML='<div class="isc-sl" style="grid-template-columns:repeat('+Math.min(n,10)+',1fr)">'+html+'</div>'
     +'<div class="isc-leg"><span><i class="b"></i>'+b+' puiet</span><span><i class="f"></i>'+f+' mâncare</span>'+(e?'<span><i class="e"></i>'+e+' goale</span>':'')+(cap>tot?'<span>'+(cap-tot)+' libere</span>':'')+'</div>';

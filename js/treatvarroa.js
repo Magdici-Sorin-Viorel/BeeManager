@@ -271,7 +271,7 @@ window.trPlTgChg=function(){
 window.inspTrRefresh=function(){
   var box=document.getElementById("iTrSec");if(!box)return;
   var mb=document.getElementById("MB"),exId=mb?mb.dataset.inspId:"";
-  var ex=exId?D.inspections.find(function(i){return i.id===exId;}):null;
+  var ex=exId?BM.inspectii.get(exId):null;
   var hid=($q("iHive")||{}).value,date=($q("iDt")||{}).value||vrToday();
   var keepPl=$q("iTrPl")&&$q("iTrPl").checked;
   var keepV={};["iTrPlP","iTrPlD","iTrPlE","iTrPlTg","iTrPlN"].forEach(function(k){if($q(k))keepV[k]=$q(k).value;});
@@ -363,7 +363,7 @@ window.inspVrRefresh=function(){
   var box=document.getElementById("iVrSec");if(!box)return;
   var hid=($q("iHive")||{}).value,date=($q("iDt")||{}).value||vrToday();
   var mb=document.getElementById("MB"),exId=mb?mb.dataset.inspId:"";
-  var ex=exId?D.inspections.find(function(i){return i.id===exId;}):null;
+  var ex=exId?BM.inspectii.get(exId):null;
   var keep={};
   if($q("iVrMites")){keep={meth:$q("iVrMeth").value,days:$q("iVrDays").value,mites:$q("iVrMites").value,bees:$q("iVrBees").value,re:$q("iVrRe").checked};}
   box.innerHTML=inspVarroaSecHTML(hid,ex,date,keep,true);

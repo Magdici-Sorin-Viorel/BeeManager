@@ -11,6 +11,7 @@ var PGS_DEFAULT=[
   {id:"queens",lk:"nav_queens",i:"fa-crown"},
   {id:"inspections",lk:"nav_inspections",i:"fa-book-open"},
   {id:"honey",lk:"nav_honey",i:"fa-droplet"},
+  {id:"cules",lk:"nav_cules",i:"fa-jar"},   // 🍯 extractions: frames per hive → kg → share per hive (cules.js)
   {id:"hranire",lk:"nav_hranire",i:"fa-bowl-rice"},
   {id:"treatments",lk:"nav_treatments",i:"fa-syringe"},
   {id:"varroa",lk:"nav_varroa",i:"fa-bug"},
@@ -155,7 +156,7 @@ function pageFromHash(){
 }
 window.addEventListener("hashchange",function(){var p=pageFromHash();if(p!==curP)go(p);});
 
-var RENDERERS=function(){return{dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,hranire:renderHranire,treatments:renderTreatments,varroa:renderVarroa,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,calculator:renderCalculator,financiar:renderFinanciar,sarcini:renderSarcini,settings:renderSettings,pastorare:renderPastorage,genealogie:renderGenealogy};};
+var RENDERERS=function(){return{dashboard:renderDashboard,hives:renderHives,queens:renderQueens,inspections:renderInspections,honey:renderHoney,cules:renderCules,hranire:renderHranire,treatments:renderTreatments,varroa:renderVarroa,inventory:renderInventory,calendar:renderCalendar,analytics:renderAnalytics,calculator:renderCalculator,financiar:renderFinanciar,sarcini:renderSarcini,settings:renderSettings,pastorare:renderPastorage,genealogie:renderGenealogy};};
 function render(){var r=RENDERERS();(r[curP]||r[HOME])();}
 function setP(h){document.getElementById("pg").innerHTML=h;}
 function closeSB(){document.getElementById("sb").classList.remove("open");document.getElementById("ov").classList.remove("show");}

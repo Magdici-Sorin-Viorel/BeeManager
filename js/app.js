@@ -6,7 +6,13 @@
 // ═══════════════════════════════════════════
 function init(){
   if(typeof demoPhoneFrame==="function"&&demoPhoneFrame())return;   // preview: the app inside a phone frame (demo.js)
-  load();
+  // the database (db.js) is read first; if it is not available the app runs on localStorage as before
+  var ls=null;try{ls=JSON.parse(localStorage.getItem("bmp5")||"null");}catch(e){}
+  (typeof dbInit==="function"?dbInit(ls):Promise.resolve(null)).then(function(dbData){initWith(dbData);});
+}
+function initWith(dbData){
+  load(dbData);
+  if(dbData){try{localStorage.setItem("bmp5",JSON.stringify(D));}catch(e){}}   // the mirror follows the database
   if(typeof demoMaybe==="function")demoMaybe();   // demo data — only in the Claude preview (see demo.js)
   applyTheme();   // chosen theme (dark / light / TRK)
   applyMenuOrder();   // menu order saved in Settings

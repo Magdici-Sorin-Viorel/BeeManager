@@ -6,8 +6,8 @@
 // ═══════════════════════════════════════════
 function renderQueens(){
   var cards=D.queens.map(function(q){
-    var hv=D.hives.find(function(h){return h.id===q.hive;});
-    var oh=D.hives.find(function(h){return h.id===q.origHive;});
+    var hv=BM.stupi.get(q.hive);
+    var oh=BM.stupi.get(q.origHive);
     var sc=((q.lay||3)+(6-(q.aggr||3)))/2;
     var qSts=t("q_statuses")||[];var stEntry=qSts.find(function(s){return s[0]===q.status;});
     var stLbl=stEntry?stEntry[1]:q.status;

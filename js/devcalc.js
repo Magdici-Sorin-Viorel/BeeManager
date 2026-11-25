@@ -149,7 +149,7 @@ function devQueenInspSave(o){
   if(cur){cur.status="înlocuită";cur.replacedAt=o.date;}
   var origins=t("q_origins")||[];
   // nuc: queen comes from the donor's line; hive: raised in the hive → same line
-  var hv=D.hives.find(function(h){return h.id===o.hiveId;}),isN=hv&&hv.kind==="roi"&&hv.genParent;
+  var hv=BM.stupi.get(o.hiveId),isN=hv&&hv.kind==="roi"&&hv.genParent;
   var dq=isN?hqCurrent(hv.genParent):null,src=cur||dq;
   // mother: for a nuc = donor's queen (on the nuc's day); in hive = previous queen (natural supersedure)
   var mq=isN?((hv.nuc&&hv.nuc.motherQ)||(dq?dq.id:null)):(cur?cur.id:null);

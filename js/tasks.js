@@ -51,7 +51,7 @@ function renderSarcini(){
 
   // Task list
   var listH=tabTasks.length?tabTasks.map(function(tk){
-    var hv=D.hives.find(function(h){return h.id===tk.hiveId;});
+    var hv=BM.stupi.get(tk.hiveId);
     var isOvd=!tk.done&&tk.dueDate&&tk.dueDate<todayStr;
     var isTdy=!tk.done&&tk.dueDate===todayStr;
     var isTmr=!tk.done&&tk.dueDate===new Date(Date.now()+86400000).toISOString().slice(0,10);

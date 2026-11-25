@@ -32,7 +32,7 @@ function renderCalendar(){
   var seeB=function(p){return'<button class="cl-see" onclick="bloomObsM(\''+p.id+'\')" title="'+L2("Am văzut-o înflorită","I saw it in bloom")+'">👀</button>';};
   var phLbl=function(st){return{start:"🌱 "+L2("început de înflorire","bloom starting"),peak:"💯 "+L2("nectar maxim","peak nectar"),end:"🍂 "+L2("spre final","ending"),before:"⏳ "+L2("urmează","coming"),after:"✔ "+L2("trecut","over")}[st.phase];};
   var dy0=doy(yr,12,31);
-  var all=MELIFERE.map(function(p){return{p:p,st:plState(p,yr,cd,off)};});
+  var all=BM.flora.toate().map(function(p){return{p:p,st:plState(p,yr,cd,off)};});
   // bloom bar: full period + nectar peak + today
   var bar=function(st){var span=st.e-st.s||1,pct=function(x){return Math.max(0,Math.min(100,(x-st.s)/span*100));};
     return'<div class="cl-bar"><i class="pk" style="left:'+pct(st.ps)+'%;width:'+(pct(st.pe)-pct(st.ps))+'%"></i>'+(st.inBloom?'<b style="left:'+pct(cd)+'%"></b>':'')+'</div>'
@@ -56,7 +56,7 @@ function renderCalendar(){
   var dy=doy(yr,12,31),P=function(dn){return Math.max(0,Math.min(100,dn/dy*100));};
   var months=L2("I F M A M I I A S O N D","J F M A M J J A S O N D").split(" ");
   var yearCard='<div class="c"><div class="ct">📅 '+L2("Calendarul anului","Year calendar")+'</div>'
-    +'<div class="tv-tabs gen-sort" style="margin-top:8px;">'+[["main",L2("Principale","Main")],["pri",L2("+ prioritare","+ priority")],["all",L2("Toate","All")+" ("+MELIFERE.length+")"]].map(function(x){return'<button class="tv-tab'+(_calView===x[0]?" on":"")+'" onclick="_calView=\''+x[0]+'\';renderCalendar()">'+x[1]+'</button>';}).join("")+'</div>'
+    +'<div class="tv-tabs gen-sort" style="margin-top:8px;">'+[["main",L2("Principale","Main")],["pri",L2("+ prioritare","+ priority")],["all",L2("Toate","All")+" ("+all.length+")"]].map(function(x){return'<button class="tv-tab'+(_calView===x[0]?" on":"")+'" onclick="_calView=\''+x[0]+'\';renderCalendar()">'+x[1]+'</button>';}).join("")+'</div>'
     +'<div class="cl-y"><div class="cl-yh"><span></span><div class="cl-ym">'+months.map(function(mm){return'<i>'+mm+'</i>';}).join("")+'</div></div>'
     +view.map(function(x){var st=x.st;
       return'<div class="cl-yr'+(x.p.cat==="main"?" mn":"")+(st.inBloom?" now":"")+'" onclick="calPlM(\''+x.p.id+'\')" style="cursor:pointer"><span class="cl-yn">'+x.p.ic+' '+esc(plantN(x.p))+'</span>'
@@ -101,7 +101,7 @@ function renderCalendar(){
         +(obsBy[x.p.id]&&!ny?'<span class="bd-ko">👀</span>':'')+'</div>';};
     var nowC=curM.slice(1).concat(sec),upC=(nextY?[]:nextM.slice(curM.length?0:1)).concat(soon);
     upC=upC.filter(function(x,i){return upC.indexOf(x)===i;}).sort(function(a,b){return a.st.until-b.st.until;});
-    var rail=function(ttl,l,ny){return l.length?'<div class="bd-sh">'+ttl+' <span class="hv-ts">'+l.length+' · '+L2("glisează →","swipe →")+'</span></div><div class="bd-rail">'+l.map(function(x){return card(x,ny);}).join("")+'</div>':'';};
+    var rail=function(ttl,l,ny){return l.length?'<div class="bd-sh">'+ttl+' <span class="hv-ts">'+l.length+'</span></div><div class="bd-rail">'+l.map(function(x){return card(x,ny);}).join("")+'</div>':'';};
     vbody='<div class="bd-hero">'+ring+'<div class="bd-hb">'+hm+'</div></div>'
       +rail("🌸 "+L2("Tot în floare acum","Also in bloom now"),nowC)
       +rail("⏭️ "+L2("Urmează","Coming up"),upC)
@@ -138,7 +138,7 @@ window.calPlM=function(id){
 window.bloomObsM=function(pid){
   var yr=new Date().getFullYear(),cd=cdoy(),off=getLatOffset();
   var near=[],main=[],pri=[],rest=[];
-  MELIFERE.slice().sort(function(a,b){return plDoy(yr,a.b[0],a.b[1],0)-plDoy(yr,b.b[0],b.b[1],0);}).forEach(function(p){
+  BM.flora.toate().slice().sort(function(a,b){return plDoy(yr,a.b[0],a.b[1],0)-plDoy(yr,b.b[0],b.b[1],0);}).forEach(function(p){
     var st=plState(p,yr,cd,off);
     if(st.s-25<=cd&&st.e+10>=cd)near.push(p);else if(p.cat==="main")main.push(p);else if(p.cat==="pri")pri.push(p);else rest.push(p);});
   var opt=function(p){return'<option value="'+p.id+'"'+(p.id===pid?" selected":"")+'>'+p.ic+' '+esc(plantN(p))+'</option>';};
@@ -168,11 +168,7 @@ window.bloomObsPrev=function(){
 window.bloomObsSave=function(){
   var p=($q("boP")||{}).value,ph=(document.querySelector("input[name='boF']:checked")||{}).value||"start",d=($q("boD")||{}).value;
   if(!p||!d)return;
-  if(!D.bloomObs)D.bloomObs=[];
-  var yr=d.slice(0,4),here=plObsHere();
-  // same plant + phase + year in the same area → replaced
-  D.bloomObs=D.bloomObs.filter(function(o){return !(o.plant===p&&o.phase===ph&&o.date.slice(0,4)===yr&&here.indexOf(o)>=0);});
-  D.bloomObs.push({id:uid(),plant:p,phase:ph,date:d,lat:D.userLoc?D.userLoc.lat:null,lon:D.userLoc?D.userLoc.lon:null});
-  save(false);closeM();renderCalendar();toast(L2("Observație salvată — calendarul s-a actualizat","Observation saved — calendar updated"),"👀");
+  BM.flora.observatii.adauga(p,ph,d);
+  closeM();renderCalendar();toast(L2("Observație salvată — calendarul s-a actualizat","Observation saved — calendar updated"),"👀");
 };
-window.bloomObsDel=function(id){showConfirm(L2("Ștergi observația?","Delete the observation?"),function(){D.bloomObs=(D.bloomObs||[]).filter(function(o){return o.id!==id;});save(false);renderCalendar();});};
+window.bloomObsDel=function(id){showConfirm(L2("Ștergi observația?","Delete the observation?"),function(){BM.flora.observatii.sterge(id);renderCalendar();});};

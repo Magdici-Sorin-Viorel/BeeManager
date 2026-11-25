@@ -41,7 +41,7 @@ var MV_NEST={b:1,ba:1,h:1,p:1};   // types counted in the brood-nest frames (bro
 
 function mvLbl(list,v){var x=list.filter(function(o){return o[0]===v;})[0];return x?x[1]:"";}
 function mvPlain(s){return String(s||"").replace(/^[^A-Za-zĂÂÎȘȚăâîșț0-9]+/,"");}
-function mvHiveName(id){var h=D.hives.find(function(x){return x.id===id;})||(typeof genFind==="function"?genFind(id):null);return h?h.name:"—";}
+function mvHiveName(id){var h=BM.stupi.get(id)||(typeof genFind==="function"?genFind(id):null);return h?h.name:"—";}
 function mvOpts(list,cur){return list.map(function(o){return'<option value="'+o[0]+'"'+(cur===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");}
 function mvHiveOpts(cur,self){
   return'<option value="">— alege stupul —</option>'+D.hives.filter(function(h){return h.id!==self;}).map(function(h){return'<option value="'+h.id+'"'+(cur===h.id?" selected":"")+'>'+(h.kind==="roi"?"🐝 ":"🏠 ")+esc(h.name)+'</option>';}).join("");
@@ -312,7 +312,7 @@ function mvTxt(i){
 }
 
 // ── ⬢ Plastic frames count per hive ─────────────────────────────
-function mvPlAdd(hid,n){var h=D.hives.find(function(x){return x.id===hid;});if(!h||!n)return;h.plastic=Math.max(0,(parseInt(h.plastic)||0)+n);}
+function mvPlAdd(hid,n){var h=BM.stupi.get(hid);if(!h||!n)return;h.plastic=Math.max(0,(parseInt(h.plastic)||0)+n);}
 // net plastic frames of an inspection's own rows (auto rows are counted when they are created)
 function mvPlNet(mv){var n=0;if(!mv)return 0;
   (mv.in||[]).forEach(function(r){if(!r.auto&&mvIsPl(r))n+=parseInt(r.n)||0;});
@@ -321,7 +321,7 @@ function mvPlNet(mv){var n=0;if(!mv)return 0;
 // ── Applying / undoing transfers on the other hive ──────────────
 function mvLatest(hid,date,exceptId){return !(D.inspections||[]).some(function(i){return i.hiveId===hid&&i.id!==exceptId&&i.date>date;});}
 function mvHiveAdd(hid,date,db,df,inspId,dg){   // change the hive's current frames (only if that inspection is its latest)
-  var h=D.hives.find(function(x){return x.id===hid;});if(!h||!mvLatest(hid,date,inspId))return;
+  var h=BM.stupi.get(hid);if(!h||!mvLatest(hid,date,inspId))return;
   h.fB=Math.max(0,(parseInt(h.fB)||0)+db);h.fH=Math.max(0,(parseInt(h.fH)||0)+df);h.fE=Math.max(0,(parseInt(h.fE)||0)+(dg||0));h.fT=h.fB+h.fH+h.fE;h.str=strCalc(h.fB,h.fH,null,date);
 }
 function mvG(t){return t==="e"||t==="f"||t==="old"||t==="d"||t==="pl";}   // 🪹 empty-frame types

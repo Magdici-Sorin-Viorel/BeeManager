@@ -1,5 +1,6 @@
 // BeeManager Pro — plants.js
-// 🌼 Database of Romanian honey plants (used by Calendar).
+// 🌼 Built-in list of Romanian honey plants — pure data. All logic (state on a day, corrections from your
+// observations, the user's own plants) is in js/flora.js (BM.flora).
 //
 // Data is for LOWLANDS (100–200 m, ~45.5°N — e.g. Western Plain / Banat, Romanian Plain).
 // The calendar shifts it by your location (getLatOffset in core.js: ~4 days / degree of latitude).
@@ -71,81 +72,4 @@ var MELIFERE=[
   {id:"mustart",n:"Muștar în miriște",ne:"Stubble mustard",lat:"Sinapis alba (cultură a doua)",ic:"🟡",cat:"sec",b:[8,20,10,15],pk:[9,1,10,5],nec:2,pol:2,nt:[14,24],z:"semănat după recoltarea păioaselor",dc:"Pentru rezervele de iarnă."},
   {id:"iedera",n:"Iederă",ne:"Ivy",lat:"Hedera helix",ic:"🍃",cat:"sec",b:[9,5,10,20],pk:[9,15,10,10],nec:2,pol:2,nt:[14,22],z:"păduri, ziduri, parcuri",dc:"Ultimul nectar al anului."}
 ];
-var PLANTS=MELIFERE;   // compatibility (Dashboard / getFlow)
-
-// day of year for a date [month,day] in year y, plus the location offset
-function plDoy(y,m,d,off){return doy(y,m,d)+(off||0);}
-// a plant's state on day cd: null (not in bloom) or {phase, left, start, end, pkS, pkE}
-function plState(p,yr,cd,off){
-  var s=plDoy(yr,p.b[0],p.b[1],off),e=plDoy(yr,p.b[2],p.b[3],off),ps=plDoy(yr,p.pk[0],p.pk[1],off),pe=plDoy(yr,p.pk[2],p.pk[3],off);
-  var r={s:s,e:e,ps:ps,pe:pe,inBloom:cd>=s&&cd<=e,inPeak:cd>=ps&&cd<=pe,until:s-cd,left:e-cd};
-  r.phase=!r.inBloom?(cd<s?"before":"after"):cd<ps?"start":cd<=pe?"peak":"end";
-  return r;
-}
-
-// ═══════════════════════════════════════════
-// 👀 YOUR OBSERVATIONS → CALENDAR ADJUSTMENT
-// ═══════════════════════════════════════════
-// D.bloomObs = [{id, plant, phase:"start"|"peak", date, lat, lon}]
-// How it's computed (per area — observations within ~30 km of where you are now):
-//  1. From PAST YEARS: mean of your deviations from the calendar (recent years weigh more) → starting point.
-//  2. From THIS YEAR: each observation gives a deviation (days earlier / later than the calendar).
-//     • the observed plant → shifts exactly to what you saw (start → start; full bloom → nectar peak)
-//     • other plants → shift by observations close in time: weight = e^(−distance in days / 45);
-//       an „anchor” of 0.35 pulls toward the calendar, so a deviation in rapeseed is felt strongly in acacia,
-//       less in linden and little in sunflower (later weather can still change things).
-var BLOOM_TAU=45,BLOOM_ANCHOR=0.35,BLOOM_RADIUS_KM=30;
-function plKm(a,b){var R=6371,dLa=(b.lat-a.lat)*Math.PI/180,dLo=(b.lon-a.lon)*Math.PI/180;
-  var x=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLo/2)*Math.sin(dLo/2);return 2*R*Math.asin(Math.sqrt(x));}
-function plObsHere(){
-  var here=D.userLoc;
-  return(D.bloomObs||[]).filter(function(o){return !here||o.lat==null||plKm(here,{lat:o.lat,lon:o.lon})<=BLOOM_RADIUS_KM;});
-}
-function plFind(id){return MELIFERE.find(function(p){return p.id===id;});}
-// raw deviation of an observation from the calendar (no adjustments), in days
-function plObsDev(o){
-  var p=plFind(o.plant);if(!p)return null;
-  var y=parseInt(o.date.slice(0,4)),off=getLatOffset(),m=parseInt(o.date.slice(5,7)),d=parseInt(o.date.slice(8,10));
-  var base=o.phase==="peak"?plDoy(y,p.pk[0],p.pk[1],off):plDoy(y,p.b[0],p.b[1],off);
-  return doy(y,m,d)-base;
-}
-var _plAdjC=null,_plAdjK="";
-function plAdjModel(yr){
-  var obs=plObsHere(),key=yr+"|"+obs.length+"|"+obs.map(function(o){return o.id+o.date+o.phase;}).join(",")+"|"+(D.userLoc?D.userLoc.lat.toFixed(2):"");
-  if(_plAdjC&&_plAdjK===key)return _plAdjC;
-  // 1. past years: per-year mean, weighted toward recent years
-  var past={};obs.forEach(function(o){var y=parseInt(o.date.slice(0,4));if(y<yr){var dv=plObsDev(o);if(dv!=null)(past[y]=past[y]||[]).push(dv);}});
-  var ys=Object.keys(past).map(Number).sort(function(a,b){return b-a;}),sw=0,sv=0;
-  ys.forEach(function(y,i){var w=Math.pow(0.7,i),a=past[y].reduce(function(x,z){return x+z;},0)/past[y].length;sw+=w;sv+=w*a;});
-  var B=sw?Math.max(-20,Math.min(20,Math.round(sv/sw))):0;
-  // 2. this year: each observation's deviation from the calendar + B
-  var cur=obs.filter(function(o){return parseInt(o.date.slice(0,4))===yr;}).map(function(o){
-    var p=plFind(o.plant);if(!p)return null;var dv=plObsDev(o);return dv==null?null:{o:o,p:p,dev:dv-B,anchor:plDoy(yr,p.b[0],p.b[1],0)};}).filter(Boolean);
-  var adj={};
-  MELIFERE.forEach(function(p){
-    var own=cur.filter(function(c){return c.p.id===p.id;});
-    var st=own.filter(function(c){return c.o.phase==="start";}).pop(),pk=own.filter(function(c){return c.o.phase==="peak";}).pop();
-    var r;
-    if(st||pk){r={s:B+(st?st.dev:pk.dev),pk:B+(pk?pk.dev:st.dev),own:true};}
-    else{
-      var me=plDoy(yr,p.b[0],p.b[1],0),w0=BLOOM_ANCHOR,swt=0,sd=0;
-      cur.forEach(function(c){var w=Math.exp(-Math.abs(me-c.anchor)/BLOOM_TAU);swt+=w;sd+=w*c.dev;});
-      var sh=swt?sd/(swt+w0):0;
-      r={s:B+sh,pk:B+sh,own:false};
-    }
-    r.s=Math.max(-30,Math.min(30,Math.round(r.s)));r.pk=Math.max(-30,Math.min(30,Math.round(r.pk)));
-    adj[p.id]=r;
-  });
-  var avgCur=cur.length?Math.round(cur.reduce(function(x,c){return x+c.dev;},0)/cur.length):null;
-  _plAdjC={adj:adj,B:B,pastYears:ys.length,cur:cur,avgCur:avgCur};_plAdjK=key;
-  return _plAdjC;
-}
-// Plant state with the adjustment applied (used by the calendar and getFlow)
-plState=function(p,yr,cd,off){
-  var A=plAdjModel(yr).adj[p.id]||{s:0,pk:0};
-  var s=plDoy(yr,p.b[0],p.b[1],off)+A.s,ps=plDoy(yr,p.pk[0],p.pk[1],off)+A.pk,pe=plDoy(yr,p.pk[2],p.pk[3],off)+A.pk,e=plDoy(yr,p.b[2],p.b[3],off)+A.pk;
-  if(ps<s)ps=s;if(e<pe)e=pe;
-  var r={s:s,e:e,ps:ps,pe:pe,inBloom:cd>=s&&cd<=e,inPeak:cd>=ps&&cd<=pe,until:s-cd,left:e-cd,adj:A.pk||A.s,own:!!A.own};
-  r.phase=!r.inBloom?(cd<s?"before":"after"):cd<ps?"start":cd<=pe?"peak":"end";
-  return r;
-};
+var PLANTS=MELIFERE;   // compatibility

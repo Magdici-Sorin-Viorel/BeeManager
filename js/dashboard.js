@@ -61,7 +61,7 @@ function renderDashboard(){
   if(pastActive.length){
     pastHTML='<div class="c" style="margin-top:14px;"><div class="ct">'+t("dash_past_label")+'</div>'
       +pastActive.map(function(p){
-        var hv=D.hives.find(function(h){return h.id===p.hiveId;});
+        var hv=BM.stupi.get(p.hiveId);
         var days=Math.round((Date.now()-new Date(p.startDate))/86400000);
         return'<div class="bb" style="background:rgba(230,180,34,.06);margin-top:7px;">'
           +'<span style="font-size:1.4rem">🚚</span>'
@@ -78,7 +78,7 @@ function renderDashboard(){
   (D.varroa||[]).forEach(function(v){
     var lvl=vrLevel(v);
     if(lvl==="treat"){
-      var hv=D.hives.find(function(h){return h.id===v.hiveId;});
+      var hv=BM.stupi.get(v.hiveId);
       if(hv&&vrAlertHives.indexOf(hv.name)===-1)vrAlertHives.push(hv.name);
     }
   });
@@ -87,7 +87,7 @@ function renderDashboard(){
   (D.varroa||[]).forEach(function(v){
     var daysDiff=Math.round((Date.now()-new Date(v.date))/86400000);
     if(daysDiff<=30&&vrLevel(v)==="treat"){
-      var hv=D.hives.find(function(h){return h.id===v.hiveId;});
+      var hv=BM.stupi.get(v.hiveId);
       if(hv&&vrAlertRecent.indexOf(hv.name)===-1)vrAlertRecent.push(hv.name);
     }
   });
@@ -99,7 +99,7 @@ function renderDashboard(){
       +'</div>'
     :"";
 
-  var lastHiveName=last?D.hives.find(function(h){return h.id===last.hiveId;})?.name||"":"";
+  var lastHiveName=last?BM.stupi.get(last.hiveId)?.name||"":"";
 
   // Varroa KPI card — most recent test across all hives
   var vrLatest=(D.varroa||[]).slice().sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
@@ -107,7 +107,7 @@ function renderDashboard(){
   if(vrLatest){
     var vrLvl=vrLevel(vrLatest);
     var vrCol=vrLvl==="ok"?"var(--ok)":vrLvl==="watch"?"var(--gold)":"var(--danger)";
-    var vrHv=D.hives.find(function(h){return h.id===vrLatest.hiveId;});
+    var vrHv=BM.stupi.get(vrLatest.hiveId);
     var vrPctStr=vrLatest.method==="natural"||vrLatest.method==="sticky"
       ?(vrLatest.miteCount||0)+" "+t("vr_mites_day")
       :(vrLatest.infestationPct||0).toFixed(1)+"%";
@@ -174,7 +174,7 @@ function renderDashboard(){
     tkPanelH+='<div style="font-size:.8rem;color:var(--mut);padding:6px 0;">'+t("tk_dash_none")+'</div>';
   }else{
     tkPanelH+=urgentTasks.map(function(tk){
-      var hv=D.hives.find(function(h){return h.id===tk.hiveId;});
+      var hv=BM.stupi.get(tk.hiveId);
       var isOvd=tk.dueDate&&tk.dueDate<todayStr;
       var isTdy=tk.dueDate===todayStr;
       var dueLbl=isOvd?('<span style="color:var(--danger);font-weight:700;">⏰ '+t("tk_overdue")+'</span>')
@@ -213,7 +213,7 @@ function renderDashboard(){
     hrPanelH+='<div style="font-size:.8rem;color:var(--mut);padding:6px 0;">'+t("hr_dash_none")+'</div>';
   }else{
     hrPanelH+=recentFeeds.map(function(f){
-      var hv=f.allHives?{name:t("hr_all_hives")}:D.hives.find(function(h){return h.id===f.hiveId;})||{name:"—"};
+      var hv=f.allHives?{name:t("hr_all_hives")}:BM.stupi.get(f.hiveId)||{name:"—"};
       var tp=(t("hr_types")||[]).find(function(x){return x.v===f.feedType;})||{l:f.feedType||"?"};
       return'<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--bdr);">'
         +'<div style="font-size:1.3rem;">🍬</div>'

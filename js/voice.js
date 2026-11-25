@@ -179,7 +179,7 @@ function qrFromUrl(){
 var _vc={rec:null,on:false,hid:null,last:"",local:false,wl:null,mr:null,chunks:[],t0:0};
 function vcSR(){return window.SpeechRecognition||window.webkitSpeechRecognition||null;}
 window.vcOpen=function(hid){
-  var h=D.hives.find(function(x){return x.id===hid;});if(!h)return;
+  var h=BM.stupi.get(hid);if(!h)return;
   vcStopAll();
   _vc.hid=hid;_vc.last="";
   var SR=vcSR(),on=navigator.onLine;

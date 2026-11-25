@@ -21,7 +21,7 @@ function pActive(p){return pAwayHives(p).length>0;}
 function pTripOf(hid,day){return(D.pastorage||[]).filter(function(p){return pAway(p,hid,day);}).sort(function(a,b){return a.startDate<b.startDate?1:-1;})[0]||null;}
 function pDays(p){return Math.max(0,Math.round((new Date(pToday())-new Date(p.startDate))/86400000));}
 function pLocations(){var a=[];(D.pastorage||[]).forEach(function(p){if(p.location&&a.indexOf(p.location)<0)a.push(p.location);});return a;}
-function pHiveName(id){var h=D.hives.find(function(x){return x.id===id;})||genFind(id);return h?h.name:"—";}
+function pHiveName(id){var h=BM.stupi.get(id)||genFind(id);return h?h.name:"—";}
 
 // ═══════════════════════════════════════════
 // PASTORARE PAGE
@@ -49,7 +49,7 @@ function renderPastorage(){
   var future=all.filter(function(p){return p.startDate>pToday();}).sort(function(a,b){return a.startDate<b.startDate?-1:1;});
   // ── tab „Acum”: trips under way (header + hive cards) and planned departures
   var actH=act.map(function(p){
-    var hs=pAwayHives(p).map(function(id){return D.hives.find(function(h){return h.id===id;});}).filter(Boolean);
+    var hs=pAwayHives(p).map(function(id){return BM.stupi.get(id);}).filter(Boolean);
     return'<div class="ps-block">'+pTripHeadHTML(p)
       +'<div class="g gc hv-grid">'+hs.map(function(h){return hvIsNuc(h)?nucCardHTML(h):hvCardHTML(h,{past:true});}).join("")+'</div></div>';
   }).join("");

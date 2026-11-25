@@ -83,7 +83,7 @@ function renderFinanciar(){
 
   // Transaction list
   var rows=tabFins.map(function(f){
-    var hv=D.hives.find(function(h){return h.id===f.hiveId;});
+    var hv=BM.stupi.get(f.hiveId);
     var isInc=f.type==="income";
     return'<div class="c" style="padding:10px 13px;margin-bottom:7px;">'
       +'<div style="display:flex;align-items:flex-start;gap:9px;">'

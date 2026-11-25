@@ -7,7 +7,7 @@
 // or anywhere when the address ends with ?demo. The file can be deleted anytime
 // (plus its line in index.html and the call in app.js / settings.js).
 
-var DEMO_V=8;   // bump to reload the demo data once more in the preview
+var DEMO_V=9;   // bump to reload the demo data once more in the preview
 
 function demoHost(){
   var h=location.hostname||"",q=location.search||"";
@@ -21,7 +21,8 @@ function demoMaybe(){
 }
 function demoApply(){
   var R=demoBuild();
-  ["hives","queens","inspections","treatments","varroa","feedings","pastorage","tasks","hivesArchive","bloomObs"].forEach(function(k){D[k]=R[k]||[];});
+  ["hives","queens","inspections","treatments","varroa","feedings","pastorage","tasks","hivesArchive","bloomObs","extractions","flora"].forEach(function(k){D[k]=R[k]||[];});
+  D.settings.culesLearn=R.culesLearn||{};
   D.settings.demoV=DEMO_V;
   save(false);
 }
@@ -37,7 +38,7 @@ function demoCardHTML(){
 
 function demoBuild(){
   var O=t("q_origins")||[];   // 0 Cumpărată · 1 Din roi propriu · 3 Import · 4 Natural (roi) · 5 Schimbare naturală
-  var R={hives:[],queens:[],inspections:[],treatments:[],varroa:[],feedings:[],pastorage:[],tasks:[],hivesArchive:[],bloomObs:[]};
+  var R={hives:[],queens:[],inspections:[],treatments:[],varroa:[],feedings:[],pastorage:[],tasks:[],hivesArchive:[],bloomObs:[],extractions:[],flora:[]};
   var W={sun:"☀️ Însorit",part:"⛅ Parțial noros",cloud:"☁️ Înnorat"};
   function M(list){return list.map(function(x){return{f:x[0],cap:x[1]};});}
   function capSum(m){return Math.round(m.reduce(function(s,x){return s+x.f*x.cap/100;},0));}
@@ -194,6 +195,17 @@ function demoBuild(){
     {id:"dv3",hiveId:"d3",date:"2026-08-30",method:"sugar",miteCount:4,beeCount:300,hours:null,infestationPct:1.33,hasBrood:true,treatmentId:null,reapplied:false,inspectionId:null,notes:""},
     {id:"dv4",hiveId:"d1",date:"2026-10-08",method:"natural",miteCount:2,beeCount:null,hours:72,infestationPct:null,hasBrood:false,treatmentId:"dt2",reapplied:false,inspectionId:null,notes:"După Apivar"},
     {id:"dv5",hiveId:"d2",date:"2026-10-10",method:"alcohol",miteCount:1,beeCount:300,hours:null,infestationPct:0.33,hasBrood:false,treatmentId:"dt2",reapplied:false,inspectionId:null,notes:"După Apivar"}];
+
+  // ── 🍯 Extractions (Cules): 2025 and 2026, same flows → the „Pe ani” comparison has something to show ──
+  var T="Dadant 1/2 (magazie)";
+  R.extractions=[
+    {id:"de1",date:"2025-06-08",cules:"salcam",rows:[{hiveId:"d1",n:18,type:T},{hiveId:"d2",n:12,type:T}],kg:41,note:"An bun la salcâm"},
+    {id:"de2",date:"2025-08-20",cules:"floarea",rows:[{hiveId:"d1",n:20,type:T},{hiveId:"d2",n:14,type:T}],kg:44},
+    {id:"de3",date:"2026-06-10",cules:"salcam",rows:[{hiveId:"d1",n:20,type:T},{hiveId:"d2",n:18,type:T}],kg:49,fromInsp:["di_d1_2026-06-10","di_d2_2026-06-12"]},
+    {id:"de4",date:"2026-08-26",cules:"floarea",rows:[{hiveId:"d1",n:28,type:T},{hiveId:"d2",n:14,type:T},{hiveId:"d3",n:6,type:T}],kg:58,fromInsp:["di_d1_2026-08-25","di_d2_2026-08-27","di_d3_2026-09-02"]}];
+  // what the app learned from them (kg / frame per flow + type), as if the kg had been entered in the app
+  var LN={};R.extractions.forEach(function(e){var n=e.rows.reduce(function(s,r){return s+r.n;},0),o=e.kg/n;[e.cules+"|"+T,"*|"+T].forEach(function(k){var L0=LN[k];LN[k]=L0?{kg:+(L0.kg+(o-L0.kg)*0.4).toFixed(2),n:L0.n+1}:{kg:+o.toFixed(2),n:1};});e.learned=true;});
+  R.culesLearn=LN;
 
   // ── Bloom observations (👀 Calendar) ──
   R.bloomObs=[["rapita","start","2026-04-12"],["salcam","start","2026-04-30"],["salcam","peak","2026-05-08"],["tei","start","2026-06-04"],["floarea","start","2026-06-28"]]

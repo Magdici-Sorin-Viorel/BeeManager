@@ -83,7 +83,7 @@ function monthName(ym){
 
 // Helper: render one inspection card (full detail)
 function inspCardHTML(i,showHiveName){
-  var hv=D.hives.find(function(h){return h.id===i.hiveId;});
+  var hv=BM.stupi.get(i.hiveId);
   var bp=t("bp")||[];var bpEntry=bp.find(function(x){return x[0]===i.bp;});
   var bpCls=i.bp==="compact"?"gg":i.bp==="necompact"?"gy":"gr";
   var bpLbl=bpEntry?bpEntry[1]:(i.bp||"—");
@@ -138,13 +138,7 @@ function renderInspections(){
 
   // Alert: hives not inspected in the last 7 days
   var today7=new Date();today7.setHours(0,0,0,0);
-  var warnHives=D.hives.filter(function(h){
-    var lastI=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;})
-      .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
-    if(!lastI)return true;
-    var lastD=new Date(lastI.date);lastD.setHours(0,0,0,0);
-    return (today7-lastD)/86400000>=7;
-  });
+  var warnHives=BM.inspectii.neinspectati().map(function(x){return x.h;});   // same rule and threshold as the hive cards
 
   // Last inspection per hive in current month (already sorted desc so first = last)
   var seenHive={};var curCards=[];var shownIds={};
@@ -169,8 +163,7 @@ function renderInspections(){
     +'<strong>⚠️ '+t("insp_alert_title")+'</strong><br>'
     +'<span style="font-size:.82rem;color:var(--mut);">'+(D.settings.lang==="en"?"Not inspected in the last 7 days:":"Nu au fost verificați în ultimele 7 zile:")+'</span><br style="margin-bottom:5px;">'
     +warnHives.map(function(h){
-      var lastI=D.inspections.filter(function(i){return i.hiveId===h.id&&i.date;})
-        .sort(function(a,b){return new Date(b.date)-new Date(a.date);})[0];
+      var lastI=BM.inspectii.aleStupului(h.id)[0];
       var daysAgo=lastI?Math.floor((today7-new Date(lastI.date))/86400000):null;
       return'<span class="bg gr" style="margin:4px 3px 0 0;display:inline-block;">🏠 '+h.name+(daysAgo!==null?" ("+daysAgo+"d)":"")+'</span>';
     }).join("")
@@ -195,7 +188,7 @@ function renderInspections(){
       var totalInMonth=0;
       hiveKeys.forEach(function(hid){totalInMonth+=hivesInMonth[hid].length;});
       var hivesHTML=hiveKeys.map(function(hid,hi){
-        var hv=D.hives.find(function(h){return h.id===hid;});
+        var hv=BM.stupi.get(hid);
         var hivArcId=arcId+"_h"+hi;
         // Sort ascending (chronological)
         var insps=hivesInMonth[hid].slice().sort(function(a,b){return new Date(a.date)-new Date(b.date);});
@@ -241,7 +234,7 @@ function renderInspections(){
 
 window.delInsp=function(id){showConfirm(t("insp_del_c"),function(){
   // undo the inspection's side effects: feeding actions, treatment finishes, a planned treatment not started yet
-  var ex=D.inspections.find(function(i){return i.id===id;});
+  var ex=BM.inspectii.get(id);
   if(ex){
     if(ex.fdActs&&ex.fdActs.length)fdRevert(ex.fdActs,D.feedings||[],ex.id,true);
     (ex.trFinished||[]).forEach(function(f){var tr=(D.treatments||[]).find(function(x){return x.id===f.id;});if(!tr)return;
@@ -254,7 +247,7 @@ window.delInsp=function(id){showConfirm(t("insp_del_c"),function(){
   D.inspections=D.inspections.filter(function(i){return i.id!==id;});
   D.varroa=(D.varroa||[]).filter(function(v){return v.inspectionId!==id;});   // and the count made during the inspection
   // it was the hive's latest inspection → the hive goes back to the frames of the previous one
-  if(ex){var hvD=D.hives.find(function(h){return h.id===ex.hiveId;}),liD=hvInsps(ex.hiveId)[0];
+  if(ex){var hvD=BM.stupi.get(ex.hiveId),liD=hvInsps(ex.hiveId)[0];
     if(hvD&&liD&&ex.date>=liD.date){hvD.fB=parseInt(liD.fB)||0;hvD.fH=inspFood(liD);hvD.fT=hvD.fB+hvD.fH;
       hvD.str=strCalc(hvD.fB,hvD.fH,liD.winter?liD.winter.frames:null,liD.date);if(liD.mags){hvD.mags=liD.mags;hvD.magCount=liD.mags.length;hvD.hasMag=liD.mags.length>0;}}}
   save();render();
@@ -266,9 +259,9 @@ function inspM(hiveId,editId,pick){
   // whole form for the hive selected in it (prefill, brood boxes, supers…); changing it rebuilds the form (inspPick)
   if(!hiveId&&!editId){pick=true;hiveId=(D.hives[0]||{}).id||null;}
   if(typeof _bx!=="undefined"){_bx.on=false;_bx.put=0;_bx.take=0;_bx.adj={b:0,f:0,e:0};}   // box-editor taps belong to one form (boxes.js)
-  var ex=editId?D.inspections.find(function(i){return i.id===editId;}):null;
+  var ex=editId?BM.inspectii.get(editId):null;
   var effHid=ex?ex.hiveId:hiveId;
-  var hive=effHid?D.hives.find(function(h){return h.id===effHid;}):null;
+  var hive=effHid?BM.stupi.get(effHid):null;
   var disArr=ex?ex.diseases||[]:[];
   // Health on a new inspection: „Sănătos” checked by default; if the hive is under treatment,
   // Varroa (varroa treatment) or „Altă problemă” (other-purpose treatment) is auto-checked.
@@ -545,7 +538,7 @@ window.togglePostTrSec=function(show){var el=document.getElementById("postTrSec"
 
 window.updMag=function(hid){
   var box=document.getElementById("magBlock");if(!box)return;
-  var hive=D.hives.find(function(h){return h.id===hid;});
+  var hive=BM.stupi.get(hid);
   box.innerHTML=magBlockHTML(hive,null);
 };
 // hive picker of a new inspection: the form is rebuilt for the chosen hive (its boxes, supers, last inspection).
@@ -660,7 +653,7 @@ window.saveInsp=function(editId,hiveId){
   var brood=parseInt(($q("iFB")||{}).value)||0;
   // editing an older inspection saved with more frames than fit (allowed before brood boxes existed) without touching
   // its frames (e.g. only the notes are fixed) → it may be saved as it was
-  var ex0=editId?D.inspections.find(function(i){return i.id===editId;}):null,iv=function(id){return parseInt(($q(id)||{}).value)||0;};
+  var ex0=editId?BM.inspectii.get(editId):null,iv=function(id){return parseInt(($q(id)||{}).value)||0;};
   var frSame=!!ex0&&(parseInt(ex0.fB)||0)===iv("iFB")&&(parseInt(ex0.fH)||0)===iv("iFH")&&(parseInt(ex0.fE)||0)===iv("iFE")&&(parseInt(ex0.nests)||1)===(iv("iNst")||1);
   if(!frSame&&!(typeof inspWinterOn==="function"&&inspWinterOn())&&(inspNestOver(hid)>0||(typeof nstOver==="function"&&$q("iNst0")&&nstOver()))){
     toast(L2("Ai trecut mai multe rame decât încap în cuib — adaugă un cuib sau corectează.","More frames than fit — add a brood box or fix the numbers."),"⚠️");
@@ -684,12 +677,12 @@ window.saveInsp=function(editId,hiveId){
     plAdd:!!($q("iPlA")&&$q("iPlA").checked),   // ⬢ plastic-foundation frames put in (one tick, boxes.js)
     popPct:parseInt(($q("iPop")||{}).value)||90,bp:($q("iBP")||{}).value||"compact",
     mv:mvRead(),
-    nFramesB:(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.nFramesB||0:0;})(),   // old field (no longer in the form) — kept on edit
+    nFramesB:(function(){var e=editId?BM.inspectii.get(editId):null;return e?e.nFramesB||0:0;})(),   // old field (no longer in the form) — kept on edit
     space:($q("iSp")||{}).value||"suficient",
-    magFull:(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.magFull||0:0;})(),   // old field, kept on edit
+    magFull:(function(){var e=editId?BM.inspectii.get(editId):null;return e?e.magFull||0:0;})(),   // old field, kept on edit
     winter:($q("iWn")&&$q("iWn").checked)?{frames:parseInt(($q("iWnF")||{}).value)||0,food:parseInt(($q("iWnH")||{}).value)||0}:null,
     diseases:dis,diseaseN:dn,notes:($q("iNt")||{}).value||"",
-    voiceTx:($q("iVoiceTx")||{}).value||(function(){var e=editId?D.inspections.find(function(i){return i.id===editId;}):null;return e?e.voiceTx||"":"";})(),   // 🎙️ everything said (voice.js)
+    voiceTx:($q("iVoiceTx")||{}).value||(function(){var e=editId?BM.inspectii.get(editId):null;return e?e.voiceTx||"":"";})(),   // 🎙️ everything said (voice.js)
     postTr:!!($q("iPostTr")||{}).checked,
     postTrId:($q("iPostTrProd")||{}).value||null,
     postTrEff:($q("iPostTrEff")||{}).value||"",
@@ -699,7 +692,7 @@ window.saveInsp=function(editId,hiveId){
   o.weight=weighRead();          // ⚖️ optional weighing (any time of year)
   o.winterMode=inspWinterOn();   // ❄️ winter mode: only the winter checks are recorded
   // 🔄 frames: final count vs before − out + in; an unexplained difference asks before saving
-  var exO=editId?D.inspections.find(function(i){return i.id===editId;}):null;
+  var exO=editId?BM.inspectii.get(editId):null;
   var bfV=($q("mvBefore")||{}).value;o.frBefore=bfV===""||bfV==null?(exO?exO.frBefore:null):parseInt(bfV);
   var bbV=($q("mvBefB")||{}).value,bhV=($q("mvBefF")||{}).value,bgV=($q("mvBefG")||{}).value;
   o.frBeforeG=bgV===""||bgV==null?(exO?exO.frBeforeG:null):parseInt(bgV);
@@ -731,23 +724,23 @@ window.saveInsp=function(editId,hiveId){
     o.magsBefore=_magSt.before.map(function(m){return{f:m.f,cap:m.cap,h:m.h,e:m.e,n:m.n,size:m.size};});
     o.magCount=o.mags.length;o.hasMag=o.magCount>0;o.magT=magSum(o.mags);
     o.magCap=Math.round(o.mags.reduce(function(t,m){return t+m.f*m.cap/100;},0));
-    o.magAddS=md.addS;o.magRmS=md.rmS;o.magAddF=md.addF;o.magRmF=md.rmF;
+    o.magAddS=md.addS;o.magRmS=md.rmS;o.magAddF=md.addF;o.magRmF=md.rmF+md.removed.reduce(function(t,m){return t+(parseInt(m.f)||0);},0);   // all super frames taken off: from kept supers + whole supers removed (→ Cules)
     if(!o.magCount)o.magFull=0;
   }
   // 🚚 inspection done during migratory beekeeping → record the location
   var ptI=typeof pTripOf==="function"?pTripOf(hid,o.date):null;
   o.pastId=ptI?ptI.id:null;o.pastLoc=ptI?ptI.location:"";
-  var prevI=editId?JSON.parse(JSON.stringify(D.inspections.find(function(i){return i.id===editId;})||null)):null;
+  var prevI=editId?JSON.parse(JSON.stringify(BM.inspectii.get(editId)||null)):null;
   inspTrSave(o,prevI); // treatments: end / plan from the inspection
   inspFdSave(o,prevI); // feeding: start / top up / stop / plan from the inspection
   mvRevert(prevI);     // frames given to / taken from other hives: undo the old version first
-  if(editId){var ei=D.inspections.find(function(i){return i.id===editId;});if(ei)Object.assign(ei,o);}
+  if(editId){var ei=BM.inspectii.get(editId);if(ei)Object.assign(ei,o);}
   else{D.inspections.push(o);}
   mvApply(o);          // frames given to / taken from other hives → recorded there too
   mvPlAdd(hid,mvPlNet(o.mv)-mvPlNet(prevI&&prevI.mv));   // ⬢ plastic frames count of this hive
   inspVarroaSave(o);   // varroa count from the inspection (if a treatment is ongoing)
   devQueenInspSave(o); // new mated queen → becomes the hive's queen (if checked)
-  var hive=D.hives.find(function(h){return h.id===hid;});
+  var hive=BM.stupi.get(hid);
   // The hive takes the frames from the inspection only if it is its most recent inspection
   // (an edited old inspection does not overwrite the current state)
   var isLatest=!D.inspections.some(function(i){return i.hiveId===hid&&i.id!==o.id&&i.date&&o.date&&i.date>o.date;});
@@ -767,6 +760,11 @@ window.saveInsp=function(editId,hiveId){
   // swarm with a confirmed mated queen → suggest moving it to hives
   if(hive&&hive.kind==="roi"&&o.qMated)setTimeout(function(){nucPromoteM(hid,true);},450);
   mvNucAfterSave(o);   // „🐝 Fac un roi nou” → open the nuc form with these frames
+  // 🍯 super frames taken off in this inspection → offer the extraction right away (Cules), with these frames prefilled
+  if(!editId&&(parseInt(o.magRmF)||0)>0&&!o.winterMode&&!(o.mv&&(o.mv.out||[]).some(function(r){return r.dest==="nuc"&&!r.nucId;}))&&typeof cuM==="function")
+    setTimeout(function(){if(document.getElementById("MB"))return;
+      showConfirm("🍯 Ai scos <b>"+o.magRmF+"</b> rame de magazie din "+esc((hive||{}).name||"stup")+".<br><br>Faci extracția acum? Ramele sunt deja trecute; pui kilogramele după stors sau mai târziu.",
+        function(){go("cules");cuM();},null,"🍯 Da, extracție");},500);
 };
 
 // 🏠 BROOD BOXES in the inspection (like the supers): 1 by default, „➕ Adaugă cuib” adds one, „➖ Scoate” on the top one.
@@ -864,7 +862,7 @@ function inspNestTip(){
   if(typeof inspSlotsUpd==="function")inspSlotsUpd();
   if(typeof bxDraw==="function"&&!_bxDrawing){_bxDrawing=true;try{bxDraw();}finally{_bxDrawing=false;}}
   var el=document.getElementById("iNestTip");if(!el)return;
-  var hid=($q("iHive")||{}).value||_mvSelf,h=D.hives.find(function(x){return x.id===hid;})||{};
+  var hid=($q("iHive")||{}).value||_mvSelf,h=BM.stupi.get(hid)||{};
   var b=parseInt(($q("iFB")||{}).value)||0,f=parseInt(($q("iFH")||{}).value)||0,e=parseInt(($q("iFE")||{}).value)||0,ns=parseInt(($q("iNst")||{}).value)||1;
   var cap=$q("iNst0")&&typeof nstCap==="function"?nstCap():hvCap(h,ns),tot=b+f+e,tt=document.getElementById("iNestTot");
   if(tt)tt.innerHTML='<b>'+tot+'</b> / '+cap+' '+L2("rame","frames")+(cap>tot&&h.kind!=="roi"?' <span class="hv-ts">· '+(cap-tot)+' '+L2("libere","free")+'</span>':'');
@@ -878,7 +876,7 @@ function inspNestTip(){
 }
 // frames vs room in the boxes (used when saving)
 function inspNestOver(hid){
-  var h=D.hives.find(function(x){return x.id===hid;})||{};if(h.kind==="roi")return 0;
+  var h=BM.stupi.get(hid)||{};if(h.kind==="roi")return 0;
   var tot=(parseInt(($q("iFB")||{}).value)||0)+(parseInt(($q("iFH")||{}).value)||0)+(parseInt(($q("iFE")||{}).value)||0);
   return Math.max(0,tot-($q("iNst0")?nstCap():hvCap(h,parseInt(($q("iNst")||{}).value)||1)));
 }

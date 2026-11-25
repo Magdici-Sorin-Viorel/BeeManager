@@ -12,7 +12,7 @@ window.delTr=function(id){showConfirm(t("tr_del_c"),function(){
   save();render();
 });};
 function treatM(id){
-  var ex=id?D.treatments.find(function(t2){return t2.id===id;}):null;
+  var ex=id?BM.tratamente.get(id):null;
   var prods=(t("tr_products")||[]).slice();
   // Treatment saved with a product no longer in the list (e.g. from the old list):
   // keep it as an option so editing doesn't change it by mistake
@@ -30,7 +30,7 @@ function treatM(id){
     +'💡 '+L2("La tratamentele pentru varroa, numără acarieni căzuți pe placă (din 🔍 Inspecție sau ➕ Numărătoare). O numărătoare înainte și una după tratament arată cât de eficient a fost.","For varroa treatments, count the mites fallen on the board (from 🔍 Inspect or ➕ Count). One count before and one after the treatment shows how effective it was.")
     +'</div>'
     +(ex&&(ex.done||(ex.doneHives&&Object.keys(ex.doneHives).length))?'<div class="al ali" style="font-size:.76rem;margin:8px 0;">✅ '+L2("Încheiat","Finished")+': '
-      +(ex.done?L2("toți stupii","all hives")+' · '+ex.done:Object.keys(ex.doneHives).map(function(hid){var hv=D.hives.find(function(h){return h.id===hid;});return esc(hv?hv.name:"?")+' · '+ex.doneHives[hid];}).join(", "))
+      +(ex.done?L2("toți stupii","all hives")+' · '+ex.done:Object.keys(ex.doneHives).map(function(hid){var hv=BM.stupi.get(hid);return esc(hv?hv.name:"?")+' · '+ex.doneHives[hid];}).join(", "))
       +'<div class="ck" style="margin-top:6px;"><input type="checkbox" id="tReopen"><label for="tReopen">↩️ '+L2("Anulează încheierea (tratamentul redevine în curs)","Undo finishing (treatment becomes active again)")+'</label></div></div>':'')
     +L(t("tr_notes"))+'<textarea id="tNt" rows="2">'+(esc(xv(ex,"notes","")))+'</textarea>'
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="saveTr(\''+(id||'')+'\')">'+btnS()+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
@@ -38,7 +38,7 @@ function treatM(id){
 window.saveTr=function(id){
   var o={id:id||uid(),target:($q("tTg")||{}).value||"varroa",product:($q("tPr")||{}).value,hiveId:($q("tHv")||{}).value||null,date:($q("tDt")||{}).value,endDate:($q("tEnd")||{}).value||"",dosage:($q("tDs")||{}).value,notes:($q("tNt")||{}).value};
   if(o.endDate&&o.date&&o.endDate<o.date){toast("⚠️ "+t("tr_end_err"));var e=$q("tEnd");if(e){e.classList.add("err");setTimeout(function(){e.classList.remove("err");},2500);}return;}
-  if(id){var ex=D.treatments.find(function(t2){return t2.id===id;});if(ex){Object.assign(ex,o);if($q("tReopen")&&$q("tReopen").checked){delete ex.done;delete ex.doneHives;}}}else{D.treatments.push(o);}
+  if(id){var ex=BM.tratamente.get(id);if(ex){Object.assign(ex,o);if($q("tReopen")&&$q("tReopen").checked){delete ex.done;delete ex.doneHives;}}}else{D.treatments.push(o);}
   save(false);closeM();render();toast(id?t("tr_upd"):t("tr_saved"),"💊");
 };
 

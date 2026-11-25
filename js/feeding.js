@@ -62,7 +62,7 @@ function fdTypeIco(f){return fdType(f).l.split(" ")[0];}
 function fdHiveNames(f,hids){
   hids=hids||fdHives(f);
   if(f.allHives&&hids.length===D.hives.length)return L2("Toți stupii","All hives");
-  return hids.map(function(id){var h=D.hives.find(function(x){return x.id===id;});return h?h.name:"—";}).join(", ");
+  return hids.map(function(id){var h=BM.stupi.get(id);return h?h.name:"—";}).join(", ");
 }
 function fdStatus(f){   // planned / active / done
   if(f.planned)return"planned";
@@ -81,7 +81,7 @@ function fdQtyTxt(f){var q=fdSumQty(f);return q?q+' '+(f.unit||fdType(f).u||"kg"
 function fdPillLbl(h){if(!h)return"?";var nm=h.name||"",m=/#\s*([0-9A-Za-z]+)/.exec(nm);
   if(m)return(hvIsNuc(h)||/^\s*roi/i.test(nm)?"R":"")+m[1];return nm.length>6?nm.slice(0,6)+"…":nm;}
 function fdHiveChecks(name,hids,checked){
-  var hs=hids.map(function(id){return D.hives.find(function(x){return x.id===id;})||{id:id,name:"—"};});
+  var hs=hids.map(function(id){return BM.stupi.get(id)||{id:id,name:"—"};});
   var st=hs.filter(function(h){return !hvIsNuc(h);}),nu=hs.filter(hvIsNuc);
   var pill=function(h){var on=checked.indexOf(h.id)>=0,away=typeof pTripOf==="function"&&pTripOf(h.id);
     return'<label class="hp-c'+(on?" on":"")+(hvIsNuc(h)?" nuc":"")+'" title="'+esc(h.name)+'"><input type="checkbox" class="fdHv" value="'+h.id+'" onchange="fdOneChk(this)"'+(on?" checked":"")+'>'
@@ -278,6 +278,7 @@ function renderHranire(){
   // Monthly chart (by portions: each top-up counts in its own month)
   setTimeout(function(){
     var canv=document.getElementById("hrChart");if(!canv)return;
+    if(typeof Chart!=="undefined"&&Chart.getChart){var old=Chart.getChart(canv);if(old)old.destroy();}   // the page was redrawn fast: free the canvas first
     var mLabels=t("hr_month_labels");
     var curYr=new Date().getFullYear();
     var yrs=[curYr,curYr-1];
@@ -663,7 +664,7 @@ function inspFdSecHTML(hid,ex,dateOv){
 window.inspFdRefresh=function(){
   var box=document.getElementById("iFdSec");if(!box)return;
   var mb=document.getElementById("MB"),exId=mb?mb.dataset.inspId:"";
-  var ex=exId?D.inspections.find(function(i){return i.id===exId;}):null;
+  var ex=exId?BM.inspectii.get(exId):null;
   var hid=($q("iHive")||{}).value,date=($q("iDt")||{}).value||fdToday();
   box.innerHTML=inspFdSecHTML(hid,ex,date);
 };

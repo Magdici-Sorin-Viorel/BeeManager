@@ -38,7 +38,7 @@ function qOrigIdx(o){
 
 // Nuc queen: pseudo-inspection "cells left" from the day the nuc was made (used by devQueenState)
 function nucQueenIQ(hid){
-  var h=D.hives.find(function(x){return x.id===hid;});
+  var h=BM.stupi.get(hid);
   if(!hvIsNuc(h)||!h.nuc||(h.nuc.found&&h.nuc.queenIn))return null;
   var s=h.nuc.stage||{},st=s.cell?(h.nuc.cellStage||"mixt"):s.larva?"roi_larve":s.egg?"roi_oua":null;
   if(!st)return null;
@@ -56,7 +56,7 @@ function nucDonorOpts(sel,exclude){
   }).join("");
 }
 window.nucM=function(id,donorId){
-  var h=id?D.hives.find(function(x){return x.id===id;}):null,n=(h&&h.nuc)||{};
+  var h=id?BM.stupi.get(id):null,n=(h&&h.nuc)||{};
   var found=!!n.found,st=n.stage||{};
   var don=h?(n.taken&&n.taken.donor)||h.parentId:(donorId||"");
   var nextN=D.hives.reduce(function(m,x){return Math.max(m,parseInt(x.num)||0);},0)+1;
@@ -112,9 +112,9 @@ window.nucPrev=function(){
     var tx="";
     if(fb+fh>max)tx+='<div class="nuc-warn">⚠️ '+L2("Mai multe rame decât încap în cutie","More frames than the box holds")+' ('+(fb+fh)+' / '+max+')</div>';
     if(!f){
-      var d=D.hives.find(function(x){return x.id===($q("nDon")||{}).value;});
+      var d=BM.stupi.get(($q("nDon")||{}).value);
       if(d){
-        var ex=editId?D.hives.find(function(x){return x.id===editId;}):null,tk=ex&&ex.nuc&&ex.nuc.taken&&ex.nuc.taken.donor===d.id?ex.nuc.taken:{fB:0,fH:0};
+        var ex=editId?BM.stupi.get(editId):null,tk=ex&&ex.nuc&&ex.nuc.taken&&ex.nuc.taken.donor===d.id?ex.nuc.taken:{fB:0,fH:0};
         var b0=(d.fB||0)+(tk.fB||0),h0=(d.fH||0)+(tk.fH||0);
         if(mb&&mb.dataset.fromInsp){   // frames already taken out in the donor's inspection → its numbers are already the remaining ones
           tx+='<div>🏠 '+esc(d.name)+': '+L2("a rămas cu","is left with")+' <b>'+(d.fB||0)+'</b> '+L2("rame puiet","brood frames")+' · <b>'+(d.fH||0)+'</b> '+L2("mâncare","food")+'</div>';
@@ -145,7 +145,7 @@ window.nucPrev=function(){
   }
 };
 window.nucSave=function(id){
-  var h=id?D.hives.find(function(x){return x.id===id;}):null;
+  var h=id?BM.stupi.get(id):null;
   var f=(document.querySelector("input[name='nOrg']:checked")||{}).value==="found";
   var nm=(($q("nNm")||{}).value||"").trim();if(!nm){toast("⚠️ "+L2("Scrie un nume","Enter a name"));return;}
   var don=f?null:(($q("nDon")||{}).value||null);
@@ -155,11 +155,11 @@ window.nucSave=function(id){
   if(!don&&fromInsp&&_mvNuc)don=_mvNuc.donor;   // donor select is locked (disabled) when coming from an inspection
   var inInsp=fromInsp||(h&&h.nuc&&h.nuc.taken&&h.nuc.taken.inInsp)||null;   // frames already out in the donor's inspection → never deducted here
   // frames taken: first restore last time's (when editing), then deduct the new ones
-  if(!inInsp&&h&&h.nuc&&h.nuc.taken){var od=D.hives.find(function(x){return x.id===h.nuc.taken.donor;});
+  if(!inInsp&&h&&h.nuc&&h.nuc.taken){var od=BM.stupi.get(h.nuc.taken.donor);
     if(od){od.fB=(od.fB||0)+(h.nuc.taken.fB||0);od.fH=(od.fH||0)+(h.nuc.taken.fH||0);od.fT=hvTotal(od);od.str=strCalc(od.fB);}}
   var taken=null;
   if(don&&inInsp)taken={donor:don,fB:fb,fH:fh,inInsp:inInsp};
-  else if(don){var d=D.hives.find(function(x){return x.id===don;});
+  else if(don){var d=BM.stupi.get(don);
     if(d){var tb=Math.min(fb,d.fB||0),th=Math.min(fh,d.fH||0);d.fB=(d.fB||0)-tb;d.fH=(d.fH||0)-th;d.fT=hvTotal(d);d.str=strCalc(d.fB,d.fH);taken={donor:don,fB:tb,fH:th};}}
   var max=parseInt(($q("nMax")||{}).value)||6;
   var nuc={start:($q("nDt")||{}).value||nucToday(),found:f,max:max,
@@ -192,7 +192,7 @@ window.nucSave=function(id){
 // NUC → HIVE  /  FAILED NUC
 // ═══════════════════════════════════════════
 window.nucPromoteM=function(id,fromInsp){
-  var h=D.hives.find(function(x){return x.id===id;});if(!hvIsNuc(h))return;
+  var h=BM.stupi.get(id);if(!hvIsNuc(h))return;
   var mods=t("mod_opts")||[];
   openM('<div class="mt">⬆️ '+L2("Roiul devine stup","The nuc becomes a hive")+'</div>'
     +(fromInsp?'<div class="al ali" style="margin-bottom:10px;">💞 '+L2("Ai confirmat că regina e împerecheată. Trec","You confirmed the queen is mated. Move")+' <b>'+esc(h.name)+'</b> '+L2("la stupi?","to hives?")+'</div>':'')
@@ -204,7 +204,7 @@ window.nucPromoteM=function(id,fromInsp){
     +'<div class="br" style="margin-top:14px;"><button class="btn" onclick="nucPromoteSave(\''+id+'\')">⬆️ '+L2("Devine stup","Make it a hive")+'</button><button class="btn gh" onclick="closeM()">'+(fromInsp?L2("Mai târziu","Later"):btnC())+'</button></div>');
 };
 window.nucPromoteSave=function(id){
-  var h=D.hives.find(function(x){return x.id===id;});if(!h)return;
+  var h=BM.stupi.get(id);if(!h)return;
   var d=($q("npDt")||{}).value||nucToday();
   h.name=(($q("npNm")||{}).value||h.name).trim();h.num=parseInt(($q("npNum")||{}).value)||h.num;h.mod=($q("npMd")||{}).value||h.mod;
   delete h.kind;h.promotedAt=d;
@@ -216,7 +216,7 @@ window.nucPromoteSave=function(id){
   save();closeM();render();toast(L2("Roiul a devenit stup","The nuc is now a hive"),"⬆️");
 };
 window.nucFailM=function(id){
-  var h=D.hives.find(function(x){return x.id===id;});if(!h)return;
+  var h=BM.stupi.get(id);if(!h)return;
   openM('<div class="mt">❌ '+L2("Închide roiul","Close the nuc")+' — '+esc(h.name)+'</div>'
     +'<div class="dev-act">'
     +'<label><input type="radio" name="nfR" value="esuat" checked onchange="document.getElementById(\'nfIW\').style.display=\'none\'"> ❌ '+L2("Eșuat (regina nu s-a împerecheat / s-a pierdut)","Failed (queen not mated / lost)")+'</label>'
@@ -228,9 +228,9 @@ window.nucFailM=function(id){
     +'<div class="br" style="margin-top:14px;"><button class="btn bd" onclick="nucFailSave(\''+id+'\')">❌ '+L2("Închide roiul","Close nuc")+'</button><button class="btn gh" onclick="closeM()">'+btnC()+'</button></div>');
 };
 window.nucFailSave=function(id){
-  var h=D.hives.find(function(x){return x.id===id;});if(!h)return;
+  var h=BM.stupi.get(id);if(!h)return;
   var r=(document.querySelector("input[name='nfR']:checked")||{}).value||"esuat",into=r==="unit"?(($q("nfI")||{}).value||null):null;
-  if(into){var t2=D.hives.find(function(x){return x.id===into;});if(t2){t2.fB=(t2.fB||0)+(h.fB||0);t2.fH=(t2.fH||0)+(h.fH||0);t2.fT=hvTotal(t2);t2.str=strCalc(t2.fB);}}
+  if(into){var t2=BM.stupi.get(into);if(t2){t2.fB=(t2.fB||0)+(h.fB||0);t2.fH=(t2.fH||0)+(h.fH||0);t2.fT=hvTotal(t2);t2.str=strCalc(t2.fB);}}
   if(!D.hivesArchive)D.hivesArchive=[];
   D.hivesArchive.push(Object.assign({},h,{closed:{date:($q("nfD")||{}).value||nucToday(),reason:r,into:into,note:($q("nfN")||{}).value||""}}));
   D.hives=D.hives.filter(function(x){return x.id!==id;});
@@ -285,22 +285,6 @@ function nucCardHTML(h){
 // ═══════════════════════════════════════════
 // GENEALOGY
 // ═══════════════════════════════════════════
-// Genetic parent: by the hive's queens (from the current one back to older ones)
-function genParentOf(h){
-  if(!h)return{root:true,why:"start"};
-  if(h.genRoot)return h.genRoot;   // trace of a deleted hive
-  var qs=(D.queens||[]).filter(function(q){return q.hive===h.id;});
-  for(var i=qs.length-1;i>=0;i--){
-    var q=qs[i],k=qOrigIdx(q.orig);
-    if(k===0||k===3)return{root:true,why:"bought",q:q};
-    if(k===4)return{root:true,why:"natural",q:q};
-    if(q.origHive&&q.origHive!==h.id)return{parent:q.origHive,q:q};
-    // raised in hive / no source hive → same line: go to the previous queen
-  }
-  if(h.genParent)return{parent:h.genParent};
-  if(h.nuc&&h.nuc.found)return{root:true,why:"found"};
-  return{root:true,why:"start"};
-}
 function genStatusBadge(h){
   if(h.closed){var r=h.closed.reason;return'<span class="bg gr">'+(r==="unit"?"🔗 "+L2("unit","merged"):r==="sters"?"🗑️ "+L2("șters","deleted"):"❌ "+L2("eșuat","failed"))+' '+devFmt(h.closed.date)+'</span>';}
   return hvIsNuc(h)?'<span class="bg gy">🐝 '+L2("roi","nuc")+'</span>':'<span class="bg gg">🏠 '+L2("stup","hive")+'</span>';
@@ -320,154 +304,8 @@ function genShort(h){   // short label: #10 = hive, R3 = nuc (so Roi #1 isn't co
   var nm=h.name||"?",m=/#\s*([0-9A-Za-z]+)/.exec(nm)||/^\s*roi\s+([0-9A-Za-z]+)/i.exec(nm)||/(\d+)/.exec(nm),isR=hvIsNucEver(h)&&/^\s*roi/i.test(nm);
   if(!m&&h.num)m=[0,String(h.num)];   // no number in the name → the hive number
   return m?(isR?"R":"#")+m[1]:nm.slice(0,7);}
-function qHiveQs(hid){return(D.queens||[]).filter(function(q){return q.hive===hid;});}
-function qFind(id){return id?(D.queens||[]).find(function(q){return q.id===id;}):null;}
-function qFrom(q){
-  if(q.from)return q.from;
-  var hs=qHiveQs(q.hive),i=hs.indexOf(q);
-  if(i>0&&hs[i-1].replacedAt)return hs[i-1].replacedAt;
-  var h=genFind(q.hive);if(h&&h.promotedAt&&i<=0)return h.promotedAt;
-  return q.yr?q.yr+"-04-01":"2000-01-01";
-}
-function qTo(q){
-  if(q.replacedAt)return q.replacedAt;
-  if(q.status==="înlocuită"){var hs=qHiveQs(q.hive),i=hs.indexOf(q);return hs[i+1]?qFrom(hs[i+1]):qFrom(q);}
-  return null;
-}
-function qAt(hid,date){
-  var hs=qHiveQs(hid);if(!hs.length)return null;
-  var m=hs.filter(function(q){var t2=qTo(q);return qFrom(q)<=date&&(!t2||t2>date);});
-  return m.length?m[m.length-1]:hs[0];
-}
-function qPrevInHive(q){var hs=qHiveQs(q.hive),i=hs.indexOf(q);return i>0?hs[i-1]:null;}
-function qMother(q){
-  if(q.motherQ!==undefined&&q.motherQ!==null)return qFind(q.motherQ);
-  if(q.motherQ===null&&q.motherSet)return null;
-  var k=qOrigIdx(q.orig);
-  if(k===0||k===3||k===4)return null;
-  if(k===5)return qPrevInHive(q);
-  if(q.origHive&&q.origHive!==q.hive)return qAt(q.origHive,qFrom(q));
-  if(q.origHive===q.hive)return qPrevInHive(q);
-  var h=genFind(q.hive);
-  if(h&&h.nuc&&!h.nuc.found&&qHiveQs(q.hive)[0]===q)return qFind(h.nuc.motherQ)||(h.genParent?qAt(h.genParent,h.nuc.start||qFrom(q)):null);
-  return qPrevInHive(q);
-}
-function qRootWhy(q){var k=qOrigIdx(q.orig);return k===0||k===3?"bought":k===4?"natural":"start";}
-function genStoppedAtQ(q){var seen={};while(q&&!seen[q.id]){seen[q.id]=1;if(q.lineStop)return q.lineStop;q=qMother(q);}return null;}
-function genStoppedAt(h){var q=hqCurrent(h.id);return q?genStoppedAtQ(q):(h.lineStop||null);}
-function qYr2(d){return d?"'"+d.slice(2,4):"";}
-function qLabel(q){var h=genFind(q.hive),c=qCode(q);return c.code+" G"+c.gen+" · "+(h?genShort(h):"?")+" "+qYr2(qFrom(q));}
-function qLabelS(q){var h=genFind(q.hive);return"G"+qCode(q).gen+" "+(h?genShort(h):"?")+" "+qYr2(qFrom(q));}
-
-// ── Genealogy line code: BREED-NNN (e.g. CPT-001), same for all generations of the line ──
-// Given to the queen at the start of the line (bought / import / found swarm) and stays fixed (q.lineCode).
-// Generation (G0 = line start, G1 = daughters, G2 = granddaughters…) is shown next to the code.
-var RACE_CODES=[[/carpat/,"CPT"],[/buckfast/,"BUK"],[/ital|ligust|cordovan/,"ITA"],[/carni/,"CAR"],[/cauca/,"CAU"]];
-function raceCode(race){var r=(race||"").toLowerCase();if(!r)return"NEC";for(var i=0;i<RACE_CODES.length;i++)if(RACE_CODES[i][0].test(r))return RACE_CODES[i][1];return"ALT";}
-function qRoot(q){var seen={},m;while(q&&!seen[q.id]&&(m=qMother(q))){seen[q.id]=1;q=m;}return q;}
-function qGen(q){var g=0,seen={},m;while(q&&!seen[q.id]&&(m=qMother(q))){seen[q.id]=1;q=m;g++;}return g;}
-var _lcT=0;
-function ensureLineCodes(force){
-  var n=Date.now();if(!force&&n-_lcT<1500)return;_lcT=n;
-  var roots=(D.queens||[]).filter(function(q){return !qMother(q);}).sort(function(a,b){return qFrom(a)<qFrom(b)?-1:1;});
-  var max={},changed=false;
-  (D.queens||[]).forEach(function(q){var m=/^([A-Z]{3})-(\d+)$/.exec(q.lineCode||"");if(m)max[m[1]]=Math.max(max[m[1]]||0,parseInt(m[2]));});
-  roots.forEach(function(q){var pre=raceCode(q.race);
-    if(q.lineCode&&q.lineCode.indexOf(pre+"-")===0)return;
-    max[pre]=(max[pre]||0)+1;q.lineCode=pre+"-"+("00"+max[pre]).slice(-3);changed=true;});
-  if(changed)save(false);
-}
-function qCode(q){if(!q)return{code:"—",gen:0};ensureLineCodes();var r=qRoot(q);return{code:r.lineCode||raceCode(r.race),gen:qGen(q),root:r};}
-function qCodeTag(q){var c=qCode(q);return'<span class="qc-tag">'+esc(c.code)+' <b>G'+c.gen+'</b></span>';}
-
-// ── Scores: per year, from inspections made while the queen was in the hive ──
-// 🍯 honey 40% (peak capped frames in supers, vs. the best in the same year)
-// 😊 gentleness 20% (aggressiveness 1 → 100, 5 → 0) · 🐝 swarming 20% (0% inspections with cells → 100, ≥50% → 0)
-// ❄️ wintering 20% (frames with bees going into winter: ≤3 → 0, ≥9 → 100)
-// A missing component → weight spread over the others. Weights: SCORE_W in config.js.
-function genScoresAll(){
-  var W=(typeof SCORE_W!=="undefined")?SCORE_W:{honey:40,gentle:20,swarm:20,winter:20};
-  var res={},best={};
-  (D.queens||[]).forEach(function(q){
-    var f=qFrom(q),t2=qTo(q),h=genFind(q.hive),yrs={};
-    (D.inspections||[]).forEach(function(i){
-      if(i.hiveId!==q.hive||!i.date||i.date<f||(t2&&i.date>=t2))return;
-      if(h&&h.nuc&&!h.promotedAt&&h.kind==="roi")return;
-      var y=i.date.slice(0,4),Y=yrs[y]=yrs[y]||{n:0,ag:[],sw:0,cap:null,win:null,sup:0};
-      if(i.winterMode){   // ❄️ winter inspection: only the cluster size counts (no temperament / swarming data)
-        if(i.winter&&i.winter.frames!=null&&(i.date.slice(5,7)>="10"||Y.win==null))Y.win=parseInt(i.winter.frames);
-        return;}
-      Y.n++;if(i.behav)Y.ag.push(parseInt(i.behav));if(i.botci)Y.sw++;
-      var ms=Array.isArray(i.mags)?i.mags:null;
-      var capF=ms?ms.reduce(function(s,m){return s+(parseInt(m.f)||0)*(parseInt(m.cap)||0)/100;},0):(i.magCap!=null?parseInt(i.magCap)||0:null);
-      if(capF!=null)Y.cap=Math.max(Y.cap||0,capF);
-      Y.sup=Math.max(Y.sup,ms?ms.length:(parseInt(i.magCount)||0));
-      if(i.winter&&i.winter.frames!=null)Y.win=parseInt(i.winter.frames);
-    });
-    Object.keys(yrs).forEach(function(y){if(yrs[y].cap)best[y]=Math.max(best[y]||0,yrs[y].cap);});
-    res[q.id]={yrs:yrs};
-  });
-  Object.keys(res).forEach(function(id){
-    var r=res[id],tot=[],comp={honey:[],gentle:[],swarm:[],winter:[]};
-    Object.keys(r.yrs).sort().forEach(function(y){
-      var Y=r.yrs[y],c={};
-      if(Y.cap!=null&&best[y])c.honey=Math.round(Y.cap/best[y]*100);
-      if(Y.ag.length){var a=Y.ag.reduce(function(x,z){return x+z;},0)/Y.ag.length;Y.aggr=a;c.gentle=Math.round((5-a)/4*100);}
-      if(Y.n>=2){Y.swPct=Math.round(Y.sw/Y.n*100);c.swarm=Math.max(0,100-2*Y.swPct);}
-      if(Y.win!=null)c.winter=Math.round(Math.max(0,Math.min(1,(Y.win-3)/6))*100);
-      var sw=0,sv=0;Object.keys(c).forEach(function(k){sw+=W[k];sv+=W[k]*c[k];});
-      Y.c=c;Y.score=sw&&(Y.n>=2||c.winter!=null)?Math.max(1,Math.round(sv/sw)):null;
-      if(Y.score!=null){tot.push(Y.score);Object.keys(c).forEach(function(k){comp[k].push(c[k]);});}
-    });
-    var avg=function(a){return a.length?Math.round(a.reduce(function(x,z){return x+z;},0)/a.length):null;};
-    r.score=avg(tot);r.years=tot.length;r.avg={honey:avg(comp.honey),gentle:avg(comp.gentle),swarm:avg(comp.swarm),winter:avg(comp.winter)};
-  });
-  return res;
-}
-var _gsC=null,_gsT=0;
-function genScoresCached(){var n=Date.now();if(!_gsC||n-_gsT>1500){_gsC=genScoresAll();_gsT=n;}return _gsC;}
-function qScoreOf(q){var s=q?genScoresCached()[q.id]:null;return s&&s.score!=null?s.score:null;}
 function genScoreCls(s){return s==null?"na":s>=75?"hi":s>=50?"mid":"lo";}
 function genScoreBadge(s){return'<span class="gs-b '+genScoreCls(s)+'">⭐ '+(s==null?"—":s)+'</span>';}
-
-// Model: nodes = queens + nucs in formation (queen doesn't exist yet)
-function genModel(){
-  ensureLineCodes(true);
-  var S=genScoresAll(),nodes=[],byId={},kids={};
-  (D.queens||[]).forEach(function(q){var h=genFind(q.hive);if(!h)return;var n={id:q.id,q:q,h:h};nodes.push(n);byId[n.id]=n;});
-  genAll().forEach(function(h){
-    if(!h.nuc||h.nuc.found||qHiveQs(h.id).length)return;
-    var m=qFind(h.nuc.motherQ)||(h.genParent?qAt(h.genParent,h.nuc.start||nucToday()):null);
-    var n={id:"p_"+h.id,pseudo:true,h:h,mother:m?m.id:null};nodes.push(n);byId[n.id]=n;
-  });
-  var roots=[];
-  nodes.forEach(function(n){var m=n.pseudo?n.mother:(qMother(n.q)||{}).id;
-    if(m&&byId[m]&&m!==n.id){(kids[m]=kids[m]||[]).push(n);n.parent=m;}else roots.push(n);});
-  var fromOf=function(n){return n.pseudo?(n.h.nuc.start||""):qFrom(n.q);};
-  Object.keys(kids).forEach(function(k){kids[k].sort(function(a,b){return fromOf(a)<fromOf(b)?-1:1;});});
-  var mem=function(r){var o=[r];(kids[r.id]||[]).forEach(function(c){o=o.concat(mem(c));});return o;};
-  var lines=roots.map(function(r){
-    var m=mem(r),sc=m.filter(function(n){return !n.pseudo&&S[n.id]&&S[n.id].score!=null;}).map(function(n){return S[n.id].score;});
-    return{r:r,mem:m,score:sc.length?Math.round(sc.reduce(function(x,y){return x+y;},0)/sc.length):null,
-      active:m.filter(function(n){return !n.h.closed&&(n.pseudo||!qTo(n.q));}).length};
-  }).sort(function(a,b){return b.mem.length-a.mem.length;});
-  var lineOf={};
-  lines.forEach(function(l,i){l.color=GEN_COLORS[i%GEN_COLORS.length];l.mem.forEach(function(n){lineOf[n.id]=l;});});
-  _genCache={S:S,nodes:nodes,byId:byId,kids:kids,lines:lines,lineOf:lineOf,fromOf:fromOf};
-  return _genCache;
-}
-function genLineName(l){
-  var r=l.r;if(r.pseudo)return"NEC · "+genShort(r.h);
-  return(r.q.lineCode||raceCode(r.q.race))+(qRootWhy(r.q)==="natural"?" 🌳":"");
-}
-function genLineSub(l){var r=l.r;if(r.pseudo)return"";var q=r.q;return(q.race||L2("rasă nenotată","race not set"))+(q.line?' · '+q.line:'');}
-function genRootLblQ(n){
-  if(n.pseudo)return'🐝 '+L2("Roi în formare","Nuc in progress");
-  var q=n.q,why=qRootWhy(q);
-  if(why==="bought")return'🛒 '+L2("Linie nouă: regină cumpărată","New line: purchased queen")+(q.race||q.line?' ('+esc([q.race,q.line].filter(Boolean).join(" · "))+')':'')+' · '+L2("în","in")+' '+esc(n.h.name)+' · '+qFrom(q);
-  if(why==="natural")return'🌳 '+L2("Origine necunoscută (roi găsit)","Unknown origin (found swarm)")+' · '+esc(n.h.name);
-  return'🏁 '+L2("Început de linie (fără date despre mamă)","Start of line (no data on the mother)")+' · '+esc(n.h.name);
-}
 // Line chart: queen generations in columns
 function genChartSVG(l,M){
   var W=58,H=38,GX=12,GY=7,TOP=20,rows=0,maxD=0,pos={};
@@ -517,11 +355,12 @@ function renderGenealogy(){
     .filter(function(r){return _genLine==="all"||(r.l&&r.l.r.id===_genLine);});
   var kf={score:function(r){return r.s&&r.s.score!=null?r.s.score:-1;},honey:function(r){return r.s&&r.s.avg.honey!=null?r.s.avg.honey:-1;},
     gentle:function(r){return r.s&&r.s.avg.gentle!=null?r.s.avg.gentle:-1;},swarm:function(r){return r.s&&r.s.avg.swarm!=null?r.s.avg.swarm:-1;},
+    brood:function(r){return r.s&&r.s.avg.brood!=null?r.s.avg.brood:-1;},health:function(r){return r.s&&r.s.avg.health!=null?r.s.avg.health:-1;},
     winter:function(r){return r.s&&r.s.avg.winter!=null?r.s.avg.winter:-1;}}[_genSort];
   rows.sort(function(a,b){return kf(b)-kf(a);});
   var shown=_genRankAll?rows:rows.slice(0,5);
   var comp=function(s){if(!s)return'<span class="hv-dim">'+L2("fără regină înregistrată","no queen recorded")+'</span>';var a=s.avg;
-    return'🍯 '+(a.honey!=null?a.honey:'—')+' · 😊 '+(a.gentle!=null?a.gentle:'—')+' · 🐝 '+(a.swarm!=null?a.swarm:'—')+' · ❄️ '+(a.winter!=null?a.winter:'—')+' <span class="hv-dim">· '+(s.years===1?'1 an':s.years+' ani')+'</span>';};
+    return'🍯 '+(a.honey!=null?a.honey:'—')+' · 😊 '+(a.gentle!=null?a.gentle:'—')+' · 🐝 '+(a.swarm!=null?a.swarm:'—')+' · 🥚 '+(a.brood!=null?a.brood:'—')+' · 🌤️ '+(a.winter!=null?a.winter:'—')+' · 🩺 '+(a.health!=null?a.health:'—')+' <span class="hv-dim">· '+(s.years===1?'1 an':s.years+' ani')+'</span>';};
   var rank=shown.map(function(r,i){var stop=r.q&&genStoppedAtQ(r.q);
     return'<div class="gr-row'+(stop?" stopped":"")+'" onclick="'+(r.q?"genCard('"+r.q.id+"')":"")+'"><span class="gr-i">'+(i<3&&!stop&&r.s&&r.s.score!=null?["🥇","🥈","🥉"][i]:(i+1))+'</span>'
       +'<span class="gen-dot" style="background:'+(r.l?r.l.color:"#888")+'"></span>'
@@ -529,7 +368,7 @@ function renderGenealogy(){
       +'<div class="hv-ts">'+(r.q?qCodeTag(r.q)+' '+esc(r.q.race||"—")+' '+qYr2(qFrom(r.q))+' · ':'')+comp(r.s)+'</div></div>'
       +'<button class="btn sm gh" onclick="event.stopPropagation();nucM(\'\',\''+r.h.id+'\')" title="'+L2("Fă roi din el","Make a nuc from it")+'">🐝</button></div>';
   }).join("");
-  var sortBtns=[["score","⭐ Nota"],["honey","🍯 Miere"],["gentle","😊 Blândețe"],["swarm","🐝 Roire"],["winter","❄️ Iernare"]]
+  var sortBtns=[["score","⭐ Nota"],["honey","🍯 Miere"],["gentle","😊 Blândețe"],["swarm","🐝 Fără roire"],["brood","🥚 Puiet"],["winter","🌤️ Adaptare"],["health","🩺 Sănătate"]]
     .map(function(x){return'<button class="gen-chip'+(_genSort===x[0]?" on":"")+'" onclick="_genSort=\''+x[0]+'\';renderGenealogy()">'+x[1]+'</button>';}).join("");
   var lines=_genLine==="all"?M.lines:M.lines.filter(function(l){return l.r.id===_genLine;});
   var legend='<div class="gen-legend"><span><i class="lg hv"></i>regina de acum</span><span><i class="lg old"></i>înlocuită</span><span><i class="lg nuc"></i>roi</span><span><i class="lg off"></i>eșuat</span><span><i class="lg stop"></i>⛔ oprită</span>'
@@ -549,7 +388,12 @@ function renderGenealogy(){
       +'</div>';
   }).join("");
   var tab=function(id,lbl,n){return'<button class="tv-tab'+(_genTab===id?" on":"")+'" onclick="_genTab=\''+id+'\';renderGenealogy()">'+lbl+(n!=null?' <span class="bg gy">'+n+'</span>':'')+'</button>';};
-  var body=_genTab==="rank"
+  var g=D.settings.genW||{},pid=g.custom?"custom":(g.preset||"bal"),Wn=genW();
+  var prio='<div class="gen-prio"><div class="hv-ts">🎯 Ce contează pentru mine (nota se recalculează):</div><div class="gen-chips">'
+    +GEN_PRESETS.map(function(p){return'<button class="gen-chip'+(pid===p.id?" on":"")+'" onclick="genSetPreset(\''+p.id+'\')">'+p.l+'</button>';}).join("")
+    +'<button class="gen-chip'+(pid==="custom"?" on":"")+'" onclick="genSetCustom(\'honey\',genW().honey)">✍️ Eu aleg</button></div>'
+    +'<div class="gen-w">'+GEN_COMP.map(function(c){return'<label><span>'+c[1]+' '+c[2]+'</span>'+(pid==="custom"?'<input type="number" min="0" max="100" value="'+Wn[c[0]]+'" onchange="genSetCustom(\''+c[0]+'\',this.value)">':'<b>'+Wn[c[0]]+'%</b>')+'</label>';}).join("")+'</div></div>';
+  var body=prio+(_genTab==="rank"
       ?chips+'<div class="tv-sec-t">🏆 Din ce stup fac roi? <span class="hv-dim">(regina de acum)</span></div>'
         +'<div class="gen-sortchips">'+sortBtns+'</div>'
         +(rows.length?'<div class="c gr-list">'+rank
@@ -557,14 +401,14 @@ function renderGenealogy(){
           :'<div class="al ali">Niciun stup în această linie acum.</div>')
         +'<button class="gen-help-b" onclick="_genHelp=!_genHelp;renderGenealogy()">ℹ️ Cum se calculează nota '+(_genHelp?'▲':'▼')+'</button>'+(_genHelp?GEN_INFO_HTML():'')
     :_genTab==="lines"?'<div class="hv-ts" style="margin:0 2px 8px;">Apasă pe o linie ca să-i vezi arborele.</div>'+linesH
-    :chips+help+lines.map(function(l){return genLineCardHTML(l,M);}).join("");
+    :chips+help+lines.map(function(l){return genLineCardHTML(l,M);}).join(""));
   setP('<div class="hv-top"><h2><i class="fas fa-sitemap" style="color:var(--gold)"></i> '+L2("Genealogie","Genealogy")+'</h2>'
     +'<button class="btn" onclick="nucM()">🐝 Roi nou</button></div>'
     +'<div class="tv-tabs">'+tab("tree","🌳 Arbore",null)+tab("rank","🏆 Clasament",null)+tab("lines","🧬 Linii",M.lines.length)+'</div>'
     +body);
 }
 // explanation of the tree / score (shown on demand)
-function GEN_INFO_HTML(){return '<div class="al ali tv-info" style="margin-top:8px;">ℹ️ '+L2("Arborele e pe <b>regine</b>, nu pe stupi: numărul stupului rămâne, dar când îi pui o regină cumpărată pornește o linie nouă, iar urmașii reginei vechi rămân în linia ei. <b>⭐ Nota (1–100) pe fiecare an</b>, din inspecțiile cât regina a fost în stup: 🍯 miere 40% (vârful de rame căpăcite în magazii, față de cel mai bun din același an) · 😊 blândețe 20% · 🐝 roire 20% (% inspecții cu botci) · ❄️ iernare 20% (rame cu albine la intrarea în iarnă: 3 → 0, 9+ → 100). Lipsește ceva → se împarte pe rest.","The tree is on <b>queens</b>, not hives: the hive number stays, but a purchased queen starts a new line while the old queen's descendants stay in hers. <b>⭐ Score (1–100) per year</b>, from inspections while the queen was in the hive: 🍯 honey 40% (peak capped super frames vs. the best that year) · 😊 gentleness 20% · 🐝 swarming 20% (% inspections with cells) · ❄️ wintering 20% (frames of bees going into winter: 3 → 0, 9+ → 100). Missing parts are spread over the rest.")+'</div>';}
+function GEN_INFO_HTML(){return '<div class="al ali tv-info" style="margin-top:8px;">ℹ️ '+L2("Arborele e pe <b>regine</b>, nu pe stupi: numărul stupului rămâne, dar când îi pui o regină cumpărată pornește o linie nouă, iar urmașii reginei vechi rămân în linia ei. <b>⭐ Nota (1–100) pe fiecare an</b>, din inspecțiile cât regina a fost în stup: 🍯 miere (kg extrase, față de cel mai bun stup din același an; fără extracții în acel an → rame căpăcite) · 😊 blândețe (agresivitate 1 → 100, 5 → 0) · 🐝 fără roire (0% inspecții cu botci → 100) · 🥚 puiet (rame cu puiet aprilie–august, față de cel mai bun) · 🌤️ adaptare la vreme (cu câte rame de albine intră în iarnă: 3 → 0, 9+ → 100, plus cât de plin de puiet e cuibul la primul cules, față de cel mai bun) · 🩺 sănătate (inspecții fără boli notate și cât varroa a avut față de stupul cu cei mai mulți). Ponderile le alegi tu sus, la „Ce contează pentru mine”. Lipsește ceva → se împarte pe rest. O regină care a stat doar o parte din sezon nu e judecată la miere pe acel an.","The tree is on <b>queens</b>, not hives: the hive number stays, but a purchased queen starts a new line while the old queen's descendants stay in hers. <b>⭐ Score (1–100) per year</b>, from inspections while the queen was in the hive: 🍯 honey 40% (peak capped super frames vs. the best that year) · 😊 gentleness 20% · 🐝 swarming 20% (% inspections with cells) · ❄️ wintering 20% (frames of bees going into winter: 3 → 0, 9+ → 100). Missing parts are spread over the rest.")+'</div>';}
 // Queen detail sheet
 window.genCard=function(id){
   var M=genModel(),n=M.byId[id];if(!n)return;
@@ -586,9 +430,9 @@ window.genCard=function(id){
     :'🐝 '+L2("Crescută din ouăle reginei","Raised from the eggs of")+' '+esc(qLabel(m))+' ('+esc((genFind(m.hive)||{}).name||"—")+')';
   var others=qHiveQs(q.hive).filter(function(x){return x!==q;});
   var yrs=Object.keys(s.yrs||{}).sort();
-  var tbl=yrs.length?'<table class="gs-tbl"><tr><th>'+L2("An","Year")+'</th><th>⭐</th><th>🍯</th><th>😊</th><th>🐝</th><th>❄️</th></tr>'
+  var tbl=yrs.length?'<table class="gs-tbl"><tr><th>'+L2("An","Year")+'</th><th>⭐</th><th>🍯</th><th>kg</th><th>😊</th><th>🐝</th><th>🥚</th><th>🌤️</th><th>🩺</th></tr>'
     +yrs.map(function(y){var Y=s.yrs[y],c=Y.c||{};
-      return'<tr><td>'+y+'</td><td>'+genScoreBadge(Y.score)+'</td><td>'+(c.honey!=null?c.honey:'—')+'</td><td>'+(c.gentle!=null?c.gentle:'—')+'</td><td>'+(c.swarm!=null?c.swarm:'—')+'</td><td>'+(c.winter!=null?c.winter+(Y.win!=null?'<small> ('+Y.win+'r)</small>':''):'—')+'</td></tr>';}).join("")+'</table>'
+      return'<tr><td>'+y+'</td><td>'+genScoreBadge(Y.score)+'</td><td>'+(c.honey!=null?c.honey:'—')+'</td><td>'+(Y.kg?'<b>'+Y.kg+'</b>':'—')+'</td><td>'+(c.gentle!=null?c.gentle:'—')+'</td><td>'+(c.swarm!=null?c.swarm:'—')+'</td><td>'+(c.brood!=null?c.brood:'—')+'</td><td>'+(c.winter!=null?c.winter+(Y.win!=null?'<small> ('+Y.win+'r)</small>':''):'—')+'</td><td>'+(c.health!=null?c.health:'—')+'</td></tr>';}).join("")+'</table>'
     :'<div class="hv-ts">'+L2("Nicio inspecție încă în perioada acestei regine.","No inspections yet during this queen's time.")+'</div>';
   openM('<div class="mt">👑 '+esc(qCode(q).code)+' · G'+(chain.length-1)+' '+genScoreBadge(s.score)+'</div>'
     +(l?'<div class="gen-cl" style="border-color:'+col+'"><span class="gen-dot" style="background:'+col+'"></span><b>'+esc(genLineName(l))+'</b> · '+esc(q.race||"—")+' · '+L2("generația","generation")+' '+(chain.length-1)+' · '+esc(h.name)+'</div>':'')
@@ -598,8 +442,10 @@ window.genCard=function(id){
     +'<div><span>📅 '+L2("În stup","In the hive")+'</span><b>'+qFrom(q)+' → '+(to?to+' <span class="hv-dim">('+L2("înlocuită","replaced")+')</span>':L2("acum","now"))+'</b></div>'
     +'<div><span>🏠 '+L2("Stupul","Hive")+'</span><b>'+esc(h.name)+(h.closed?' '+genStatusBadge(h):'')+'</b></div>'
     +(q.line?'<div><span>🧬 '+L2("Linie (notată)","Line (noted)")+'</span><b>'+esc(q.line)+'</b></div>':'')
+    +(function(){var kg=0,ys=0;Object.keys(s.yrs||{}).forEach(function(y){if(s.yrs[y].kg){kg+=s.yrs[y].kg;ys++;}});
+      return kg?'<div><span>🍯 '+L2("Miere extrasă","Honey extracted")+'</span><b>'+(+kg.toFixed(1))+' kg'+(ys>1?' <span class="hv-dim">· '+(+(kg/ys).toFixed(1))+' kg/an</span>':'')+'</b></div>':'';})()
     +'</div>'
-    +'<div class="tv-sec-t" style="margin-top:4px;">⭐ '+L2("Nota pe ani","Score per year")+'</div>'+tbl
+    +'<div class="tv-sec-t" style="margin-top:4px;">⭐ '+L2("Nota pe ani","Score per year")+' <span class="hv-dim">· 🍯 = nota la miere (față de cel mai bun stup din an) · kg = mierea extrasă</span></div>'+tbl
     +'<div class="gen-kids"><b>👶 '+L2("Fiice","Daughters")+':</b> '+(kids.length?kids.map(function(c){return'<span class="gen-pp" style="border-color:'+col+'" onclick="genCard(\''+c.id+'\')">'+esc(c.pseudo?genShort(c.h)+" 🐝":qLabelS(c.q))+'</span>';}).join(" ")+(desc>kids.length?' <span class="hv-dim">+ '+(desc-kids.length)+' '+L2("mai departe","further down")+'</span>':''):'<span class="hv-dim">'+L2("niciuna încă","none yet")+'</span>')+'</div>'
     +(others.length?'<div class="hv-ts" style="margin-top:6px;">🏠 '+L2("Alte regine în","Other queens in")+' '+esc(h.name)+': '+others.map(function(x){var lx=M.lineOf[x.id];return'<span class="gen-pp" style="border-color:'+(lx?lx.color:"#888")+'" onclick="genCard(\''+x.id+'\')">'+esc(qCode(x).code+" G"+qCode(x).gen+" · "+(x.race||"?")+" "+qYr2(qFrom(x)))+'</span>';}).join(" ")+'</div>':'')
     +(stop&&!q.lineStop?'<div class="hv-ts" style="color:var(--danger);margin-top:6px;">⛔ '+L2("Ramura e oprită mai sus, din","The branch is stopped higher up, since")+' '+stop+'</div>':'')

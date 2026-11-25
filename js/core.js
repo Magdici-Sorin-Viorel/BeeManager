@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════
 let D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],pastorage:[],finances:[],varroa:[],tasks:[],feedings:[],userLoc:null,weather:null,settings:{dark:true,lang:"ro",tempUnit:"C"}};
 
-// Nectar plants: see js/plants.js (MELIFERE / PLANTS)
+// Nectar plants: data in js/plants.js (MELIFERE), logic + API BM.flora in js/flora.js
 
 const WMO={0:{i:"☀️",r:0},1:{i:"🌤️",r:0},2:{i:"⛅",r:0},3:{i:"☁️",r:0},
   45:{i:"🌫️",r:0},48:{i:"🌫️",r:0},
@@ -26,9 +26,11 @@ const FW={"Dadant 1/1 (cuib)":2.8,"Dadant 1/2 (magazie)":1.4,"Langstroth 1/1":2.
 // ═══════════════════════════════════════════
 // STORAGE
 // ═══════════════════════════════════════════
-function load(){
+// load(dbData): dbData = what db.js read from the database (newest copy), or null → the localStorage mirror "bmp5"
+function load(dbData){
   var s=localStorage.getItem("bmp5");
-  if(s){var p=JSON.parse(s);D={...D,...p};}
+  if(s){try{var p=JSON.parse(s);D={...D,...p};}catch(e){}}
+  if(dbData)D={...D,...dbData};
   cleanTestData();   // first start of the production version: drop demo / test data left from testing
   if(!D.settings)D.settings={dark:true,lang:"ro",tempUnit:"C"};
   D.settings.lang="ro"; // app is Romanian-only (English option removed from Settings)
@@ -39,6 +41,8 @@ function load(){
   if(!D.varroa)D.varroa=[];
   if(!D.tasks)D.tasks=[];
   if(!D.feedings)D.feedings=[];
+  if(!D.extractions)D.extractions=[];
+  if(!D.flora)D.flora=[];
   initLoc();
 }
 
@@ -54,7 +58,7 @@ function cleanTestData(){
   if(testMode||demo){
     var keep=D.settings||{},loc=D.userLoc,w=D.weather;
     D={hives:[],queens:[],inspections:[],honeyHarvests:[],treatments:[],inventory:[],pastorage:[],finances:[],varroa:[],tasks:[],feedings:[],
-      hivesArchive:[],bloomObs:[],userLoc:loc||null,weather:w||null,settings:keep};
+      hivesArchive:[],bloomObs:[],extractions:[],flora:[],userLoc:loc||null,weather:w||null,settings:keep};
     try{Object.keys(localStorage).forEach(function(k){if(k.indexOf("bmp5_hive_")===0||k==="bmp5_beforeTest"||k==="bmp5_fakeNow")localStorage.removeItem(k);});}catch(e){}
   }
   if(!D.settings)D.settings={dark:true,lang:"ro",tempUnit:"C"};
@@ -64,13 +68,15 @@ function cleanTestData(){
 
 function save(showToast){
   if(showToast===undefined)showToast=true;
-  localStorage.setItem("bmp5",JSON.stringify(D));
+  if(D.settings)D.settings.savedAt=Date.now();
+  try{localStorage.setItem("bmp5",JSON.stringify(D));}catch(e){}   // mirror (backups, older versions)
+  if(typeof dbSaveSoon==="function")dbSaveSoon();                  // the database (db.js)
   if(showToast)toast(D.settings.lang==="en"?"Saved ✅":"Salvat ✅","🍯");
 }
 
 // Per-hive snapshot: save individual hive data + its inspections in a separate localStorage key
 function saveHiveSnapshot(hiveId){
-  var hive=D.hives.find(function(h){return h.id===hiveId;});
+  var hive=BM.stupi.get(hiveId);
   if(!hive)return;
   var snap={hive:hive,inspections:D.inspections.filter(function(i){return i.hiveId===hiveId;}),queens:D.queens?D.queens.filter(function(q){return q.hive===hiveId;}):[], honeyHarvests:D.honeyHarvests.filter(function(h){return h.hiveId===hiveId;}),savedAt:new Date().toISOString()};
   localStorage.setItem("bmp5_hive_"+hiveId,JSON.stringify(snap));
@@ -81,6 +87,7 @@ function themeId(){var t=D.settings.theme;if(t==="light"||t==="trk")return t;ret
 window.setTheme=function(id){D.settings.theme=id;D.settings.dark=id!=="light";applyTheme();save(false);if(typeof renderSettings==="function"&&curP==="settings")renderSettings();};
 function applyTheme(){
   var th=themeId();
+  document.body.classList.remove("glove");if(D.settings)delete D.settings.glove;   // trial mode removed
   document.body.classList.toggle("light",th==="light");
   document.body.classList.toggle("trk",th==="trk");
   var mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.setAttribute("content",th==="light"?"#fefaf0":th==="trk"?"#05070c":"#0f0e0e");
@@ -171,12 +178,8 @@ function getLatOffset(){
   if(!D.userLoc)return 0;
   return Math.round((D.userLoc.lat-45.5)*4);
 }
-function getFlow(){
-  var cd=cdoy(),yr=new Date().getFullYear(),off=getLatOffset();
-  // main nectar flow blooming now (the one in its peak-nectar period takes priority)
-  var act=PLANTS.filter(function(p){return p.cat==="main"&&plState(p,yr,cd,off).inBloom;});
-  return act.filter(function(p){return plState(p,yr,cd,off).inPeak;})[0]||act[0]||null;
-}
+// main nectar flow blooming now (the one in its peak-nectar period takes priority) — see BM.flora (js/flora.js)
+function getFlow(){return BM.flora.culesCurent();}
 function sBadge(s){
   if(s==="puternic")return'<span class="bg gg">'+t("str_strong")+'</span>';
   if(s==="mediu")return'<span class="bg gy">'+t("str_medium")+'</span>';

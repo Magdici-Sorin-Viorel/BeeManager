@@ -304,7 +304,7 @@ function hvInspSecHTML(h,insps){
 function hvChipsHTML(h){
   var sc=h.sc==="red"?["gr","🔴 Problemă"]:h.sc==="yellow"?["gy","🟡 Atenție"]:["gg","🟢 Sănătos"];
   return'<div class="hv-chips">'+sBadge(h.str)+'<span class="bg '+sc[0]+'">'+sc[1]+'</span>'
-    +hvPlBadge(h)+'</div>';   // ❄️ wintering has its own band below
+    +hvPlBadge(h)+(typeof cuHiveBadge==='function'?cuHiveBadge(h):'')+'</div>';   // ❄️ wintering has its own band below
 }
 function hvCardHTML(h,opt){
   opt=opt||{};
@@ -379,8 +379,7 @@ function hvSummaryHTML(){
 function hvAlertHTML(){
   var th=hvThreshold();
   // wintering hives: no weekly alert
-  var late=D.hives.filter(function(h){return !hvIsNuc(h)&&!hvWinterState(h);}).map(function(h){var li=hvInsps(h.id)[0];return{h:h,d:li?hvDaysSince(li.date):null};})
-    .filter(function(x){return x.d===null||x.d>=th;});
+  var late=BM.inspectii.neinspectati(th).map(function(x){return{h:x.h,d:x.zile};});
   if(!late.length)return"";
   return'<div class="sa hv-alert">'
     +'<div><strong>⚠️ '+t("insp_alert_title")+'</strong> <span class="hv-ts">· '+t("hv_alert_lbl")+' '+th+' '+t("hv_days")+'</span></div>'
@@ -508,7 +507,7 @@ var _hvNucStay=false;
 
 window.delH=function(id){
   showConfirm(t("h_del_c"),function(){
-    genArchiveStub(D.hives.find(function(h){return h.id===id;}));   // trace in genealogy
+    genArchiveStub(BM.stupi.get(id));   // trace in genealogy
     D.hives=D.hives.filter(function(h){return h.id!==id;});
     D.inspections=D.inspections.filter(function(i){return i.hiveId!==id;});
     D.queens=D.queens.filter(function(q){return q.hive!==id;});
@@ -534,7 +533,7 @@ function fgHTML(title,inner,sub){return'<div class="fg"><div class="fg-t">'+titl
 // ── Hive form (with the Queen section) ───────────────────
 // Order: identification → the box → the colony now → the queen → notes; Save / Cancel stay at the bottom.
 function hiveM(id){
-  var h=id?D.hives.find(function(x){return x.id===id;}):null;
+  var h=id?BM.stupi.get(id):null;
   var mats=t("mat_opts"),mods=t("mod_opts");
   _hqReplace=false;
   var li=h?hvInsps(h.id)[0]:null;
@@ -590,11 +589,11 @@ window.saveH=function(id){
   o.fT=o.fB+o.fH+o.fE;                   // total frames = brood + food + empty
   o.plastic=Math.max(0,parseInt(($q("hPl")||{}).value)||0);   // ⬢ frames with plastic foundation
   // Supers keep their frames and capped percentage; only the changed count is added / removed
-  (function(){var old=id?D.hives.find(function(x){return x.id===id;}):null;
+  (function(){var old=id?BM.stupi.get(id):null;
     var a=(old&&Array.isArray(old.mags))?old.mags.slice(0,o.magCount):[];
     while(a.length<o.magCount)a.push({f:o.magF||10,cap:0});o.mags=a;})();
   // 🏠 frames of each brood box: kept if they still add up to the totals, otherwise spread again (bottom box first)
-  (function(){var old=id?D.hives.find(function(x){return x.id===id;}):null,nf=old&&old.nestF;
+  (function(){var old=id?BM.stupi.get(id):null,nf=old&&old.nestF;
     if(o.nests>1){var ok=Array.isArray(nf)&&nf.length===o.nests&&["b","f","e"].every(function(k){return nf.reduce(function(t,x){return t+(parseInt(x[k])||0);},0)===(k==="b"?o.fB:k==="f"?o.fH:o.fE);});
       o.nestF=ok?nf:(typeof nstSplit==="function"?nstSplit(o.fB,o.fH,o.fE,o.nests,hvCap1(o)):null);}
     else o.nestF=null;})();
@@ -626,6 +625,6 @@ window.saveH=function(id){
   }
   _hqReplace=false;
 
-  if(id){var ex=D.hives.find(function(h){return h.id===id;});if(ex)Object.assign(ex,o);}else{D.hives.push(o);}
+  if(id){var ex=BM.stupi.get(id);if(ex)Object.assign(ex,o);}else{D.hives.push(o);}
   save();closeM();renderHives();
 };
